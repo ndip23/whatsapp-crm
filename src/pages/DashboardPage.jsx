@@ -1,0 +1,1591 @@
+import { useState } from 'react'
+import { useChat } from '../context/ChatContext'
+import { Search, Paperclip, Send, MessageCircle, Clock, User, CheckCircle, Maximize2, X, PieChart } from 'lucide-react'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart as RechartsPieChart, Pie, Cell } from 'recharts'
+
+const DashboardPage = () => {
+  const { conversations, activeConversation, selectConversation, sendMessage } = useChat()
+  const [message, setMessage] = useState('')
+  const [searchTerm, setSearchTerm] = useState('')
+  const [isChatExpanded, setIsChatExpanded] = useState(false)
+  const [isAnalyticsExpanded, setIsAnalyticsExpanded] = useState(false)
+  const [conversationStatus, setConversationStatus] = useState('pending')
+
+  const handleSendMessage = (e) => {
+    e.preventDefault()
+    if (message.trim() && activeConversation) {
+      sendMessage(activeConversation.id, message)
+      setMessage('')
+    }
+  }
+
+  const handleStatusChange = (status) => {
+    setConversationStatus(status)
+    // In a real app, you would save this status to a backend
+    console.log('Conversation status changed to:', status)
+  }
+
+  const filteredConversations = conversations.filter(conv => 
+    conv.client.toLowerCase().includes(searchTerm.toLowerCase())
+  )
+
+  const chartData = [
+    { name: 'Mon', conversations: 12 },
+    { name: 'Tue', conversations: 19 },
+    { name: 'Wed', conversations: 8 },
+    { name: 'Thu', conversations: 15 },
+    { name: 'Fri', conversations: 11 },
+    { name: 'Sat', conversations: 7 },
+    { name: 'Sun', conversations: 13 },
+  ]
+
+  const performanceData = [
+    { name: 'John', conversations: 24, responseTime: '2.3 min' },
+    { name: 'Jane', conversations: 18, responseTime: '3.1 min' },
+    { name: 'Bob', conversations: 32, responseTime: '1.8 min' },
+    { name: 'Alice', conversations: 21, responseTime: '2.7 min' },
+  ]
+
+  const styles = {
+    page: {
+      padding: '1rem'
+    },
+    pageTitle: {
+      fontSize: '1.5rem',
+      fontWeight: '700',
+      color: '#111827',
+      marginBottom: '1.5rem'
+    },
+    chatContainer: {
+      backgroundColor: '#ffffff',
+      borderRadius: '0.75rem',
+      marginBottom: '2rem',
+      overflow: 'hidden'
+    },
+    chatInterface: {
+      display: 'flex',
+      height: 'calc(100vh - 200px)'
+    },
+    // Conversations panel
+    conversationsPanel: {
+      width: '30%',
+      borderRight: '1px solid #e5e7eb',
+      display: 'flex',
+      flexDirection: 'column',
+      backgroundColor: '#f9fafb'
+    },
+    searchContainer: {
+      padding: '1rem',
+      borderBottom: '1px solid #e5e7eb',
+      backgroundColor: '#ffffff'
+    },
+    searchWrapper: {
+      position: 'relative'
+    },
+    searchIcon: {
+      position: 'absolute',
+      insetY: '0',
+      left: '0',
+      paddingLeft: '0.75rem',
+      display: 'flex',
+      alignItems: 'center',
+      pointerEvents: 'none',
+      height: '100%'
+    },
+    searchInput: {
+      display: 'block',
+      width: '100%',
+      paddingLeft: '2.5rem',
+      paddingRight: '0.75rem',
+      paddingTop: '0.5rem',
+      paddingBottom: '0.5rem',
+      border: '1px solid #d1d5db',
+      borderRadius: '0.375rem',
+      backgroundColor: '#ffffff',
+      placeholderColor: '#9ca3af',
+      outline: 'none'
+    },
+    searchInputFocus: {
+      borderColor: '#10b981',
+      ring: '1px solid #10b981'
+    },
+    conversationsList: {
+      flex: '1',
+      overflowY: 'auto'
+    },
+    conversationItem: {
+      display: 'flex',
+      alignItems: 'center',
+      padding: '1rem',
+      borderBottom: '1px solid #e5e7eb',
+      cursor: 'pointer',
+      backgroundColor: '#ffffff',
+      transition: 'background-color 0.2s ease'
+    },
+    conversationItemHover: {
+      backgroundColor: '#f0fdf4'
+    },
+    conversationItemActive: {
+      backgroundColor: '#ecfdf5',
+      borderLeft: '3px solid #10b981'
+    },
+    avatarContainer: {
+      flexShrink: '0'
+    },
+    avatar: {
+      height: '3rem',
+      width: '3rem',
+      borderRadius: '9999px',
+      backgroundColor: '#d1fae5',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center'
+    },
+    avatarText: {
+      color: '#065f46',
+      fontWeight: '600'
+    },
+    conversationDetails: {
+      marginLeft: '1rem',
+      flex: '1',
+      minWidth: '0'
+    },
+    conversationHeader: {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between'
+    },
+    clientName: {
+      fontSize: '0.875rem',
+      fontWeight: '600',
+      color: '#111827',
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+      whiteSpace: 'nowrap'
+    },
+    time: {
+      fontSize: '0.75rem',
+      color: '#6b7280'
+    },
+    conversationFooter: {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginTop: '0.25rem'
+    },
+    lastMessage: {
+      fontSize: '0.875rem',
+      color: '#6b7280',
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+      whiteSpace: 'nowrap',
+      flex: '1'
+    },
+    unreadBadge: {
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      height: '1.25rem',
+      width: '1.25rem',
+      borderRadius: '9999px',
+      backgroundColor: '#10b981',
+      color: '#ffffff',
+      fontSize: '0.75rem',
+      fontWeight: '600'
+    },
+    // Chat panel
+    chatPanel: {
+      flex: '1',
+      display: 'flex',
+      flexDirection: 'column',
+      backgroundColor: '#f0f9ff'
+    },
+    chatHeader: {
+      padding: '1rem',
+      borderBottom: '1px solid #e5e7eb',
+      backgroundColor: '#ffffff'
+    },
+    chatHeaderContent: {
+      display: 'flex',
+      alignItems: 'center'
+    },
+    chatAvatar: {
+      flexShrink: '0'
+    },
+    chatAvatarInner: {
+      height: '2.5rem',
+      width: '2.5rem',
+      borderRadius: '9999px',
+      backgroundColor: '#d1fae5',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center'
+    },
+    chatAvatarText: {
+      color: '#065f46',
+      fontWeight: '600'
+    },
+    clientInfo: {
+      marginLeft: '1rem'
+    },
+    clientNameHeader: {
+      fontSize: '1rem',
+      fontWeight: '600',
+      color: '#111827'
+    },
+    clientStatus: {
+      fontSize: '0.875rem',
+      color: '#6b7280'
+    },
+    messagesContainer: {
+      flex: '1',
+      overflowY: 'auto',
+      padding: '1rem',
+      backgroundColor: '#f0f9ff'
+    },
+    messageList: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '1rem'
+    },
+    messageRow: {
+      display: 'flex'
+    },
+    messageRowSent: {
+      justifyContent: 'flex-end'
+    },
+    messageRowReceived: {
+      justifyContent: 'flex-start'
+    },
+    messageBubble: {
+      maxWidth: '70%',
+      paddingLeft: '1rem',
+      paddingRight: '1rem',
+      paddingTop: '0.75rem',
+      paddingBottom: '0.75rem',
+      borderRadius: '1rem',
+      boxShadow: '0 1px 2px rgba(0, 0, 0, 0.1)'
+    },
+    messageBubbleSent: {
+      backgroundColor: '#10b981',
+      color: '#ffffff',
+      borderBottomRightRadius: '0.25rem'
+    },
+    messageBubbleReceived: {
+      backgroundColor: '#ffffff',
+      color: '#1f2937',
+      borderBottomLeftRadius: '0.25rem'
+    },
+    messageText: {
+      marginBottom: '0.25rem'
+    },
+    messageTime: {
+      fontSize: '0.75rem'
+    },
+    messageTimeSent: {
+      color: '#d1fae5',
+      textAlign: 'right'
+    },
+    messageTimeReceived: {
+      color: '#9ca3af',
+      textAlign: 'left'
+    },
+    noConversation: {
+      flex: '1',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: '#f0f9ff'
+    },
+    noConversationText: {
+      color: '#6b7280'
+    },
+    inputContainer: {
+      padding: '1rem',
+      borderTop: '1px solid #e5e7eb',
+      backgroundColor: '#ffffff'
+    },
+    inputForm: {
+      display: 'flex',
+      alignItems: 'center'
+    },
+    attachmentButton: {
+      padding: '0.5rem',
+      color: '#6b7280',
+      backgroundColor: 'transparent',
+      border: 'none',
+      cursor: 'pointer',
+      borderRadius: '0.5rem'
+    },
+    attachmentButtonHover: {
+      color: '#374151',
+      backgroundColor: '#f3f4f6'
+    },
+    messageInput: {
+      flex: '1',
+      margin: '0 0.5rem',
+      paddingLeft: '1rem',
+      paddingRight: '1rem',
+      paddingTop: '0.75rem',
+      paddingBottom: '0.75rem',
+      border: '1px solid #d1d5db',
+      borderRadius: '1.5rem',
+      outline: 'none',
+      fontSize: '0.875rem'
+    },
+    messageInputFocus: {
+      borderColor: '#10b981',
+      ring: '1px solid #10b981'
+    },
+    sendButton: {
+      padding: '0.75rem',
+      backgroundColor: '#10b981',
+      color: '#ffffff',
+      borderRadius: '1.5rem',
+      border: 'none',
+      cursor: 'pointer',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center'
+    },
+    sendButtonHover: {
+      backgroundColor: '#059669'
+    },
+    // Client info panel
+    clientInfoPanel: {
+      width: '25%',
+      borderLeft: '1px solid #e5e7eb',
+      padding: '0.75rem',
+      backgroundColor: '#ffffff',
+      overflowY: 'auto'
+    },
+    clientInfoTitle: {
+      fontSize: '1rem',
+      fontWeight: '600',
+      color: '#10b981',
+      marginBottom: '0.75rem',
+      paddingBottom: '0.25rem',
+      borderBottom: '1px solid #10b981',
+      textAlign: 'center',
+      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
+    },
+    sectionTitle: {
+      fontSize: '0.75rem',
+      fontWeight: '600',
+      color: '#10b981',
+      marginBottom: '0.5rem',
+      textTransform: 'uppercase',
+      letterSpacing: '0.025em',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '0.25rem',
+      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
+    },
+    detailsList: {
+      marginTop: '0.5rem',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '0.75rem'
+    },
+    detailItem: {
+      display: 'flex',
+      flexDirection: 'column'
+    },
+    detailLabel: {
+      fontSize: '0.75rem',
+      color: '#6b7280',
+      fontWeight: '500',
+      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
+    },
+    detailValue: {
+      fontSize: '0.875rem',
+      fontWeight: '500',
+      color: '#111827',
+      marginTop: '0.125rem',
+      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
+    },
+    clientInfoSection: {
+      marginBottom: '1rem'
+    },
+    tagsContainer: {
+      marginTop: '0.5rem',
+      display: 'flex',
+      flexWrap: 'wrap',
+      gap: '0.5rem'
+    },
+    tag: {
+      display: 'inline-flex',
+      alignItems: 'center',
+      paddingLeft: '0.75rem',
+      paddingRight: '0.75rem',
+      paddingTop: '0.25rem',
+      paddingBottom: '0.25rem',
+      borderRadius: '9999px',
+      fontSize: '0.75rem',
+      fontWeight: '500'
+    },
+    tagNew: {
+      backgroundColor: '#dbeafe',
+      color: '#1e40af'
+    },
+    tagVip: {
+      backgroundColor: '#ede9fe',
+      color: '#5b21b6'
+    },
+    addTagButton: {
+      marginTop: '0.75rem',
+      fontSize: '0.875rem',
+      color: '#10b981',
+      backgroundColor: 'transparent',
+      border: 'none',
+      cursor: 'pointer',
+      fontWeight: '500',
+      display: 'flex',
+      alignItems: 'center'
+    },
+    addTagButtonHover: {
+      color: '#065f46'
+    },
+    notesList: {
+      marginTop: '0.5rem',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '0.75rem'
+    },
+    noteItem: {
+      fontSize: '0.875rem',
+      padding: '0.75rem',
+      backgroundColor: '#f9fafb',
+      borderRadius: '0.5rem'
+    },
+    noteText: {
+      color: '#111827',
+      fontSize: '0.875rem',
+      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
+    },
+    noteTime: {
+      color: '#6b7280',
+      fontSize: '0.75rem',
+      marginTop: '0.25rem',
+      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
+    },
+    reminderContainer: {
+      marginTop: '0.75rem',
+      display: 'flex',
+      gap: '0.5rem',
+      flexDirection: 'column'
+    },
+    reminderInput: {
+      border: '1px solid #d1d5db',
+      borderRadius: '0.375rem',
+      paddingLeft: '0.5rem',
+      paddingRight: '0.5rem',
+      paddingTop: '0.375rem',
+      paddingBottom: '0.375rem',
+      fontSize: '0.8125rem',
+      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+      outline: 'none',
+      transition: 'border-color 0.2s ease',
+      width: '100%'
+    },
+    reminderButton: {
+      backgroundColor: '#10b981',
+      color: '#ffffff',
+      fontWeight: '500',
+      paddingTop: '0.5rem',
+      paddingBottom: '0.5rem',
+      paddingLeft: '1rem',
+      paddingRight: '1rem',
+      borderRadius: '0.375rem',
+      border: 'none',
+      fontSize: '0.8125rem',
+      cursor: 'pointer',
+      alignSelf: 'flex-start',
+      transition: 'background-color 0.2s ease'
+    },
+    actionButtons: {
+      display: 'flex',
+      gap: '1rem',
+      paddingTop: '1.5rem',
+      borderTop: '1px solid #e5e7eb'
+    },
+    saveButton: {
+      flex: '1',
+      backgroundColor: '#10b981',
+      color: '#ffffff',
+      fontWeight: '500',
+      paddingTop: '0.625rem',
+      paddingBottom: '0.625rem',
+      paddingLeft: '1rem',
+      paddingRight: '1rem',
+      borderRadius: '0.375rem',
+      border: 'none',
+      cursor: 'pointer',
+      fontSize: '0.8125rem',
+      transition: 'background-color 0.2s ease'
+    },
+    saveButtonHover: {
+      backgroundColor: '#059669'
+    },
+    cancelButton: {
+      flex: '1',
+      backgroundColor: '#f3f4f6',
+      color: '#1f2937',
+      fontWeight: '500',
+      paddingTop: '0.625rem',
+      paddingBottom: '0.625rem',
+      paddingLeft: '1rem',
+      paddingRight: '1rem',
+      borderRadius: '0.375rem',
+      border: '1px solid #d1d5db',
+      cursor: 'pointer',
+      fontSize: '0.8125rem',
+      transition: 'background-color 0.2s ease'
+    },
+    cancelButtonHover: {
+      backgroundColor: '#e5e7eb'
+    },
+    statusButton: {
+      padding: '0.25rem 0.5rem',
+      borderRadius: '0.25rem',
+      border: '1px solid #d1d5db',
+      backgroundColor: '#f9fafb',
+      color: '#374151',
+      fontSize: '0.75rem',
+      fontWeight: '500',
+      cursor: 'pointer',
+      transition: 'all 0.2s ease'
+    },
+    statusButtonActive: {
+      backgroundColor: '#10b981',
+      borderColor: '#10b981',
+      color: '#ffffff'
+    },
+    // Stats cards
+    statsGrid: {
+      display: 'flex',
+      gap: '1rem',
+      marginBottom: '2rem',
+      flexWrap: 'wrap',
+      padding: '1.5rem',
+      backgroundColor: '#ffffff',
+      borderRadius: '0.75rem',
+      boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)'
+    },
+    statsCard: {
+      backgroundColor: '#ffffff',
+      padding: '1rem',
+      borderRadius: '0.5rem',
+      border: '1px solid #e5e7eb',
+      transition: 'transform 0.2s ease',
+      flex: '1 1 calc(50% - 0.5rem)',
+      minWidth: '200px'
+    },
+    statsCardHover: {
+      transform: 'translateY(-2px)'
+    },
+    statsTitle: {
+      fontSize: '0.8125rem',
+      fontWeight: '500',
+      color: '#6b7280',
+      marginBottom: '0.5rem',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '0.5rem'
+    },
+    statsValue: {
+      fontSize: '1.25rem',
+      fontWeight: '600',
+      color: '#10b981',
+      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
+    },
+    statsIcon: {
+      width: '1.125rem',
+      height: '1.125rem',
+      color: '#10b981'
+    }
+  }
+
+  // Responsive styles
+  const mediaStyles = `
+    @media (min-width: 768px) {
+      .chatInterface {
+        flex-direction: row;
+      }
+      
+      .conversationsPanel {
+        width: 33.333333%;
+      }
+      
+      .clientInfoPanel {
+        width: 25%;
+      }
+      
+      .statsGrid {
+        gridTemplateColumns: repeat(2, minmax(0, 1fr));
+      }
+    }
+    
+    @media (min-width: 1024px) {
+      .statsGrid {
+        gridTemplateColumns: repeat(4, minmax(0, 1fr));
+      }
+    }
+    
+    /* Custom scrollbar styling */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    
+    ::-webkit-scrollbar-track {
+      background: #f3f4f6;
+      border-radius: 3px;
+    }
+    
+    ::-webkit-scrollbar-thumb {
+      background: #a7f3d0;
+      border-radius: 3px;
+    }
+    
+    ::-webkit-scrollbar-thumb:hover {
+      background: #6ee7b7;
+    }
+    
+    /* Firefox */
+    * {
+      scrollbar-width: thin;
+      scrollbar-color: #a7f3d0 #f3f4f6;
+    }
+  `
+
+  // Chat Container
+  const chatContainerStyle = {
+    ...styles.chatContainer,
+    position: 'relative'
+  }
+
+  const expandButtonStyle = {
+    position: 'absolute',
+    top: '0.5rem',
+    right: '0.5rem',
+    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+    color: '#10b981',
+    border: '1px solid rgba(16, 185, 129, 0.3)',
+    borderRadius: '0.375rem',
+    padding: '0.375rem',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: '10',
+    transition: 'all 0.2s ease',
+    width: '2rem',
+    height: '2rem'
+  }
+
+  const expandButtonHoverStyle = {
+    backgroundColor: 'rgba(16, 185, 129, 0.2)',
+    borderColor: 'rgba(16, 185, 129, 0.5)'
+  }
+
+  const closeButtonStyle = {
+    position: 'absolute',
+    top: '1rem',
+    right: '1rem',
+    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+    color: '#10b981',
+    border: '1px solid rgba(16, 185, 129, 0.3)',
+    borderRadius: '0.375rem',
+    padding: '0.375rem',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: '1001',
+    transition: 'all 0.2s ease',
+    width: '2rem',
+    height: '2rem'
+  }
+
+  const closeButtonHoverStyle = {
+    backgroundColor: 'rgba(16, 185, 129, 0.2)',
+    borderColor: 'rgba(16, 185, 129, 0.5)'
+  }
+
+  const expandedViewStyle = {
+    position: 'fixed',
+    top: '0',
+    left: '0',
+    right: '0',
+    bottom: '0',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: '1000'
+  }
+
+  const expandedContentStyle = {
+    backgroundColor: '#ffffff',
+    borderRadius: '0.75rem',
+    width: '95%',
+    height: '95%',
+    maxWidth: '1400px',
+    position: 'relative',
+    display: 'flex',
+    flexDirection: 'column'
+  }
+
+  const expandedChatInterfaceStyle = {
+    ...styles.chatInterface,
+    height: '100%',
+    flex: '1'
+  }
+
+  // Analytics Expansion Button
+  const analyticsExpandButtonStyle = {
+    position: 'absolute',
+    top: '0.5rem',
+    right: '0.5rem',
+    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+    color: '#10b981',
+    border: '1px solid rgba(16, 185, 129, 0.3)',
+    borderRadius: '0.375rem',
+    padding: '0.375rem',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: '10',
+    transition: 'all 0.2s ease',
+    width: '2rem',
+    height: '2rem'
+  }
+
+  const analyticsExpandButtonHoverStyle = {
+    backgroundColor: 'rgba(16, 185, 129, 0.2)',
+    borderColor: 'rgba(16, 185, 129, 0.5)'
+  }
+
+  // Pie Chart Data
+  const pieChartData = [
+    { name: 'Resolved', value: 65, color: '#10b981' },
+    { name: 'Pending', value: 20, color: '#f59e0b' },
+    { name: 'Escalated', value: 15, color: '#ef4444' }
+  ]
+
+  // Expanded Chart Container
+  const expandedChartContainerStyle = {
+    padding: '1.5rem',
+    backgroundColor: '#ffffff',
+    borderRadius: '0.75rem',
+    boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+    height: 'calc(100vh - 3rem)'
+  }
+
+  // Expanded Chart Style
+  const expandedChartStyle = {
+    height: '100%',
+    width: '100%',
+    position: 'relative'
+  }
+
+  return (
+    <div style={styles.page}>
+      <style>{mediaStyles}</style>
+      
+      {/* WhatsApp-style chat interface */}
+      <div style={chatContainerStyle}>
+        {!isChatExpanded && (
+          <button 
+            style={expandButtonStyle}
+            onClick={() => setIsChatExpanded(true)}
+            onMouseEnter={(e) => {
+              e.target.style.backgroundColor = expandButtonHoverStyle.backgroundColor;
+              e.target.style.borderColor = expandButtonHoverStyle.borderColor;
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.backgroundColor = expandButtonStyle.backgroundColor;
+              e.target.style.borderColor = expandButtonStyle.borderColor;
+            }}
+          >
+            <Maximize2 style={{ height: '1rem', width: '1rem' }} />
+          </button>
+        )}
+        
+        <div className="chatInterface" style={styles.chatInterface}>
+          {/* Left Panel - Conversations List */}
+          <div className="conversationsPanel" style={styles.conversationsPanel}>
+            <div style={styles.searchContainer}>
+              <div style={styles.searchWrapper}>
+                <div style={styles.searchIcon}>
+                  <Search style={{ height: '1.25rem', width: '1.25rem', color: '#9ca3af' }} />
+                </div>
+                <input
+                  type="text"
+                  placeholder="Search conversations..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  style={styles.searchInput}
+                  onFocus={(e) => {
+                    e.target.style.borderColor = styles.searchInputFocus.borderColor;
+                    e.target.style.boxShadow = `0 0 0 1px ${styles.searchInputFocus.ring}`;
+                  }}
+                  onBlur={(e) => {
+                    e.target.style.borderColor = '';
+                    e.target.style.boxShadow = '';
+                  }}
+                />
+              </div>
+            </div>
+            <div style={styles.conversationsList}>
+              {filteredConversations.map((conversation) => (
+                <div
+                  key={conversation.id}
+                  style={{
+                    ...styles.conversationItem,
+                    ...(activeConversation.id === conversation.id ? styles.conversationItemActive : {})
+                  }}
+                  onClick={() => selectConversation(conversation)}
+                  onMouseEnter={(e) => {
+                    if (activeConversation.id !== conversation.id) {
+                      e.target.style.backgroundColor = styles.conversationItemHover.backgroundColor;
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (activeConversation.id !== conversation.id) {
+                      e.target.style.backgroundColor = styles.conversationItem.backgroundColor;
+                    }
+                  }}
+                >
+                  <div style={styles.avatarContainer}>
+                    <div style={styles.avatar}>
+                      <span style={styles.avatarText}>
+                        {conversation.client.charAt(0)}
+                      </span>
+                    </div>
+                  </div>
+                  <div style={styles.conversationDetails}>
+                    <div style={styles.conversationHeader}>
+                      <h3 style={styles.clientName}>
+                        {conversation.client}
+                      </h3>
+                      <span style={styles.time}>
+                        {conversation.time}
+                      </span>
+                    </div>
+                    <div style={styles.conversationFooter}>
+                      <p style={styles.lastMessage}>
+                        {conversation.lastMessage}
+                      </p>
+                      {conversation.unread > 0 && (
+                        <span style={styles.unreadBadge}>
+                          {conversation.unread}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Center Panel - Chat Window */}
+          <div style={styles.chatPanel}>
+            {activeConversation ? (
+              <>
+                <div style={styles.chatHeader}>
+                  <div style={styles.chatHeaderContent}>
+                    <div style={styles.chatAvatar}>
+                      <div style={styles.chatAvatarInner}>
+                        <span style={styles.chatAvatarText}>
+                          {activeConversation.client.charAt(0)}
+                        </span>
+                      </div>
+                    </div>
+                    <div style={styles.clientInfo}>
+                      <h3 style={styles.clientNameHeader}>
+                        {activeConversation.client}
+                      </h3>
+                      <p style={styles.clientStatus}>
+                        {activeConversation.online ? 'Online' : 'Offline'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <div style={styles.messagesContainer}>
+                  <div style={styles.messageList}>
+                    {activeConversation.messages.map((msg) => (
+                      <div
+                        key={msg.id}
+                        className={`messageRow ${msg.sender === 'agent' ? 'messageRowSent' : 'messageRowReceived'}`}
+                        style={{
+                          ...styles.messageRow,
+                          ...(msg.sender === 'agent' ? styles.messageRowSent : styles.messageRowReceived)
+                        }}
+                      >
+                        <div
+                          className={`messageBubble ${msg.sender === 'agent' ? 'messageBubbleSent' : 'messageBubbleReceived'}`}
+                          style={{
+                            ...styles.messageBubble,
+                            ...(msg.sender === 'agent' ? styles.messageBubbleSent : styles.messageBubbleReceived)
+                          }}
+                        >
+                          <p style={styles.messageText}>{msg.text}</p>
+                          <p
+                            className={`messageTime ${msg.sender === 'agent' ? 'messageTimeSent' : 'messageTimeReceived'}`}
+                            style={{
+                              ...styles.messageTime,
+                              ...(msg.sender === 'agent' ? styles.messageTimeSent : styles.messageTimeReceived)
+                            }}
+                          >
+                            {msg.timestamp}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div style={styles.inputContainer}>
+                  <form onSubmit={handleSendMessage} style={styles.inputForm}>
+                    <button
+                      type="button"
+                      style={styles.attachmentButton}
+                      onMouseEnter={(e) => e.target.style.color = styles.attachmentButtonHover.color}
+                      onMouseLeave={(e) => e.target.style.color = styles.attachmentButton.color}
+                    >
+                      <Paperclip style={{ height: '1.25rem', width: '1.25rem' }} />
+                    </button>
+                    <input
+                      type="text"
+                      value={message}
+                      onChange={(e) => setMessage(e.target.value)}
+                      placeholder="Type a message..."
+                      style={styles.messageInput}
+                      onFocus={(e) => {
+                        e.target.style.borderColor = styles.messageInputFocus.borderColor;
+                        e.target.style.boxShadow = `0 0 0 1px ${styles.messageInputFocus.ring}`;
+                      }}
+                      onBlur={(e) => {
+                        e.target.style.borderColor = '';
+                        e.target.style.boxShadow = '';
+                      }}
+                    />
+                    <button
+                      type="submit"
+                      style={styles.sendButton}
+                      onMouseEnter={(e) => e.target.style.backgroundColor = styles.sendButtonHover.backgroundColor}
+                      onMouseLeave={(e) => e.target.style.backgroundColor = styles.sendButton.backgroundColor}
+                    >
+                      <Send style={{ height: '1.25rem', width: '1.25rem' }} />
+                    </button>
+                  </form>
+                </div>
+              </>
+            ) : (
+              <div style={styles.noConversation}>
+                <p style={styles.noConversationText}>Select a conversation to start chatting</p>
+              </div>
+            )}
+          </div>
+
+          {/* Right Panel - Client Info */}
+          <div className="clientInfoPanel" style={styles.clientInfoPanel}>
+            {activeConversation && (
+              <div>
+                <h3 style={styles.clientInfoTitle}>Client Information</h3>
+                <div style={styles.clientInfoSection}>
+                  <h4 style={styles.sectionTitle}>Client Details</h4>
+                  <dl style={styles.detailsList}>
+                    <div style={styles.detailItem}>
+                      <dt style={styles.detailLabel}>Name</dt>
+                      <dd style={styles.detailValue}>{activeConversation.client}</dd>
+                    </div>
+                    <div style={styles.detailItem}>
+                      <dt style={styles.detailLabel}>Phone Number</dt>
+                      <dd style={styles.detailValue}>+1 234 567 8900</dd>
+                    </div>
+                    <div style={styles.detailItem}>
+                      <dt style={styles.detailLabel}>Country</dt>
+                      <dd style={styles.detailValue}>USA</dd>
+                    </div>
+                  </dl>
+                </div>
+                
+                <div style={styles.clientInfoSection}>
+                  <h4 style={styles.sectionTitle}>Status</h4>
+                  <div style={{ display: 'flex', gap: '0.25rem', marginTop: '0.5rem', flexWrap: 'wrap' }}>
+                    <button
+                      style={{
+                        ...styles.statusButton,
+                        ...(conversationStatus === 'solved' ? styles.statusButtonActive : {}),
+                        padding: '0.25rem 0.5rem'
+                      }}
+                      onClick={() => handleStatusChange('solved')}
+                    >
+                      <span style={{ fontSize: '0.75rem', fontWeight: '500' }}>Solved</span>
+                    </button>
+                    <button
+                      style={{
+                        ...styles.statusButton,
+                        ...(conversationStatus === 'pending' ? styles.statusButtonActive : {}),
+                        padding: '0.25rem 0.5rem'
+                      }}
+                      onClick={() => handleStatusChange('pending')}
+                    >
+                      <span style={{ fontSize: '0.75rem', fontWeight: '500' }}>Pending</span>
+                    </button>
+                    <button
+                      style={{
+                        ...styles.statusButton,
+                        ...(conversationStatus === 'escalated' ? styles.statusButtonActive : {}),
+                        padding: '0.25rem 0.5rem'
+                      }}
+                      onClick={() => handleStatusChange('escalated')}
+                    >
+                      <span style={{ fontSize: '0.75rem', fontWeight: '500' }}>Escalated</span>
+                    </button>
+                  </div>
+                </div>
+                
+                <div style={styles.clientInfoSection}>
+                  <h4 style={styles.sectionTitle}>Tags</h4>
+                  <div style={styles.tagsContainer}>
+                    <span style={{ ...styles.tag, ...styles.tagNew }}>
+                      New Lead
+                    </span>
+                    <span style={{ ...styles.tag, ...styles.tagVip }}>
+                      VIP
+                    </span>
+                  </div>
+                  <button 
+                    style={styles.addTagButton}
+                    onMouseEnter={(e) => e.target.style.color = styles.addTagButtonHover.color}
+                    onMouseLeave={(e) => e.target.style.color = styles.addTagButton.color}
+                  >
+                    + Add Tag
+                  </button>
+                </div>
+                
+                <div style={styles.clientInfoSection}>
+                  <h4 style={styles.sectionTitle}>Notes</h4>
+                  <div style={styles.notesList}>
+                    <div style={styles.noteItem}>
+                      <p style={styles.noteText}>Initial inquiry about product features</p>
+                      <p style={styles.noteTime}>2 hours ago</p>
+                    </div>
+                  </div>
+                  <button 
+                    style={styles.addTagButton}
+                    onMouseEnter={(e) => e.target.style.color = styles.addTagButtonHover.color}
+                    onMouseLeave={(e) => e.target.style.color = styles.addTagButton.color}
+                  >
+                    + Add Note
+                  </button>
+                </div>
+                
+                <div style={styles.clientInfoSection}>
+                  <h4 style={styles.sectionTitle}>Follow-up Reminder</h4>
+                  <div style={styles.reminderContainer}>
+                    <input
+                      type="datetime-local"
+                      style={styles.reminderInput}
+                    />
+                    <button 
+                      style={styles.reminderButton}
+                      onMouseEnter={(e) => e.target.style.backgroundColor = styles.reminderButtonHover.backgroundColor}
+                      onMouseLeave={(e) => e.target.style.backgroundColor = styles.reminderButton.backgroundColor}
+                    >
+                      Save
+                    </button>
+                  </div>
+                </div>
+                
+                <div style={styles.actionButtons}>
+                  <button 
+                    style={styles.saveButton}
+                    onMouseEnter={(e) => e.target.style.backgroundColor = styles.saveButtonHover.backgroundColor}
+                    onMouseLeave={(e) => e.target.style.backgroundColor = styles.saveButton.backgroundColor}
+                  >
+                    Save
+                  </button>
+                  <button 
+                    style={styles.cancelButton}
+                    onMouseEnter={(e) => e.target.style.backgroundColor = styles.cancelButtonHover.backgroundColor}
+                    onMouseLeave={(e) => e.target.style.backgroundColor = styles.cancelButton.backgroundColor}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Expanded Chat View */}
+      {isChatExpanded && (
+        <div style={expandedViewStyle} onClick={(e) => e.target === e.currentTarget && setIsChatExpanded(false)}>
+          <div style={expandedContentStyle}>
+            <button 
+              style={closeButtonStyle}
+              onClick={() => setIsChatExpanded(false)}
+              onMouseEnter={(e) => {
+                e.target.style.backgroundColor = closeButtonHoverStyle.backgroundColor;
+                e.target.style.borderColor = closeButtonHoverStyle.borderColor;
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.backgroundColor = closeButtonStyle.backgroundColor;
+                e.target.style.borderColor = closeButtonStyle.borderColor;
+              }}
+            >
+              <X style={{ height: '1rem', width: '1rem' }} />
+            </button>
+            
+            <div style={expandedChatInterfaceStyle}>
+              {/* Left Panel - Conversations List */}
+              <div className="conversationsPanel" style={{...styles.conversationsPanel, width: '30%'}}>
+                <div style={styles.searchContainer}>
+                  <div style={styles.searchWrapper}>
+                    <div style={styles.searchIcon}>
+                      <Search style={{ height: '1.25rem', width: '1.25rem', color: '#9ca3af' }} />
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="Search conversations..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      style={styles.searchInput}
+                      onFocus={(e) => {
+                        e.target.style.borderColor = styles.searchInputFocus.borderColor;
+                        e.target.style.boxShadow = `0 0 0 1px ${styles.searchInputFocus.ring}`;
+                      }}
+                      onBlur={(e) => {
+                        e.target.style.borderColor = '';
+                        e.target.style.boxShadow = '';
+                      }}
+                    />
+                  </div>
+                </div>
+                <div style={styles.conversationsList}>
+                  {filteredConversations.map((conversation) => (
+                    <div
+                      key={conversation.id}
+                      style={{
+                        ...styles.conversationItem,
+                        ...(activeConversation.id === conversation.id ? styles.conversationItemActive : {})
+                      }}
+                      onClick={() => selectConversation(conversation)}
+                      onMouseEnter={(e) => {
+                        if (activeConversation.id !== conversation.id) {
+                          e.target.style.backgroundColor = styles.conversationItemHover.backgroundColor;
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (activeConversation.id !== conversation.id) {
+                          e.target.style.backgroundColor = styles.conversationItem.backgroundColor;
+                        }
+                      }}
+                    >
+                      <div style={styles.avatarContainer}>
+                        <div style={styles.avatar}>
+                          <span style={styles.avatarText}>
+                            {conversation.client.charAt(0)}
+                          </span>
+                        </div>
+                      </div>
+                      <div style={styles.conversationDetails}>
+                        <div style={styles.conversationHeader}>
+                          <h3 style={styles.clientName}>
+                            {conversation.client}
+                          </h3>
+                          <span style={styles.time}>
+                            {conversation.time}
+                          </span>
+                        </div>
+                        <div style={styles.conversationFooter}>
+                          <p style={styles.lastMessage}>
+                            {conversation.lastMessage}
+                          </p>
+                          {conversation.unread > 0 && (
+                            <span style={styles.unreadBadge}>
+                              {conversation.unread}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Center Panel - Chat Window */}
+              <div style={{...styles.chatPanel, flex: '1'}}>
+                {activeConversation ? (
+                  <>
+                    <div style={styles.chatHeader}>
+                      <div style={styles.chatHeaderContent}>
+                        <div style={styles.chatAvatar}>
+                          <div style={styles.chatAvatarInner}>
+                            <span style={styles.chatAvatarText}>
+                              {activeConversation.client.charAt(0)}
+                            </span>
+                          </div>
+                        </div>
+                        <div style={styles.clientInfo}>
+                          <h3 style={styles.clientNameHeader}>
+                            {activeConversation.client}
+                          </h3>
+                          <p style={styles.clientStatus}>
+                            {activeConversation.online ? 'Online' : 'Offline'}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    <div style={styles.messagesContainer}>
+                      <div style={styles.messageList}>
+                        {activeConversation.messages.map((msg) => (
+                          <div
+                            key={msg.id}
+                            className={`messageRow ${msg.sender === 'agent' ? 'messageRowSent' : 'messageRowReceived'}`}
+                            style={{
+                              ...styles.messageRow,
+                              ...(msg.sender === 'agent' ? styles.messageRowSent : styles.messageRowReceived)
+                            }}
+                          >
+                            <div
+                              className={`messageBubble ${msg.sender === 'agent' ? 'messageBubbleSent' : 'messageBubbleReceived'}`}
+                              style={{
+                                ...styles.messageBubble,
+                                ...(msg.sender === 'agent' ? styles.messageBubbleSent : styles.messageBubbleReceived)
+                              }}
+                            >
+                              <p style={styles.messageText}>{msg.text}</p>
+                              <p
+                                className={`messageTime ${msg.sender === 'agent' ? 'messageTimeSent' : 'messageTimeReceived'}`}
+                                style={{
+                                  ...styles.messageTime,
+                                  ...(msg.sender === 'agent' ? styles.messageTimeSent : styles.messageTimeReceived)
+                                }}
+                              >
+                                {msg.timestamp}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    <div style={styles.inputContainer}>
+                      <form onSubmit={handleSendMessage} style={styles.inputForm}>
+                        <button
+                          type="button"
+                          style={styles.attachmentButton}
+                          onMouseEnter={(e) => e.target.style.color = styles.attachmentButtonHover.color}
+                          onMouseLeave={(e) => e.target.style.color = styles.attachmentButton.color}
+                        >
+                          <Paperclip style={{ height: '1.25rem', width: '1.25rem' }} />
+                        </button>
+                        <input
+                          type="text"
+                          value={message}
+                          onChange={(e) => setMessage(e.target.value)}
+                          placeholder="Type a message..."
+                          style={styles.messageInput}
+                          onFocus={(e) => {
+                            e.target.style.borderColor = styles.messageInputFocus.borderColor;
+                            e.target.style.boxShadow = `0 0 0 1px ${styles.messageInputFocus.ring}`;
+                          }}
+                          onBlur={(e) => {
+                            e.target.style.borderColor = '';
+                            e.target.style.boxShadow = '';
+                          }}
+                        />
+                        <button
+                          type="submit"
+                          style={styles.sendButton}
+                          onMouseEnter={(e) => e.target.style.backgroundColor = styles.sendButtonHover.backgroundColor}
+                          onMouseLeave={(e) => e.target.style.backgroundColor = styles.sendButton.backgroundColor}
+                        >
+                          <Send style={{ height: '1.25rem', width: '1.25rem' }} />
+                        </button>
+                      </form>
+                    </div>
+                  </>
+                ) : (
+                  <div style={styles.noConversation}>
+                    <p style={styles.noConversationText}>Select a conversation to start chatting</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Right Panel - Client Info */}
+              <div className="clientInfoPanel" style={{...styles.clientInfoPanel, width: '25%'}}>
+                {activeConversation && (
+                  <div>
+                    <h3 style={styles.clientInfoTitle}>Client Information</h3>
+                    <div style={styles.clientInfoSection}>
+                      <h4 style={styles.sectionTitle}>Client Details</h4>
+                      <dl style={styles.detailsList}>
+                        <div style={styles.detailItem}>
+                          <dt style={styles.detailLabel}>Name</dt>
+                          <dd style={styles.detailValue}>{activeConversation.client}</dd>
+                        </div>
+                        <div style={styles.detailItem}>
+                          <dt style={styles.detailLabel}>Phone Number</dt>
+                          <dd style={styles.detailValue}>+1 234 567 8900</dd>
+                        </div>
+                        <div style={styles.detailItem}>
+                          <dt style={styles.detailLabel}>Country</dt>
+                          <dd style={styles.detailValue}>USA</dd>
+                        </div>
+                      </dl>
+                    </div>
+                    
+                    <div style={styles.clientInfoSection}>
+                      <h4 style={styles.sectionTitle}>Tags</h4>
+                      <div style={styles.tagsContainer}>
+                        <span style={{ ...styles.tag, ...styles.tagNew }}>
+                          New Lead
+                        </span>
+                        <span style={{ ...styles.tag, ...styles.tagVip }}>
+                          VIP
+                        </span>
+                      </div>
+                      <button 
+                        style={styles.addTagButton}
+                        onMouseEnter={(e) => e.target.style.color = styles.addTagButtonHover.color}
+                        onMouseLeave={(e) => e.target.style.color = styles.addTagButton.color}
+                      >
+                        + Add Tag
+                      </button>
+                    </div>
+                    
+                    <div style={styles.clientInfoSection}>
+                      <h4 style={styles.sectionTitle}>Notes</h4>
+                      <div style={styles.notesList}>
+                        <div style={styles.noteItem}>
+                          <p style={styles.noteText}>Initial inquiry about product features</p>
+                          <p style={styles.noteTime}>2 hours ago</p>
+                        </div>
+                      </div>
+                      <button 
+                        style={styles.addTagButton}
+                        onMouseEnter={(e) => e.target.style.color = styles.addTagButtonHover.color}
+                        onMouseLeave={(e) => e.target.style.color = styles.addTagButton.color}
+                      >
+                        + Add Note
+                      </button>
+                    </div>
+                    
+                    <div style={styles.clientInfoSection}>
+                      <h4 style={styles.sectionTitle}>Follow-up Reminder</h4>
+                      <div style={styles.reminderContainer}>
+                        <input
+                          type="datetime-local"
+                          style={styles.reminderInput}
+                        />
+                        <button 
+                          style={styles.reminderButton}
+                          onMouseEnter={(e) => e.target.style.backgroundColor = styles.reminderButtonHover.backgroundColor}
+                          onMouseLeave={(e) => e.target.style.backgroundColor = styles.reminderButton.backgroundColor}
+                        >
+                          Save
+                        </button>
+                      </div>
+                    </div>
+                    
+                    <div style={styles.actionButtons}>
+                      <button 
+                        style={styles.saveButton}
+                        onMouseEnter={(e) => e.target.style.backgroundColor = styles.saveButtonHover.backgroundColor}
+                        onMouseLeave={(e) => e.target.style.backgroundColor = styles.saveButton.backgroundColor}
+                      >
+                        Save
+                      </button>
+                      <button 
+                        style={styles.cancelButton}
+                        onMouseEnter={(e) => e.target.style.backgroundColor = styles.cancelButtonHover.backgroundColor}
+                        onMouseLeave={(e) => e.target.style.backgroundColor = styles.cancelButton.backgroundColor}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Stats Cards */}
+      <div style={{...styles.statsGrid, position: 'relative'}}>
+        {!isAnalyticsExpanded && (
+          <button 
+            style={analyticsExpandButtonStyle}
+            onClick={() => setIsAnalyticsExpanded(true)}
+            onMouseEnter={(e) => {
+              e.target.style.backgroundColor = analyticsExpandButtonHoverStyle.backgroundColor;
+              e.target.style.borderColor = analyticsExpandButtonHoverStyle.borderColor;
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.backgroundColor = analyticsExpandButtonStyle.backgroundColor;
+              e.target.style.borderColor = analyticsExpandButtonStyle.borderColor;
+            }}
+          >
+            <PieChart style={{ height: '1rem', width: '1rem' }} />
+          </button>
+        )}
+        
+        <div 
+          style={styles.statsCard}
+          onMouseEnter={(e) => {
+            e.target.style.transform = styles.statsCardHover.transform;
+            e.target.style.boxShadow = styles.statsCardHover.boxShadow;
+          }}
+          onMouseLeave={(e) => {
+            e.target.style.transform = '';
+            e.target.style.boxShadow = styles.statsCard.boxShadow;
+          }}
+        >
+          <h3 style={styles.statsTitle}>
+            <MessageCircle style={styles.statsIcon} />
+            Total Conversations Today
+          </h3>
+          <p style={styles.statsValue}>42</p>
+        </div>
+        <div 
+          style={styles.statsCard}
+          onMouseEnter={(e) => {
+            e.target.style.transform = styles.statsCardHover.transform;
+            e.target.style.boxShadow = styles.statsCardHover.boxShadow;
+          }}
+          onMouseLeave={(e) => {
+            e.target.style.transform = '';
+            e.target.style.boxShadow = styles.statsCard.boxShadow;
+          }}
+        >
+          <h3 style={styles.statsTitle}>
+            <Clock style={styles.statsIcon} />
+            Avg. First Response Time
+          </h3>
+          <p style={styles.statsValue}>2.4 min</p>
+        </div>
+        <div 
+          style={styles.statsCard}
+          onMouseEnter={(e) => {
+            e.target.style.transform = styles.statsCardHover.transform;
+            e.target.style.boxShadow = styles.statsCardHover.boxShadow;
+          }}
+          onMouseLeave={(e) => {
+            e.target.style.transform = '';
+            e.target.style.boxShadow = styles.statsCard.boxShadow;
+          }}
+        >
+          <h3 style={styles.statsTitle}>
+            <MessageCircle style={styles.statsIcon} />
+            Open Conversations &gt; 24h
+          </h3>
+          <p style={styles.statsValue}>8</p>
+        </div>
+        <div 
+          style={styles.statsCard}
+          onMouseEnter={(e) => {
+            e.target.style.transform = styles.statsCardHover.transform;
+            e.target.style.boxShadow = styles.statsCardHover.boxShadow;
+          }}
+          onMouseLeave={(e) => {
+            e.target.style.transform = '';
+            e.target.style.boxShadow = styles.statsCard.boxShadow;
+          }}
+        >
+          <h3 style={styles.statsTitle}>
+            <CheckCircle style={styles.statsIcon} />
+            Resolved Today
+          </h3>
+          <p style={styles.statsValue}>32</p>
+        </div>
+      </div>
+
+      {/* Expanded Analytics View */}
+      {isAnalyticsExpanded && (
+        <div style={expandedViewStyle} onClick={(e) => e.target === e.currentTarget && setIsAnalyticsExpanded(false)}>
+          <div style={expandedContentStyle}>
+            <button 
+              style={closeButtonStyle}
+              onClick={() => setIsAnalyticsExpanded(false)}
+              onMouseEnter={(e) => {
+                e.target.style.backgroundColor = closeButtonHoverStyle.backgroundColor;
+                e.target.style.borderColor = closeButtonHoverStyle.borderColor;
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.backgroundColor = closeButtonStyle.backgroundColor;
+                e.target.style.borderColor = closeButtonStyle.borderColor;
+              }}
+            >
+              <X style={{ height: '1rem', width: '1rem' }} />
+            </button>
+            
+            <div style={expandedChartContainerStyle}>
+              <h2 style={{ ...styles.pageTitle, marginBottom: '2rem' }}>Analytics Dashboard</h2>
+              
+              <div style={{ display: 'flex', gap: '2rem', height: 'calc(100% - 4rem)' }}>
+                <div style={{ flex: '1', display: 'flex', flexDirection: 'column' }}>
+                  <h3 style={{ ...styles.sectionTitle, fontSize: '1.125rem', marginBottom: '1rem' }}>
+                    Conversations Overview
+                  </h3>
+                  <div style={expandedChartStyle}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={chartData}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="name" />
+                        <YAxis />
+                        <Tooltip />
+                        <Legend />
+                        <Bar dataKey="conversations" fill="#10b981" name="Conversations" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+                
+                <div style={{ flex: '1', display: 'flex', flexDirection: 'column' }}>
+                  <h3 style={{ ...styles.sectionTitle, fontSize: '1.125rem', marginBottom: '1rem' }}>
+                    Status Distribution
+                  </h3>
+                  <div style={expandedChartStyle}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <RechartsPieChart>
+                        <Pie
+                          data={pieChartData}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={true}
+                          label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                          outerRadius={120}
+                          fill="#8884d8"
+                          dataKey="value"
+                          animationBegin={0}
+                          animationDuration={1000}
+                        >
+                          {pieChartData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))}
+                        </Pie>
+                        <Tooltip formatter={(value) => [value, 'Count']} />
+                        <Legend />
+                      </RechartsPieChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+    </div>
+  )
+}
+
+export default DashboardPage

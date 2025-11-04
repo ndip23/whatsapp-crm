@@ -9,7 +9,75 @@ const DashboardPage = () => {
   const [searchTerm, setSearchTerm] = useState('')
   const [isChatExpanded, setIsChatExpanded] = useState(false)
   const [isAnalyticsExpanded, setIsAnalyticsExpanded] = useState(false)
+  const [isAgentPerformanceExpanded, setIsAgentPerformanceExpanded] = useState(false)
   const [conversationStatus, setConversationStatus] = useState('pending')
+
+  // Mock data for monitoring and reporting charts
+  const conversationData = [
+    { name: 'Mon', conversations: 12 },
+    { name: 'Tue', conversations: 19 },
+    { name: 'Wed', conversations: 8 },
+    { name: 'Thu', conversations: 15 },
+    { name: 'Fri', conversations: 11 },
+    { name: 'Sat', conversations: 7 },
+    { name: 'Sun', conversations: 13 },
+  ]
+
+  // Weekly agent performance data
+  const weeklyPerformanceData = [
+    { name: 'John', mon: 5, tue: 7, wed: 4, thu: 6, fri: 8, sat: 3, sun: 4 },
+    { name: 'Jane', mon: 4, tue: 6, wed: 5, thu: 7, fri: 6, sat: 2, sun: 5 },
+    { name: 'Bob', mon: 6, tue: 8, wed: 7, thu: 9, fri: 10, sat: 4, sun: 6 },
+    { name: 'Alice', mon: 3, tue: 5, wed: 6, thu: 4, fri: 5, sat: 3, sun: 7 },
+  ]
+
+  // Detailed agent performance data
+  const agentPerformanceData = [
+    { 
+      name: 'John Doe', 
+      totalConversations: 42, 
+      solved: 35, 
+      unsolved: 5, 
+      escalated: 2, 
+      responseTime: '2.3 min',
+      status: 'Active' 
+    },
+    { 
+      name: 'Jane Smith', 
+      totalConversations: 38, 
+      solved: 30, 
+      unsolved: 6, 
+      escalated: 2, 
+      responseTime: '3.1 min',
+      status: 'Active' 
+    },
+    { 
+      name: 'Bob Johnson', 
+      totalConversations: 52, 
+      solved: 45, 
+      unsolved: 4, 
+      escalated: 3, 
+      responseTime: '1.8 min',
+      status: 'Active' 
+    },
+    { 
+      name: 'Alice Brown', 
+      totalConversations: 41, 
+      solved: 34, 
+      unsolved: 5, 
+      escalated: 2, 
+      responseTime: '2.7 min',
+      status: 'Away' 
+    },
+  ]
+
+  // Existing agent data
+  const agentData = [
+    { name: 'John Doe', handled: 24, responseTime: '2.3 min', status: 'Active' },
+    { name: 'Jane Smith', handled: 18, responseTime: '3.1 min', status: 'Active' },
+    { name: 'Bob Johnson', handled: 32, responseTime: '1.8 min', status: 'Active' },
+    { name: 'Alice Brown', handled: 21, responseTime: '2.7 min', status: 'Away' },
+  ]
 
   const handleSendMessage = (e) => {
     e.preventDefault()
@@ -29,22 +97,11 @@ const DashboardPage = () => {
     conv.client.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
-  const chartData = [
-    { name: 'Mon', conversations: 12 },
-    { name: 'Tue', conversations: 19 },
-    { name: 'Wed', conversations: 8 },
-    { name: 'Thu', conversations: 15 },
-    { name: 'Fri', conversations: 11 },
-    { name: 'Sat', conversations: 7 },
-    { name: 'Sun', conversations: 13 },
-  ]
-
-  const performanceData = [
-    { name: 'John', conversations: 24, responseTime: '2.3 min' },
-    { name: 'Jane', conversations: 18, responseTime: '3.1 min' },
-    { name: 'Bob', conversations: 32, responseTime: '1.8 min' },
-    { name: 'Alice', conversations: 21, responseTime: '2.7 min' },
-  ]
+  const pieChartData = [
+    { name: 'Resolved', value: 65, color: '#10b981' },
+    { name: 'Pending', value: 20, color: '#f59e0b' },
+    { name: 'Escalated', value: 15, color: '#ef4444' }
+  ];
 
   const styles = {
     page: {
@@ -603,10 +660,142 @@ const DashboardPage = () => {
       width: '1.125rem',
       height: '1.125rem',
       color: '#10b981'
-    }
+    },
+    // Add new styles for monitoring and reporting components
+    chartsGrid: {
+      display: 'grid',
+      gridTemplateColumns: 'repeat(1, minmax(0, 1fr))',
+      gap: '1.5rem',
+      marginBottom: '2rem'
+    },
+    chartCard: {
+      backgroundColor: '#ffffff',
+      padding: '1.5rem',
+      borderRadius: '0.5rem',
+      boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)'
+    },
+    chartTitle: {
+      fontSize: '1.125rem',
+      fontWeight: '500',
+      color: '#111827',
+      marginBottom: '1rem'
+    },
+    chartContainer: {
+      height: '20rem'
+    },
+    tableContainer: {
+      backgroundColor: '#ffffff',
+      borderRadius: '0.5rem',
+      boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
+      overflow: 'hidden',
+      marginBottom: '2rem'
+    },
+    table: {
+      minWidth: '100%',
+      borderCollapse: 'collapse',
+      divideY: '1px solid #e5e7eb'
+    },
+    tableHeader: {
+      backgroundColor: '#f9fafb'
+    },
+    tableHeaderCell: {
+      paddingLeft: '1.5rem',
+      paddingRight: '1.5rem',
+      paddingTop: '0.75rem',
+      paddingBottom: '0.75rem',
+      textAlign: 'left',
+      fontSize: '0.75rem',
+      fontWeight: '500',
+      color: '#6b7280',
+      textTransform: 'uppercase',
+      letterSpacing: '0.05em'
+    },
+    tableBody: {
+      backgroundColor: '#ffffff',
+      divideY: '1px solid #e5e7eb'
+    },
+    tableRow: {
+      backgroundColor: '#ffffff'
+    },
+    tableCell: {
+      paddingLeft: '1.5rem',
+      paddingRight: '1.5rem',
+      paddingTop: '1rem',
+      paddingBottom: '1rem',
+      whiteSpace: 'nowrap',
+      fontSize: '0.875rem',
+      color: '#111827'
+    },
+    tableCellSecondary: {
+      color: '#6b7280'
+    },
+    statusBadge: {
+      paddingLeft: '0.5rem',
+      paddingRight: '0.5rem',
+      paddingTop: '0.125rem',
+      paddingBottom: '0.125rem',
+      borderRadius: '9999px',
+      fontSize: '0.75rem',
+      fontWeight: '500'
+    },
+    statusActive: {
+      backgroundColor: '#d1fae5',
+      color: '#065f46'
+    },
+    statusAway: {
+      backgroundColor: '#fef3c7',
+      color: '#92400e'
+    },
+    // Add new styles for the detailed agent performance table
+    detailedTableContainer: {
+      backgroundColor: '#ffffff',
+      borderRadius: '0.5rem',
+      boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
+      overflow: 'hidden',
+      marginBottom: '2rem'
+    },
+    detailedTable: {
+      minWidth: '100%',
+      borderCollapse: 'collapse',
+      divideY: '1px solid #e5e7eb'
+    },
+    detailedTableHeader: {
+      backgroundColor: '#f9fafb'
+    },
+    detailedTableHeaderCell: {
+      paddingLeft: '1rem',
+      paddingRight: '1rem',
+      paddingTop: '0.75rem',
+      paddingBottom: '0.75rem',
+      textAlign: 'left',
+      fontSize: '0.75rem',
+      fontWeight: '500',
+      color: '#6b7280',
+      textTransform: 'uppercase',
+      letterSpacing: '0.05em'
+    },
+    detailedTableBody: {
+      backgroundColor: '#ffffff',
+      divideY: '1px solid #e5e7eb'
+    },
+    detailedTableRow: {
+      backgroundColor: '#ffffff'
+    },
+    detailedTableCell: {
+      paddingLeft: '1rem',
+      paddingRight: '1rem',
+      paddingTop: '1rem',
+      paddingBottom: '1rem',
+      whiteSpace: 'nowrap',
+      fontSize: '0.875rem',
+      color: '#111827'
+    },
+    detailedTableCellSecondary: {
+      color: '#6b7280'
+    },
   }
 
-  // Responsive styles
+  // Responsive styles - updated to include monitoring and reporting responsiveness
   const mediaStyles = `
     @media (min-width: 768px) {
       .chatInterface {
@@ -624,11 +813,15 @@ const DashboardPage = () => {
       .statsGrid {
         gridTemplateColumns: repeat(2, minmax(0, 1fr));
       }
+      
+      .chartsGrid {
+        gridTemplateColumns: repeat(2, minmax(0, 1fr));
+      }
     }
     
     @media (min-width: 1024px) {
       .statsGrid {
-        gridTemplateColumns: repeat(4, minmax(0, 1fr));
+        gridTemplateColumns: repeat(2, minmax(0, 1fr));
       }
     }
     
@@ -768,27 +961,47 @@ const DashboardPage = () => {
     borderColor: 'rgba(16, 185, 129, 0.5)'
   }
 
-  // Pie Chart Data
-  const pieChartData = [
-    { name: 'Resolved', value: 65, color: '#10b981' },
-    { name: 'Pending', value: 20, color: '#f59e0b' },
-    { name: 'Escalated', value: 15, color: '#ef4444' }
-  ]
+  // Agent Performance Expansion Button
+  const agentPerformanceExpandButtonStyle = {
+    position: 'absolute',
+    top: '0.5rem',
+    right: '0.5rem',
+    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+    color: '#10b981',
+    border: '1px solid rgba(16, 185, 129, 0.3)',
+    borderRadius: '0.375rem',
+    padding: '0.375rem',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: '10',
+    transition: 'all 0.2s ease',
+    width: '2rem',
+    height: '2rem'
+  }
 
-  // Expanded Chart Container
-  const expandedChartContainerStyle = {
+  const agentPerformanceExpandButtonHoverStyle = {
+    backgroundColor: 'rgba(16, 185, 129, 0.2)',
+    borderColor: 'rgba(16, 185, 129, 0.5)'
+  }
+
+  // Expanded Agent Performance Container
+  const expandedAgentPerformanceContainerStyle = {
     padding: '1.5rem',
     backgroundColor: '#ffffff',
     borderRadius: '0.75rem',
     boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
-    height: 'calc(100vh - 3rem)'
+    height: 'calc(100vh - 3rem)',
+    overflow: 'auto'
   }
 
-  // Expanded Chart Style
-  const expandedChartStyle = {
-    height: '100%',
+  // Expanded Agent Performance Chart Style
+  const expandedAgentPerformanceChartStyle = {
+    height: '400px',
     width: '100%',
-    position: 'relative'
+    position: 'relative',
+    overflow: 'auto'
   }
 
   return (
@@ -1419,25 +1632,8 @@ const DashboardPage = () => {
         </div>
       )}
 
-      {/* Stats Cards */}
-      <div style={{...styles.statsGrid, position: 'relative'}}>
-        {!isAnalyticsExpanded && (
-          <button 
-            style={analyticsExpandButtonStyle}
-            onClick={() => setIsAnalyticsExpanded(true)}
-            onMouseEnter={(e) => {
-              e.target.style.backgroundColor = analyticsExpandButtonHoverStyle.backgroundColor;
-              e.target.style.borderColor = analyticsExpandButtonHoverStyle.borderColor;
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.backgroundColor = analyticsExpandButtonStyle.backgroundColor;
-              e.target.style.borderColor = analyticsExpandButtonStyle.borderColor;
-            }}
-          >
-            <PieChart style={{ height: '1rem', width: '1rem' }} />
-          </button>
-        )}
-        
+      {/* Stats Cards - Now in two-column layout */}
+      <div style={styles.statsGrid}>
         <div 
           style={styles.statsCard}
           onMouseEnter={(e) => {
@@ -1508,6 +1704,137 @@ const DashboardPage = () => {
         </div>
       </div>
 
+      {/* Charts Section - Moved from Monitoring & Reporting */}
+      <div className="chartsGrid" style={styles.chartsGrid}>
+        <div style={styles.chartCard}>
+          <h3 style={styles.chartTitle}>Conversations per Day</h3>
+          <div style={{ ...styles.chartContainer, height: '20rem' }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={conversationData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey="conversations" fill="#10b981" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+        
+        <div style={{...styles.chartCard, position: 'relative'}}>
+          <h3 style={styles.chartTitle}>Agent Performance (Weekly)</h3>
+          {!isAgentPerformanceExpanded && (
+            <button 
+              style={agentPerformanceExpandButtonStyle}
+              onClick={() => setIsAgentPerformanceExpanded(true)}
+              onMouseEnter={(e) => {
+                e.target.style.backgroundColor = agentPerformanceExpandButtonHoverStyle.backgroundColor;
+                e.target.style.borderColor = agentPerformanceExpandButtonHoverStyle.borderColor;
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.backgroundColor = agentPerformanceExpandButtonStyle.backgroundColor;
+                e.target.style.borderColor = agentPerformanceExpandButtonStyle.borderColor;
+              }}
+            >
+              <Maximize2 style={{ height: '1rem', width: '1rem' }} />
+            </button>
+          )}
+          <div style={{ ...styles.chartContainer, height: '20rem' }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={weeklyPerformanceData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey="mon" fill="#10b981" name="Monday" />
+                <Bar dataKey="tue" fill="#3b82f6" name="Tuesday" />
+                <Bar dataKey="wed" fill="#8b5cf6" name="Wednesday" />
+                <Bar dataKey="thu" fill="#ec4899" name="Thursday" />
+                <Bar dataKey="fri" fill="#f59e0b" name="Friday" />
+                <Bar dataKey="sat" fill="#ef4444" name="Saturday" />
+                <Bar dataKey="sun" fill="#06b6d4" name="Sunday" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </div>
+
+      {/* Detailed Agent Performance Table */}
+      <div style={styles.detailedTableContainer}>
+        <div style={{ paddingLeft: '1rem', paddingRight: '1rem', paddingTop: '1rem', paddingBottom: '1rem', borderBottom: '1px solid #e5e7eb' }}>
+          <h3 style={{ fontSize: '1.125rem', fontWeight: '500', color: '#111827' }}>Agent Performance Details</h3>
+        </div>
+        <table style={styles.detailedTable}>
+          <thead style={styles.detailedTableHeader}>
+            <tr>
+              <th style={styles.detailedTableHeaderCell}>Agent</th>
+              <th style={styles.detailedTableHeaderCell}>Total Conversations</th>
+              <th style={styles.detailedTableHeaderCell}>Solved</th>
+              <th style={styles.detailedTableHeaderCell}>Unsolved</th>
+              <th style={styles.detailedTableHeaderCell}>Escalated</th>
+              <th style={styles.detailedTableHeaderCell}>Avg. Response Time</th>
+              <th style={styles.detailedTableHeaderCell}>Status</th>
+            </tr>
+          </thead>
+          <tbody style={styles.detailedTableBody}>
+            {agentPerformanceData.map((agent, index) => (
+              <tr key={index} style={styles.detailedTableRow}>
+                <td style={{ ...styles.detailedTableCell, fontWeight: '500' }}>{agent.name}</td>
+                <td style={{ ...styles.detailedTableCell, ...styles.detailedTableCellSecondary }}>{agent.totalConversations}</td>
+                <td style={{ ...styles.detailedTableCell, color: '#10b981' }}>{agent.solved}</td>
+                <td style={{ ...styles.detailedTableCell, color: '#f59e0b' }}>{agent.unsolved}</td>
+                <td style={{ ...styles.detailedTableCell, color: '#ef4444' }}>{agent.escalated}</td>
+                <td style={{ ...styles.detailedTableCell, ...styles.detailedTableCellSecondary }}>{agent.responseTime}</td>
+                <td style={styles.detailedTableCell}>
+                  <span style={{ 
+                    ...styles.statusBadge, 
+                    ...(agent.status === 'Active' ? styles.statusActive : styles.statusAway) 
+                  }}>
+                    {agent.status}
+                  </span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Agent Performance Table - Moved from Monitoring & Reporting */}
+      <div style={styles.tableContainer}>
+        <div style={{ paddingLeft: '1.5rem', paddingRight: '1.5rem', paddingTop: '1rem', paddingBottom: '1rem', borderBottom: '1px solid #e5e7eb' }}>
+          <h3 style={{ fontSize: '1.125rem', fontWeight: '500', color: '#111827' }}>Agent Performance</h3>
+        </div>
+        <table style={styles.table}>
+          <thead style={styles.tableHeader}>
+            <tr>
+              <th style={styles.tableHeaderCell}>Name</th>
+              <th style={styles.tableHeaderCell}>Conversations Handled</th>
+              <th style={styles.tableHeaderCell}>Avg. Response Time</th>
+              <th style={styles.tableHeaderCell}>Status</th>
+            </tr>
+          </thead>
+          <tbody style={styles.tableBody}>
+            {agentData.map((agent, index) => (
+              <tr key={index} style={styles.tableRow}>
+                <td style={{ ...styles.tableCell, fontWeight: '500' }}>{agent.name}</td>
+                <td style={{ ...styles.tableCell, ...styles.tableCellSecondary }}>{agent.handled}</td>
+                <td style={{ ...styles.tableCell, ...styles.tableCellSecondary }}>{agent.responseTime}</td>
+                <td style={styles.tableCell}>
+                  <span style={{ 
+                    ...styles.statusBadge, 
+                    ...(agent.status === 'Active' ? styles.statusActive : styles.statusAway) 
+                  }}>
+                    {agent.status}
+                  </span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
       {/* Expanded Analytics View */}
       {isAnalyticsExpanded && (
         <div style={expandedViewStyle} onClick={(e) => e.target === e.currentTarget && setIsAnalyticsExpanded(false)}>
@@ -1537,7 +1864,7 @@ const DashboardPage = () => {
                   </h3>
                   <div style={expandedChartStyle}>
                     <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={chartData}>
+                      <BarChart data={conversationData}>
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="name" />
                         <YAxis />
@@ -1578,6 +1905,88 @@ const DashboardPage = () => {
                     </ResponsiveContainer>
                   </div>
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Expanded Agent Performance View */}
+      {isAgentPerformanceExpanded && (
+        <div style={expandedViewStyle} onClick={(e) => e.target === e.currentTarget && setIsAgentPerformanceExpanded(false)}>
+          <div style={{...expandedContentStyle, height: '90%', width: '90%'}}>
+            <button 
+              style={closeButtonStyle}
+              onClick={() => setIsAgentPerformanceExpanded(false)}
+              onMouseEnter={(e) => {
+                e.target.style.backgroundColor = closeButtonHoverStyle.backgroundColor;
+                e.target.style.borderColor = closeButtonHoverStyle.borderColor;
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.backgroundColor = closeButtonStyle.backgroundColor;
+                e.target.style.borderColor = closeButtonStyle.borderColor;
+              }}
+            >
+              <X style={{ height: '1rem', width: '1rem' }} />
+            </button>
+            
+            <div style={expandedAgentPerformanceContainerStyle}>
+              <h2 style={{ ...styles.pageTitle, marginBottom: '1rem' }}>Agent Performance Details</h2>
+              
+              <div style={expandedAgentPerformanceChartStyle}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={weeklyPerformanceData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Bar dataKey="mon" fill="#10b981" name="Monday" />
+                    <Bar dataKey="tue" fill="#3b82f6" name="Tuesday" />
+                    <Bar dataKey="wed" fill="#8b5cf6" name="Wednesday" />
+                    <Bar dataKey="thu" fill="#ec4899" name="Thursday" />
+                    <Bar dataKey="fri" fill="#f59e0b" name="Friday" />
+                    <Bar dataKey="sat" fill="#ef4444" name="Saturday" />
+                    <Bar dataKey="sun" fill="#06b6d4" name="Sunday" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+              
+              {/* Detailed Agent Performance Table in Expanded View */}
+              <div style={{...styles.detailedTableContainer, marginTop: '2rem', maxHeight: '400px', overflow: 'auto'}}>
+                <table style={styles.detailedTable}>
+                  <thead style={styles.detailedTableHeader}>
+                    <tr>
+                      <th style={styles.detailedTableHeaderCell}>Agent</th>
+                      <th style={styles.detailedTableHeaderCell}>Total Conversations</th>
+                      <th style={styles.detailedTableHeaderCell}>Solved</th>
+                      <th style={styles.detailedTableHeaderCell}>Unsolved</th>
+                      <th style={styles.detailedTableHeaderCell}>Escalated</th>
+                      <th style={styles.detailedTableHeaderCell}>Avg. Response Time</th>
+                      <th style={styles.detailedTableHeaderCell}>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody style={styles.detailedTableBody}>
+                    {agentPerformanceData.map((agent, index) => (
+                      <tr key={index} style={styles.detailedTableRow}>
+                        <td style={{ ...styles.detailedTableCell, fontWeight: '500' }}>{agent.name}</td>
+                        <td style={{ ...styles.detailedTableCell, ...styles.detailedTableCellSecondary }}>{agent.totalConversations}</td>
+                        <td style={{ ...styles.detailedTableCell, color: '#10b981' }}>{agent.solved}</td>
+                        <td style={{ ...styles.detailedTableCell, color: '#f59e0b' }}>{agent.unsolved}</td>
+                        <td style={{ ...styles.detailedTableCell, color: '#ef4444' }}>{agent.escalated}</td>
+                        <td style={{ ...styles.detailedTableCell, ...styles.detailedTableCellSecondary }}>{agent.responseTime}</td>
+                        <td style={styles.detailedTableCell}>
+                          <span style={{ 
+                            ...styles.statusBadge, 
+                            ...(agent.status === 'Active' ? styles.statusActive : styles.statusAway) 
+                          }}>
+                            {agent.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>

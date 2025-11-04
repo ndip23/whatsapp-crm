@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Outlet, useNavigate, useLocation, Link } from 'react-router-dom'
+import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { 
   Bell, 
   User, 
@@ -20,7 +20,9 @@ import {
   TrendingUp,
   Eye,
   Key,
-  UserCheck
+  UserCheck,
+  CheckCircle,
+  AlertCircle
 } from 'lucide-react'
 import NotificationsCenter from '../components/NotificationsCenter'
 import { useUser } from '../context/UserContext'
@@ -29,7 +31,8 @@ const DashboardLayout = () => {
   const [showNotifications, setShowNotifications] = useState(false)
   const [expandedMenus, setExpandedMenus] = useState({
     admin: true,
-    clients: true
+    clients: true,
+    shifts: true
   })
   const [showUserDropdown, setShowUserDropdown] = useState(false)
   const { currentUser, notifications } = useUser()
@@ -431,8 +434,8 @@ const DashboardLayout = () => {
           </div>
         </div>
         <nav style={styles.nav}>
-          <Link
-            to="/dashboard"
+          <a
+            href="/dashboard"
             style={{
               ...styles.navItem,
               ...(activeNav === 'dashboard' ? styles.navItemActive : styles.navItemInactive)
@@ -452,7 +455,7 @@ const DashboardLayout = () => {
           >
             <Home style={styles.icon} />
             <span>Dashboard</span>
-          </Link>
+          </a>
           
           <div
             style={{
@@ -486,8 +489,8 @@ const DashboardLayout = () => {
           
           {expandedMenus.admin && (
             <div style={styles.submenu}>
-              <Link
-                to="/dashboard/admin"
+              <a
+                href="/dashboard/admin"
                 style={{
                   ...styles.submenuItem,
                   ...(location.pathname === '/dashboard/admin' || location.pathname === '/dashboard/admin/users' ? styles.submenuItemActive : {})
@@ -506,10 +509,10 @@ const DashboardLayout = () => {
                 }}
               >
                 <User style={{ ...styles.icon, marginRight: '0.5rem' }} />
-                <span>Agents</span>
-              </Link>
-              <Link
-                to="/dashboard/admin/roles"
+                <span>Users</span>
+              </a>
+              <a
+                href="/dashboard/admin/roles"
                 style={{
                   ...styles.submenuItem,
                   ...(location.pathname === '/dashboard/admin/roles' ? styles.submenuItemActive : {})
@@ -529,9 +532,9 @@ const DashboardLayout = () => {
               >
                 <Shield style={{ ...styles.icon, marginRight: '0.5rem' }} />
                 <span>Roles</span>
-              </Link>
-              <Link
-                to="/dashboard/admin/permissions"
+              </a>
+              <a
+                href="/dashboard/admin/permissions"
                 style={{
                   ...styles.submenuItem,
                   ...(location.pathname === '/dashboard/admin/permissions' ? styles.submenuItemActive : {})
@@ -551,16 +554,17 @@ const DashboardLayout = () => {
               >
                 <Settings style={{ ...styles.icon, marginRight: '0.5rem' }} />
                 <span>Permissions</span>
-              </Link>
+              </a>
             </div>
           )}
           
-          <Link
-            to="/dashboard/shifts"
+          <div
             style={{
               ...styles.navItem,
+              ...styles.navItemWithSubmenu,
               ...(activeNav === 'shifts' ? styles.navItemActive : styles.navItemInactive)
             }}
+            onClick={() => toggleMenu('shifts')}
             onMouseEnter={(e) => {
               if (activeNav !== 'shifts') {
                 e.target.style.backgroundColor = styles.navItemHover.backgroundColor;
@@ -574,16 +578,94 @@ const DashboardLayout = () => {
               }
             }}
           >
-            <Clock style={styles.icon} />
-            <span>Shift Management</span>
-          </Link>
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              <Clock style={styles.icon} />
+              <span>Shift Management</span>
+            </div>
+            {expandedMenus.shifts ? 
+              <ChevronDown style={styles.expandIcon} /> : 
+              <ChevronRight style={styles.expandIcon} />
+            }
+          </div>
           
-          <div
-            style={{
-              ...styles.navItem,
-              ...styles.navItemWithSubmenu,
-              ...(activeNav === 'clients' ? styles.navItemActive : styles.navItemInactive)
-            }}
+          {expandedMenus.shifts && (
+            <div style={styles.submenu}>
+              <a
+                href="/dashboard/shifts/manage"
+                style={{
+                  ...styles.submenuItem,
+                  ...(location.pathname === '/dashboard/shifts/manage' ? styles.submenuItemActive : {})
+                }}
+                onMouseEnter={(e) => {
+                  if (location.pathname !== '/dashboard/shifts/manage') {
+                    e.target.style.backgroundColor = styles.submenuItemHover.backgroundColor;
+                    e.target.style.color = styles.submenuItemHover.color;
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (location.pathname !== '/dashboard/shifts/manage') {
+                    e.target.style.backgroundColor = '';
+                    e.target.style.color = styles.submenuItem.color;
+                  }
+                }}
+              >
+                <Clock style={{ ...styles.icon, marginRight: '0.5rem' }} />
+                <span>Manage Shifts</span>
+              </a>
+              <a
+                href="/dashboard/shifts/assign"
+                style={{
+                  ...styles.submenuItem,
+                  ...(location.pathname === '/dashboard/shifts/assign' ? styles.submenuItemActive : {})
+                }}
+                onMouseEnter={(e) => {
+                  if (location.pathname !== '/dashboard/shifts/assign') {
+                    e.target.style.backgroundColor = styles.submenuItemHover.backgroundColor;
+                    e.target.style.color = styles.submenuItemHover.color;
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (location.pathname !== '/dashboard/shifts/assign') {
+                    e.target.style.backgroundColor = '';
+                    e.target.style.color = styles.submenuItem.color;
+                  }
+                }}
+              >
+                <User style={{ ...styles.icon, marginRight: '0.5rem' }} />
+                <span>Assign Shifts</span>
+              </a>
+              <a
+                href="/dashboard/shifts/log"
+                style={{
+                  ...styles.submenuItem,
+                  ...(location.pathname === '/dashboard/shifts/log' ? styles.submenuItemActive : {})
+                }}
+                onMouseEnter={(e) => {
+                  if (location.pathname !== '/dashboard/shifts/log') {
+                    e.target.style.backgroundColor = styles.submenuItemHover.backgroundColor;
+                    e.target.style.color = styles.submenuItemHover.color;
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (location.pathname !== '/dashboard/shifts/log') {
+                    e.target.style.backgroundColor = '';
+                    e.target.style.color = styles.submenuItem.color;
+                  }
+                }}
+              >
+                <FileText style={{ ...styles.icon, marginRight: '0.5rem' }} />
+                <span>Shift Log</span>
+              </a>
+            </div>
+          )
+        }
+        
+        <div
+          style={{
+            ...styles.navItem,
+            ...styles.navItemWithSubmenu,
+            ...(activeNav === 'clients' ? styles.navItemActive : styles.navItemInactive)
+          }}
             onClick={() => toggleMenu('clients')}
             onMouseEnter={(e) => {
               if (activeNav !== 'clients') {
@@ -610,8 +692,8 @@ const DashboardLayout = () => {
           
           {expandedMenus.clients && (
             <div style={styles.submenu}>
-              <Link
-                to="/dashboard/clients/list"
+              <a
+                href="/dashboard/clients/list"
                 style={{
                   ...styles.submenuItem,
                   ...(location.pathname === '/dashboard/clients/list' ? styles.submenuItemActive : {})
@@ -631,76 +713,76 @@ const DashboardLayout = () => {
               >
                 <Users style={{ ...styles.icon, marginRight: '0.5rem' }} />
                 <span>Client List</span>
-              </Link>
-              <Link
-                to="/dashboard/clients/groups"
+              </a>
+              <a
+                href="/dashboard/clients/solved"
                 style={{
                   ...styles.submenuItem,
-                  ...(location.pathname === '/dashboard/clients/groups' ? styles.submenuItemActive : {})
+                  ...(location.pathname === '/dashboard/clients/solved' ? styles.submenuItemActive : {})
                 }}
                 onMouseEnter={(e) => {
-                  if (location.pathname !== '/dashboard/clients/groups') {
+                  if (location.pathname !== '/dashboard/clients/solved') {
                     e.target.style.backgroundColor = styles.submenuItemHover.backgroundColor;
                     e.target.style.color = styles.submenuItemHover.color;
                   }
                 }}
                 onMouseLeave={(e) => {
-                  if (location.pathname !== '/dashboard/clients/groups') {
+                  if (location.pathname !== '/dashboard/clients/solved') {
                     e.target.style.backgroundColor = '';
                     e.target.style.color = styles.submenuItem.color;
                   }
                 }}
               >
-                <UserCircle style={{ ...styles.icon, marginRight: '0.5rem' }} />
-                <span>Client Groups</span>
-              </Link>
-              <Link
-                to="/dashboard/clients/templates"
+                <CheckCircle style={{ ...styles.icon, marginRight: '0.5rem' }} />
+                <span>Solved Conversations</span>
+              </a>
+              <a
+                href="/dashboard/clients/pending"
                 style={{
                   ...styles.submenuItem,
-                  ...(location.pathname === '/dashboard/clients/templates' ? styles.submenuItemActive : {})
+                  ...(location.pathname === '/dashboard/clients/pending' ? styles.submenuItemActive : {})
                 }}
                 onMouseEnter={(e) => {
-                  if (location.pathname !== '/dashboard/clients/templates') {
+                  if (location.pathname !== '/dashboard/clients/pending') {
                     e.target.style.backgroundColor = styles.submenuItemHover.backgroundColor;
                     e.target.style.color = styles.submenuItemHover.color;
                   }
                 }}
                 onMouseLeave={(e) => {
-                  if (location.pathname !== '/dashboard/clients/templates') {
+                  if (location.pathname !== '/dashboard/clients/pending') {
                     e.target.style.backgroundColor = '';
                     e.target.style.color = styles.submenuItem.color;
                   }
                 }}
               >
-                <FileText style={{ ...styles.icon, marginRight: '0.5rem' }} />
-                <span>Message Templates</span>
-              </Link>
+                <Clock style={{ ...styles.icon, marginRight: '0.5rem' }} />
+                <span>Pending Conversations</span>
+              </a>
+              <a
+                href="/dashboard/clients/escalated"
+                style={{
+                  ...styles.submenuItem,
+                  ...(location.pathname === '/dashboard/clients/escalated' ? styles.submenuItemActive : {})
+                }}
+                onMouseEnter={(e) => {
+                  if (location.pathname !== '/dashboard/clients/escalated') {
+                    e.target.style.backgroundColor = styles.submenuItemHover.backgroundColor;
+                    e.target.style.color = styles.submenuItemHover.color;
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (location.pathname !== '/dashboard/clients/escalated') {
+                    e.target.style.backgroundColor = '';
+                    e.target.style.color = styles.submenuItem.color;
+                  }
+                }}
+              >
+                <AlertCircle style={{ ...styles.icon, marginRight: '0.5rem' }} />
+                <span>Escalated Conversations</span>
+              </a>
             </div>
           )}
           
-          <Link
-            to="/dashboard/monitoring"
-            style={{
-              ...styles.navItem,
-              ...(activeNav === 'monitoring' ? styles.navItemActive : styles.navItemInactive)
-            }}
-            onMouseEnter={(e) => {
-              if (activeNav !== 'monitoring') {
-                e.target.style.backgroundColor = styles.navItemHover.backgroundColor;
-                e.target.style.color = styles.navItemHover.color;
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (activeNav !== 'monitoring') {
-                e.target.style.backgroundColor = '';
-                e.target.style.color = styles.navItemInactive.color;
-              }
-            }}
-          >
-            <TrendingUp style={styles.icon} />
-            <span>Monitoring & Reporting</span>
-          </Link>
         </nav>
       </div>
 
@@ -711,9 +793,12 @@ const DashboardLayout = () => {
           <div style={styles.headerContent}>
             <div style={styles.headerTitle}>
               {location.pathname.includes('/dashboard/admin') ? 'Staff Management' : 
+               location.pathname.includes('/dashboard/shifts/manage') ? 'Manage Shifts' : 
+               location.pathname.includes('/dashboard/shifts/assign') ? 'Assign Shifts' : 
+               location.pathname.includes('/dashboard/shifts/log') ? 'Shift Log' : 
                location.pathname.includes('/dashboard/shifts') ? 'Shift Management' : 
                location.pathname.includes('/dashboard/clients') ? 'Client Management' : 
-               location.pathname.includes('/dashboard/monitoring') ? 'Monitoring & Reporting' : 'Dashboard'}
+               'Dashboard'}
             </div>
             <div style={styles.headerActions}>
               <button

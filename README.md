@@ -50,6 +50,7 @@ This application is built using modern web technologies:
 - Shift Management System
 - Client Management with groups and message templates
 - Monitoring & Reporting with analytics dashboard
+- Shift Log with detailed conversation tracking
 
 ### UI/UX Features
 - Responsive design for all device sizes
@@ -58,8 +59,9 @@ This application is built using modern web technologies:
 - User dropdown menu with profile options
 - Consistent styling and design language
 - Form validation with user-friendly error messages
-
-
+- Enhanced conversation modals with WhatsApp-like interface
+- Improved table views with better data organization
+- Semi-transparent buttons with hover effects for better UX
 
 ## Project Structure
 
@@ -164,6 +166,7 @@ yarn preview
 4. **Comments**: All backend integration points are clearly marked with explanatory comments
 5. **Responsive Design**: Ensure all components work on mobile, tablet, and desktop screens
 6. **Accessibility**: Follow WCAG guidelines for accessible UI components
+7. **UI Consistency**: Maintain consistent styling patterns across all pages, especially for buttons, modals, and tables
 
 ## Contributing
 

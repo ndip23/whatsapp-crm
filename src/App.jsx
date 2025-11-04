@@ -5,8 +5,13 @@ import DashboardLayout from './layouts/DashboardLayout'
 import DashboardPage from './pages/DashboardPage'
 import AdminManagementPage from './pages/AdminManagementPage'
 import ShiftManagementPage from './pages/ShiftManagementPage'
+import AssignShiftsPage from './pages/AssignShiftsPage'
+import ShiftLogPage from './pages/ShiftLogPage'
 import ClientManagementPage from './pages/ClientManagementPage'
-import MonitoringReportingPage from './pages/MonitoringReportingPage'
+import ClientListPage from './pages/ClientListPage'
+import SolvedConversationsPage from './pages/SolvedConversationsPage'
+import PendingConversationsPage from './pages/PendingConversationsPage'
+import EscalatedConversationsPage from './pages/EscalatedConversationsPage'
 import PermissionsManagementPage from './pages/PermissionsManagementPage'
 import RoleManagementPage from './pages/RoleManagementPage'
 import ProfilePage from './pages/ProfilePage'
@@ -27,9 +32,20 @@ function App() {
           <Route path="admin/users" element={<AdminManagementPage />} />
           <Route path="admin/permissions" element={<PermissionsManagementPage />} />
           <Route path="admin/roles" element={<RoleManagementPage />} />
-          <Route path="shifts" element={<ShiftManagementPage />} />
-          <Route path="clients" element={<ClientManagementPage />} />
-          <Route path="monitoring" element={<MonitoringReportingPage />} />
+          <Route path="shifts">
+            <Route index element={<ShiftManagementPage />} />
+            <Route path="manage" element={<ShiftManagementPage />} />
+            <Route path="assign" element={<AssignShiftsPage />} />
+            <Route path="log" element={<ShiftLogPage />} />
+          </Route>
+          <Route path="clients">
+            <Route index element={<ClientListPage />} />
+            <Route path="list" element={<ClientListPage />} />
+            <Route path="solved" element={<SolvedConversationsPage />} />
+            <Route path="pending" element={<PendingConversationsPage />} />
+            <Route path="escalated" element={<EscalatedConversationsPage />} />
+          </Route>
+          {/* Removed monitoring route as content is now in DashboardPage */}
           <Route path="profile" element={<ProfilePage />} />
           <Route path="change-password" element={<ChangePasswordPage />} />
           <Route path="settings" element={<SettingsPage />} />

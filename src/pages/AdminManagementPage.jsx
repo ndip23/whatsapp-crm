@@ -882,7 +882,7 @@ const AdminManagementPage = () => {
           onMouseLeave={(e) => e.target.style.backgroundColor = styles.addButton.backgroundColor}
         >
           <UserPlus style={{ height: '1rem', width: '1rem' }} />
-          <span>Add Agent</span>
+          <span>Add User</span>
         </button>
       </div>
 

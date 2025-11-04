@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Outlet, useNavigate, useLocation } from 'react-router-dom'
+import { Outlet, useNavigate, useLocation, Link } from 'react-router-dom'
 import { 
   Bell, 
   User, 
@@ -431,8 +431,8 @@ const DashboardLayout = () => {
           </div>
         </div>
         <nav style={styles.nav}>
-          <a
-            href="/dashboard"
+          <Link
+            to="/dashboard"
             style={{
               ...styles.navItem,
               ...(activeNav === 'dashboard' ? styles.navItemActive : styles.navItemInactive)
@@ -452,7 +452,7 @@ const DashboardLayout = () => {
           >
             <Home style={styles.icon} />
             <span>Dashboard</span>
-          </a>
+          </Link>
           
           <div
             style={{
@@ -486,8 +486,8 @@ const DashboardLayout = () => {
           
           {expandedMenus.admin && (
             <div style={styles.submenu}>
-              <a
-                href="/dashboard/admin"
+              <Link
+                to="/dashboard/admin"
                 style={{
                   ...styles.submenuItem,
                   ...(location.pathname === '/dashboard/admin' || location.pathname === '/dashboard/admin/users' ? styles.submenuItemActive : {})
@@ -506,10 +506,10 @@ const DashboardLayout = () => {
                 }}
               >
                 <User style={{ ...styles.icon, marginRight: '0.5rem' }} />
-                <span>Users</span>
-              </a>
-              <a
-                href="/dashboard/admin/roles"
+                <span>Agents</span>
+              </Link>
+              <Link
+                to="/dashboard/admin/roles"
                 style={{
                   ...styles.submenuItem,
                   ...(location.pathname === '/dashboard/admin/roles' ? styles.submenuItemActive : {})
@@ -529,9 +529,9 @@ const DashboardLayout = () => {
               >
                 <Shield style={{ ...styles.icon, marginRight: '0.5rem' }} />
                 <span>Roles</span>
-              </a>
-              <a
-                href="/dashboard/admin/permissions"
+              </Link>
+              <Link
+                to="/dashboard/admin/permissions"
                 style={{
                   ...styles.submenuItem,
                   ...(location.pathname === '/dashboard/admin/permissions' ? styles.submenuItemActive : {})
@@ -551,12 +551,12 @@ const DashboardLayout = () => {
               >
                 <Settings style={{ ...styles.icon, marginRight: '0.5rem' }} />
                 <span>Permissions</span>
-              </a>
+              </Link>
             </div>
           )}
           
-          <a
-            href="/dashboard/shifts"
+          <Link
+            to="/dashboard/shifts"
             style={{
               ...styles.navItem,
               ...(activeNav === 'shifts' ? styles.navItemActive : styles.navItemInactive)
@@ -576,7 +576,7 @@ const DashboardLayout = () => {
           >
             <Clock style={styles.icon} />
             <span>Shift Management</span>
-          </a>
+          </Link>
           
           <div
             style={{
@@ -610,8 +610,8 @@ const DashboardLayout = () => {
           
           {expandedMenus.clients && (
             <div style={styles.submenu}>
-              <a
-                href="/dashboard/clients/list"
+              <Link
+                to="/dashboard/clients/list"
                 style={{
                   ...styles.submenuItem,
                   ...(location.pathname === '/dashboard/clients/list' ? styles.submenuItemActive : {})
@@ -631,9 +631,9 @@ const DashboardLayout = () => {
               >
                 <Users style={{ ...styles.icon, marginRight: '0.5rem' }} />
                 <span>Client List</span>
-              </a>
-              <a
-                href="/dashboard/clients/groups"
+              </Link>
+              <Link
+                to="/dashboard/clients/groups"
                 style={{
                   ...styles.submenuItem,
                   ...(location.pathname === '/dashboard/clients/groups' ? styles.submenuItemActive : {})
@@ -653,9 +653,9 @@ const DashboardLayout = () => {
               >
                 <UserCircle style={{ ...styles.icon, marginRight: '0.5rem' }} />
                 <span>Client Groups</span>
-              </a>
-              <a
-                href="/dashboard/clients/templates"
+              </Link>
+              <Link
+                to="/dashboard/clients/templates"
                 style={{
                   ...styles.submenuItem,
                   ...(location.pathname === '/dashboard/clients/templates' ? styles.submenuItemActive : {})
@@ -675,12 +675,12 @@ const DashboardLayout = () => {
               >
                 <FileText style={{ ...styles.icon, marginRight: '0.5rem' }} />
                 <span>Message Templates</span>
-              </a>
+              </Link>
             </div>
           )}
           
-          <a
-            href="/dashboard/monitoring"
+          <Link
+            to="/dashboard/monitoring"
             style={{
               ...styles.navItem,
               ...(activeNav === 'monitoring' ? styles.navItemActive : styles.navItemInactive)
@@ -700,7 +700,7 @@ const DashboardLayout = () => {
           >
             <TrendingUp style={styles.icon} />
             <span>Monitoring & Reporting</span>
-          </a>
+          </Link>
         </nav>
       </div>
 

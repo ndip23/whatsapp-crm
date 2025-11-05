@@ -24,7 +24,8 @@ import {
   CheckCircle,
 
   Menu,
-  X
+  X,
+  AlertCircle
 } from 'lucide-react'
 import NotificationsCenter from '../components/NotificationsCenter'
 import { useUser } from '../context/UserContext'
@@ -889,7 +890,7 @@ const DashboardLayout = () => {
                   }
                 }}
               >
-                <LinklertCircle style={{ ...styles.icon, marginRight: '0.5rem' }} />
+                <AlertCircle style={{ ...styles.icon, marginRight: '0.5rem' }} />
                 <span>Escalated Conversations</span>
               </Link>
             </div>

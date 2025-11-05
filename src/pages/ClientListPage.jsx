@@ -1,6 +1,8 @@
 import { useState, useMemo } from 'react'
 import { Search, User, Calendar, MessageCircle, CheckCircle, Clock, AlertCircle, Plus, Edit } from 'lucide-react'
 import { showToast } from '../utils/toast'
+import ResponsiveTable from '../components/ResponsiveTable'
+import ResponsivePagination from '../components/ResponsivePagination'
 
 const ClientListPage = () => {
   // Sample data for clients
@@ -198,42 +200,6 @@ const ClientListPage = () => {
     setCurrentPage(1)
   }, [searchTerm])
 
-  // Generate page numbers to display
-  const getPageNumbers = () => {
-    const pages = []
-    const maxVisiblePages = 5
-    
-    if (totalPages <= maxVisiblePages) {
-      for (let i = 1; i <= totalPages; i++) {
-        pages.push(i)
-      }
-    } else {
-      if (currentPage <= 3) {
-        for (let i = 1; i <= 4; i++) {
-          pages.push(i)
-        }
-        pages.push('...')
-        pages.push(totalPages)
-      } else if (currentPage >= totalPages - 2) {
-        pages.push(1)
-        pages.push('...')
-        for (let i = totalPages - 3; i <= totalPages; i++) {
-          pages.push(i)
-        }
-      } else {
-        pages.push(1)
-        pages.push('...')
-        for (let i = currentPage - 1; i <= currentPage + 1; i++) {
-          pages.push(i)
-        }
-        pages.push('...')
-        pages.push(totalPages)
-      }
-    }
-    
-    return pages
-  }
-
   const styles = {
     page: {
       padding: '1rem',
@@ -289,46 +255,6 @@ const ClientListPage = () => {
       boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
       overflow: 'hidden',
       border: '1px solid #e5e7eb'
-    },
-    tableWrapper: {
-      overflowX: 'auto',
-      maxWidth: '100%'
-    },
-    table: {
-      minWidth: '1200px',
-      width: '100%',
-      borderCollapse: 'collapse'
-    },
-    tableHeader: {
-      backgroundColor: '#f9fafb'
-    },
-    tableHeaderCell: {
-      paddingLeft: '1rem',
-      paddingRight: '1rem',
-      paddingTop: '0.75rem',
-      paddingBottom: '0.75rem',
-      textAlign: 'left',
-      fontSize: '0.75rem',
-      fontWeight: '500',
-      color: '#6b7280',
-      textTransform: 'uppercase',
-      letterSpacing: '0.05em'
-    },
-    tableBody: {
-      backgroundColor: '#ffffff'
-    },
-    tableRow: {
-      backgroundColor: '#ffffff'
-    },
-    tableCell: {
-      paddingLeft: '1rem',
-      paddingRight: '1rem',
-      paddingTop: '0.75rem',
-      paddingBottom: '0.75rem',
-      whiteSpace: 'nowrap',
-      fontSize: '0.875rem',
-      color: '#111827',
-      borderBottom: '1px solid #e5e7eb'
     },
     tableCellSecondary: {
       color: '#6b7280'
@@ -492,65 +418,6 @@ const ClientListPage = () => {
     },
     saveButtonHover: {
       backgroundColor: '#059669'
-    },
-    paginationContainer: {
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      padding: '1rem',
-      borderTop: '1px solid #e5e7eb'
-    },
-    paginationInfo: {
-      fontSize: '0.8125rem',
-      color: '#6b7280'
-    },
-    paginationControls: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: '0.5rem'
-    },
-    paginationButton: {
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      width: '2rem',
-      height: '2rem',
-      borderRadius: '0.375rem',
-      border: '1px solid #d1d5db',
-      backgroundColor: '#ffffff',
-      color: '#374151',
-      cursor: 'pointer',
-      fontSize: '0.875rem'
-    },
-    paginationButtonHover: {
-      backgroundColor: '#f9fafb'
-    },
-    paginationButtonDisabled: {
-      opacity: '0.5',
-      cursor: 'not-allowed'
-    },
-    paginationButtonActive: {
-      backgroundColor: '#10b981',
-      color: '#ffffff',
-      borderColor: '#10b981'
-    },
-    paginationButtonInactive: {
-      backgroundColor: '#ffffff',
-      color: '#10b981',
-      borderColor: '#10b981',
-      borderWidth: '1px',
-      borderStyle: 'solid'
-    },
-    pageNumber: {
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      width: '2rem',
-      height: '2rem',
-      borderRadius: '0.375rem',
-      cursor: 'pointer',
-      fontSize: '0.875rem',
-      border: '1px solid transparent'
     }
   }
 
@@ -559,15 +426,6 @@ const ClientListPage = () => {
     @media (max-width: 768px) {
       .page {
         padding: 0.75rem;
-      }
-      
-      .tableWrapper {
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-      }
-      
-      .table {
-        min-width: 1000px;
       }
       
       .modalContainer {
@@ -583,12 +441,6 @@ const ClientListPage = () => {
         max-width: 100%;
         margin-bottom: 0.75rem;
       }
-      
-      .paginationContainer {
-        flex-direction: column;
-        gap: 1rem;
-        align-items: stretch;
-      }
     }
     
     @media (max-width: 480px) {
@@ -602,22 +454,6 @@ const ClientListPage = () => {
         gap: 1rem;
         padding: 0.75rem 0;
       }
-      
-      .table {
-        min-width: 800px;
-      }
-      
-      .tableCell {
-        padding-left: 0.75rem;
-        padding-right: 0.75rem;
-        font-size: 0.75rem;
-      }
-      
-      .tableHeaderCell {
-        padding-left: 0.75rem;
-        padding-right: 0.75rem;
-        font-size: 0.625rem;
-      }
     }
   `
 
@@ -626,6 +462,102 @@ const ClientListPage = () => {
     setSelectedClient(client)
     setShowChatModal(true)
   }
+
+  // Render cell content for the table
+  const renderCellContent = (row, column) => {
+    switch (column.key) {
+      case 'name':
+        return row.name;
+      case 'phone':
+        return <span style={styles.tableCellSecondary}>{row.phone}</span>;
+      case 'country':
+        return <span style={styles.tableCellSecondary}>{row.country}</span>;
+      case 'assignmentStatus':
+        return row.assigned ? (
+          <span style={{ color: '#10b981', fontWeight: '500' }}>Assigned</span>
+        ) : (
+          <span style={{ color: '#ef4444', fontWeight: '500' }}>Unassigned</span>
+        );
+      case 'assignedUser':
+        return <span style={styles.tableCellSecondary}>{row.assigned ? row.assignedUser : '-'}</span>;
+      case 'assignmentDate':
+        return <span style={styles.tableCellSecondary}>{row.assignmentDate || '-'}</span>;
+      case 'conversationStatus':
+        return row.conversationStatus ? (
+          <span style={{ ...styles.statusBadge, ...getStatusStyle(row.conversationStatus) }}>
+            {getStatusIcon(row.conversationStatus)}
+            <span style={{ marginLeft: '0.25rem' }}>
+              {getStatusText(row.conversationStatus)}
+            </span>
+          </span>
+        ) : (
+          '-'
+        );
+      case 'actions':
+        if (row.assigned) {
+          if (row.conversationStatus === 'solved') {
+            return (
+              <button
+                onClick={() => handleViewConversation(row.client)}
+                style={{
+                  backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                  color: '#10b981',
+                  fontWeight: '500',
+                  paddingTop: '0.25rem',
+                  paddingBottom: '0.25rem',
+                  paddingLeft: '0.75rem',
+                  paddingRight: '0.75rem',
+                  borderRadius: '0.375rem',
+                  border: '1px solid rgba(16, 185, 129, 0.3)',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.25rem',
+                  fontSize: '0.8125rem'
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.backgroundColor = 'rgba(16, 185, 129, 0.2)';
+                  e.target.style.borderColor = 'rgba(16, 185, 129, 0.5)';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.backgroundColor = 'rgba(16, 185, 129, 0.1)';
+                  e.target.style.borderColor = 'rgba(16, 185, 129, 0.3)';
+                }}
+              >
+                <MessageCircle style={{ height: '1rem', width: '1rem' }} />
+                <span>View</span>
+              </button>
+            );
+          } else {
+            return (
+              <button
+                onClick={() => handleReassignClick(row.client)}
+                style={styles.reassignButton}
+                onMouseEnter={(e) => e.target.style.backgroundColor = styles.reassignButtonHover.backgroundColor}
+                onMouseLeave={(e) => e.target.style.backgroundColor = styles.reassignButton.backgroundColor}
+              >
+                <Edit style={{ height: '1rem', width: '1rem' }} />
+                <span>Re-assign</span>
+              </button>
+            );
+          }
+        } else {
+          return (
+            <button
+              onClick={() => handleAssignClick(row.client)}
+              style={styles.assignButton}
+              onMouseEnter={(e) => e.target.style.backgroundColor = styles.assignButtonHover.backgroundColor}
+              onMouseLeave={(e) => e.target.style.backgroundColor = styles.assignButton.backgroundColor}
+            >
+              <User style={{ height: '1rem', width: '1rem' }} />
+              <span>Assign</span>
+            </button>
+          );
+        }
+      default:
+        return row[column.key];
+    }
+  };
 
   return (
     <div style={styles.page}>
@@ -655,197 +587,40 @@ const ClientListPage = () => {
       </div>
 
       <div style={styles.tableContainer}>
-        <div style={styles.tableWrapper}>
-          <table style={styles.table}>
-            <thead style={styles.tableHeader}>
-              <tr>
-                <th style={styles.tableHeaderCell}>Client Name</th>
-                <th style={styles.tableHeaderCell}>Phone</th>
-                <th style={styles.tableHeaderCell}>Country</th>
-                <th style={styles.tableHeaderCell}>Assignment Status</th>
-                <th style={styles.tableHeaderCell}>Assigned User</th>
-                <th style={styles.tableHeaderCell}>Assignment Date</th>
-                <th style={styles.tableHeaderCell}>Conversation Status</th>
-                <th style={styles.tableHeaderCell}>Actions</th>
-              </tr>
-            </thead>
-            <tbody style={styles.tableBody}>
-              {currentClients.map((client) => (
-                <tr key={client.id} style={styles.tableRow}>
-                  <td style={{ ...styles.tableCell, fontWeight: '500' }}>{client.name}</td>
-                  <td style={{ ...styles.tableCell, ...styles.tableCellSecondary }}>{client.phone}</td>
-                  <td style={{ ...styles.tableCell, ...styles.tableCellSecondary }}>{client.country}</td>
-                  <td style={styles.tableCell}>
-                    {client.assigned ? (
-                      <span style={{ color: '#10b981', fontWeight: '500' }}>Assigned</span>
-                    ) : (
-                      <span style={{ color: '#ef4444', fontWeight: '500' }}>Unassigned</span>
-                    )}
-                  </td>
-                  <td style={{ ...styles.tableCell, ...styles.tableCellSecondary }}>
-                    {client.assigned ? client.assignedUser : '-'}
-                  </td>
-                  <td style={{ ...styles.tableCell, ...styles.tableCellSecondary }}>
-                    {client.assignmentDate || '-'}
-                  </td>
-                  <td style={styles.tableCell}>
-                    {client.conversationStatus ? (
-                      <span style={{ ...styles.statusBadge, ...getStatusStyle(client.conversationStatus) }}>
-                        {getStatusIcon(client.conversationStatus)}
-                        <span style={{ marginLeft: '0.25rem' }}>
-                          {getStatusText(client.conversationStatus)}
-                        </span>
-                      </span>
-                    ) : (
-                      '-'
-                    )}
-                  </td>
-                  <td style={styles.tableCell}>
-                    {client.assigned ? (
-                      client.conversationStatus === 'solved' ? (
-                        <button
-                          onClick={() => handleViewConversation(client)}
-                          style={{
-                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                            color: '#10b981',
-                            fontWeight: '500',
-                            paddingTop: '0.25rem',
-                            paddingBottom: '0.25rem',
-                            paddingLeft: '0.75rem',
-                            paddingRight: '0.75rem',
-                            borderRadius: '0.375rem',
-                            border: '1px solid rgba(16, 185, 129, 0.3)',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.25rem',
-                            fontSize: '0.8125rem'
-                          }}
-                          onMouseEnter={(e) => {
-                            e.target.style.backgroundColor = 'rgba(16, 185, 129, 0.2)';
-                            e.target.style.borderColor = 'rgba(16, 185, 129, 0.5)';
-                          }}
-                          onMouseLeave={(e) => {
-                            e.target.style.backgroundColor = 'rgba(16, 185, 129, 0.1)';
-                            e.target.style.borderColor = 'rgba(16, 185, 129, 0.3)';
-                          }}
-                        >
-                          <MessageCircle style={{ height: '1rem', width: '1rem' }} />
-                          <span className="buttonText">View</span>
-                        </button>
-                      ) : (
-                        <button
-                          onClick={() => handleReassignClick(client)}
-                          style={styles.reassignButton}
-                          onMouseEnter={(e) => e.target.style.backgroundColor = styles.reassignButtonHover.backgroundColor}
-                          onMouseLeave={(e) => e.target.style.backgroundColor = styles.reassignButton.backgroundColor}
-                        >
-                          <Edit style={{ height: '1rem', width: '1rem' }} />
-                          <span className="buttonText">Re-assign</span>
-                        </button>
-                      )
-                    ) : (
-                      <button
-                        onClick={() => handleAssignClick(client)}
-                        style={styles.assignButton}
-                        onMouseEnter={(e) => e.target.style.backgroundColor = styles.assignButtonHover.backgroundColor}
-                        onMouseLeave={(e) => e.target.style.backgroundColor = styles.assignButton.backgroundColor}
-                      >
-                        <User style={{ height: '1rem', width: '1rem' }} />
-                        <span className="buttonText">Assign</span>
-                      </button>
-                    )}
-                  </td>
+        <ResponsiveTable
+          columns={[
+            { key: 'name', header: 'Client Name', isPrimary: true },
+            { key: 'phone', header: 'Phone' },
+            { key: 'country', header: 'Country' },
+            { key: 'assignmentStatus', header: 'Assignment Status' },
+            { key: 'assignedUser', header: 'Assigned User' },
+            { key: 'assignmentDate', header: 'Assignment Date' },
+            { key: 'conversationStatus', header: 'Conversation Status' },
+            { key: 'actions', header: 'Actions', sortable: false }
+          ]}
+          data={currentClients.map(client => ({
+            id: client.id,
+            name: client.name,
+            phone: client.phone,
+            country: client.country,
+            assignmentStatus: client.assigned,
+            assignedUser: client.assignedUser,
+            assignmentDate: client.assignmentDate,
+            conversationStatus: client.conversationStatus,
+            client: client
+          }))}
+          renderCell={(row, column) => renderCellContent(row, column)}
+        />
 
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div style={styles.paginationContainer}>
-            <div style={styles.paginationInfo}>
-              Showing {startIndex + 1}-{Math.min(endIndex, filteredClients.length)} of {filteredClients.length} clients
-            </div>
-            <div style={styles.paginationControls}>
-              <button
-                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                disabled={currentPage === 1}
-                style={{
-                  ...styles.paginationButton,
-                  ...(currentPage === 1 ? styles.paginationButtonDisabled : {})
-                }}
-                onMouseEnter={(e) => {
-                  if (currentPage !== 1) {
-                    e.target.style.backgroundColor = styles.paginationButtonHover.backgroundColor;
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (currentPage !== 1) {
-                    e.target.style.backgroundColor = styles.paginationButton.backgroundColor;
-                  }
-                }}
-              >
-                <svg style={{ height: '1rem', width: '1rem' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                </svg>
-              </button>
-              
-              {getPageNumbers().map((page, index) => (
-                <div key={index}>
-                  {page === '...' ? (
-                    <span style={{ ...styles.pageNumber, cursor: 'default', color: '#9ca3af' }}>...</span>
-                  ) : (
-                    <button
-                      onClick={() => setCurrentPage(page)}
-                      style={{
-                        ...styles.pageNumber,
-                        ...(currentPage === page ? styles.paginationButtonActive : styles.paginationButtonInactive)
-                      }}
-                      onMouseEnter={(e) => {
-                        if (currentPage !== page) {
-                          e.target.style.backgroundColor = styles.paginationButtonHover.backgroundColor;
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (currentPage !== page) {
-                          e.target.style.backgroundColor = styles.paginationButtonInactive.backgroundColor;
-                        }
-                      }}
-                    >
-                      {page}
-                    </button>
-                  )}
-                </div>
-              ))}
-              
-              <button
-                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                disabled={currentPage === totalPages}
-                style={{
-                  ...styles.paginationButton,
-                  ...(currentPage === totalPages ? styles.paginationButtonDisabled : {})
-                }}
-                onMouseEnter={(e) => {
-                  if (currentPage !== totalPages) {
-                    e.target.style.backgroundColor = styles.paginationButtonHover.backgroundColor;
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (currentPage !== totalPages) {
-                    e.target.style.backgroundColor = styles.paginationButton.backgroundColor;
-                  }
-                }}
-              >
-                <svg style={{ height: '1rem', width: '1rem' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </button>
-            </div>
-          </div>
-        )}
+        <ResponsivePagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          itemsPerPage={itemsPerPage}
+          totalItems={filteredClients.length}
+          showInfo={true}
+          showNavigation={true}
+        />
       </div>
 
       {/* Assign Modal */}

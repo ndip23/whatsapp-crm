@@ -19,6 +19,16 @@
   .mobile-hidden {
     display: none;
   }
+  
+  .sidebar-collapsed {
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+  }
+  
+  .sidebar-expanded {
+    transform: translateX(0);
+    transition: transform 0.3s ease;
+  }
 }
 
 @media (min-width: 768px) {

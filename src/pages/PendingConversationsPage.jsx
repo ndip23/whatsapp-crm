@@ -1,8 +1,10 @@
 import { useState, useMemo } from 'react'
 import { Search, Clock, User, Calendar, MessageCircle } from 'lucide-react'
+import ResponsiveTable from '../components/ResponsiveTable'
+import ResponsivePagination from '../components/ResponsivePagination'
 
 const PendingConversationsPage = () => {
-  // Sample data for pending conversations
+  // Sample data for pending conversations with messages
   const [conversations] = useState([
     { 
       id: 1, 
@@ -11,7 +13,17 @@ const PendingConversationsPage = () => {
       date: '2023-06-01', 
       messages: 8, 
       waitingTime: '25 mins',
-      lastMessage: 'Awaiting client response'
+      lastMessage: 'Awaiting client response',
+      conversationMessages: [
+        { id: 1, sender: 'client', content: 'Hi, I have a question about my order #12345.', timestamp: '10:30 AM' },
+        { id: 2, sender: 'agent', content: 'Hello Robert! I\'d be happy to help you with your order. What would you like to know?', timestamp: '10:32 AM' },
+        { id: 3, sender: 'client', content: 'I want to know when it will be delivered. The tracking shows it\'s delayed.', timestamp: '10:33 AM' },
+        { id: 4, sender: 'agent', content: 'Let me check the status of your order. I can see that there was a delay due to weather conditions, but it\'s now on its way.', timestamp: '10:35 AM' },
+        { id: 5, sender: 'agent', content: 'You should receive it by tomorrow afternoon. I apologize for the inconvenience.', timestamp: '10:36 AM' },
+        { id: 6, sender: 'client', content: 'Thank you for the update. I\'ll wait for it.', timestamp: '10:37 AM' },
+        { id: 7, sender: 'agent', content: 'You\'re welcome! Is there anything else I can help you with?', timestamp: '10:38 AM' },
+        { id: 8, sender: 'client', content: 'No, that\'s all for now. Thanks again!', timestamp: '10:39 AM' }
+      ]
     },
     { 
       id: 2, 
@@ -20,7 +32,21 @@ const PendingConversationsPage = () => {
       date: '2023-06-01', 
       messages: 12, 
       waitingTime: '42 mins',
-      lastMessage: 'Waiting for documentation'
+      lastMessage: 'Waiting for documentation',
+      conversationMessages: [
+        { id: 1, sender: 'client', content: 'Hello, I\'m applying for a business loan and need some information.', timestamp: '09:15 AM' },
+        { id: 2, sender: 'agent', content: 'Hi Sarah! I\'d be happy to help you with information about our business loans. What specifically would you like to know?', timestamp: '09:17 AM' },
+        { id: 3, sender: 'client', content: 'I need to know what documentation is required for the application process.', timestamp: '09:18 AM' },
+        { id: 4, sender: 'agent', content: 'For a business loan application, we typically require: 1) Business financial statements for the past 2 years, 2) Personal financial statements, 3) Business plan, 4) Tax returns, and 5) Legal documents.', timestamp: '09:20 AM' },
+        { id: 5, sender: 'client', content: 'That\'s helpful. Do you have a checklist I can download?', timestamp: '09:22 AM' },
+        { id: 6, sender: 'agent', content: 'Yes, I can email you our comprehensive checklist. Would you like me to send it to sarah.williams@email.com?', timestamp: '09:23 AM' },
+        { id: 7, sender: 'client', content: 'Yes, please. Also, what\'s the minimum credit score required?', timestamp: '09:24 AM' },
+        { id: 8, sender: 'agent', content: 'Our minimum credit score requirement is 680 for business loans. However, higher scores may qualify for better interest rates.', timestamp: '09:25 AM' },
+        { id: 9, sender: 'client', content: 'I see. My score is 720, so that should be fine. When can I submit the application?', timestamp: '09:26 AM' },
+        { id: 10, sender: 'agent', content: 'You can submit your application at any time through our online portal. I\'ll send you the checklist and a link to the application portal.', timestamp: '09:27 AM' },
+        { id: 11, sender: 'client', content: 'Perfect. I\'ll wait for your email.', timestamp: '09:28 AM' },
+        { id: 12, sender: 'agent', content: 'Great! I\'ll send it right away. Please let me know if you have any other questions.', timestamp: '09:29 AM' }
+      ]
     },
     { 
       id: 3, 
@@ -29,7 +55,15 @@ const PendingConversationsPage = () => {
       date: '2023-05-31', 
       messages: 6, 
       waitingTime: '18 mins',
-      lastMessage: 'Awaiting payment confirmation'
+      lastMessage: 'Awaiting payment confirmation',
+      conversationMessages: [
+        { id: 1, sender: 'client', content: 'Hi, I\'ve sent a payment for my invoice #7890, but it\'s not showing in your system.', timestamp: '11:30 AM' },
+        { id: 2, sender: 'agent', content: 'Hello Thomas! Let me check our system for your payment. Can you confirm the date and amount you sent?', timestamp: '11:32 AM' },
+        { id: 3, sender: 'client', content: 'I sent $1,250.00 on May 30th via bank transfer.', timestamp: '11:33 AM' },
+        { id: 4, sender: 'agent', content: 'Thank you for that information. I can see the payment was initiated but not yet cleared in our system.', timestamp: '11:35 AM' },
+        { id: 5, sender: 'agent', content: 'Bank transfers can take 1-3 business days to process. I\'ll mark this as pending and check again tomorrow.', timestamp: '11:36 AM' },
+        { id: 6, sender: 'client', content: 'Okay, thank you. I\'ll wait for confirmation.', timestamp: '11:37 AM' }
+      ]
     },
     { 
       id: 4, 
@@ -38,7 +72,24 @@ const PendingConversationsPage = () => {
       date: '2023-05-31', 
       messages: 15, 
       waitingTime: '1 hour 5 mins',
-      lastMessage: 'Waiting for technical details'
+      lastMessage: 'Waiting for technical details',
+      conversationMessages: [
+        { id: 1, sender: 'client', content: 'Hello, I\'m interested in your enterprise software solution.', timestamp: '08:30 AM' },
+        { id: 2, sender: 'agent', content: 'Hi Emily! I\'d be happy to provide information about our enterprise software. What specific needs does your business have?', timestamp: '08:32 AM' },
+        { id: 3, sender: 'client', content: 'We need a solution for customer relationship management and analytics.', timestamp: '08:33 AM' },
+        { id: 4, sender: 'agent', content: 'Our enterprise CRM solution includes advanced analytics, automation tools, and integration capabilities. Would you like me to schedule a demo?', timestamp: '08:35 AM' },
+        { id: 5, sender: 'client', content: 'Yes, that would be great. When is the next available slot?', timestamp: '08:36 AM' },
+        { id: 6, sender: 'agent', content: 'I can schedule a demo for tomorrow at 2 PM or Thursday at 10 AM. Which works better for you?', timestamp: '08:37 AM' },
+        { id: 7, sender: 'client', content: 'Tomorrow at 2 PM works for me.', timestamp: '08:38 AM' },
+        { id: 8, sender: 'agent', content: 'Perfect! I\'ve scheduled the demo for tomorrow at 2 PM. What technical specifications should I prepare for the demo?', timestamp: '08:39 AM' },
+        { id: 9, sender: 'client', content: 'We\'re currently using Windows servers and have about 200 users. We also use Salesforce for our current CRM.', timestamp: '08:40 AM' },
+        { id: 10, sender: 'agent', content: 'Thank you for that information. I\'ll make sure our technical team prepares a demo that addresses your specific environment and integration needs.', timestamp: '08:42 AM' },
+        { id: 11, sender: 'client', content: 'That sounds good. Will the demo be in person or virtual?', timestamp: '08:43 AM' },
+        { id: 12, sender: 'agent', content: 'Given the current circumstances, we\'re conducting all demos virtually via our secure meeting platform.', timestamp: '08:44 AM' },
+        { id: 13, sender: 'client', content: 'Perfect. What information do you need from me to set up the virtual meeting?', timestamp: '08:45 AM' },
+        { id: 14, sender: 'agent', content: 'I\'ll send you a calendar invitation with the meeting link. You\'ll just need a computer with a webcam and stable internet connection.', timestamp: '08:46 AM' },
+        { id: 15, sender: 'client', content: 'Great! I look forward to it.', timestamp: '08:47 AM' }
+      ]
     },
     { 
       id: 5, 
@@ -47,7 +98,18 @@ const PendingConversationsPage = () => {
       date: '2023-05-30', 
       messages: 9, 
       waitingTime: '32 mins',
-      lastMessage: 'Awaiting approval'
+      lastMessage: 'Awaiting approval',
+      conversationMessages: [
+        { id: 1, sender: 'client', content: 'Hi, I submitted a request for a new service plan yesterday. Any updates?', timestamp: '10:30 AM' },
+        { id: 2, sender: 'agent', content: 'Hello James! Let me check the status of your service plan request. Can you confirm your account number?', timestamp: '10:32 AM' },
+        { id: 3, sender: 'client', content: 'It\'s account #456789.', timestamp: '10:33 AM' },
+        { id: 4, sender: 'agent', content: 'Thank you. I can see your request is currently under review by our service planning team.', timestamp: '10:35 AM' },
+        { id: 5, sender: 'agent', content: 'The review process typically takes 1-2 business days. You should receive an update by tomorrow.', timestamp: '10:36 AM' },
+        { id: 6, sender: 'client', content: 'Thank you. I\'m looking forward to the upgrade.', timestamp: '10:37 AM' },
+        { id: 7, sender: 'agent', content: 'You\'re welcome! I\'ll follow up with you tomorrow with an update on your request.', timestamp: '10:38 AM' },
+        { id: 8, sender: 'client', content: 'That would be great.', timestamp: '10:39 AM' },
+        { id: 9, sender: 'agent', content: 'Is there anything else I can assist you with today?', timestamp: '10:40 AM' }
+      ]
     },
   ])
 
@@ -85,42 +147,6 @@ const PendingConversationsPage = () => {
   useMemo(() => {
     setCurrentPage(1)
   }, [searchTerm])
-
-  // Generate page numbers to display
-  const getPageNumbers = () => {
-    const pages = []
-    const maxVisiblePages = 5
-    
-    if (totalPages <= maxVisiblePages) {
-      for (let i = 1; i <= totalPages; i++) {
-        pages.push(i)
-      }
-    } else {
-      if (currentPage <= 3) {
-        for (let i = 1; i <= 4; i++) {
-          pages.push(i)
-        }
-        pages.push('...')
-        pages.push(totalPages)
-      } else if (currentPage >= totalPages - 2) {
-        pages.push(1)
-        pages.push('...')
-        for (let i = totalPages - 3; i <= totalPages; i++) {
-          pages.push(i)
-        }
-      } else {
-        pages.push(1)
-        pages.push('...')
-        for (let i = currentPage - 1; i <= currentPage + 1; i++) {
-          pages.push(i)
-        }
-        pages.push('...')
-        pages.push(totalPages)
-      }
-    }
-    
-    return pages
-  }
 
   const styles = {
     page: {
@@ -181,49 +207,6 @@ const PendingConversationsPage = () => {
       overflow: 'hidden',
       border: '1px solid #e5e7eb'
     },
-    tableWrapper: {
-      overflowX: 'auto',
-      maxWidth: '100%'
-    },
-    table: {
-      minWidth: '800px',
-      width: '100%',
-      borderCollapse: 'collapse'
-    },
-    tableHeader: {
-      backgroundColor: '#f9fafb'
-    },
-    tableHeaderCell: {
-      paddingLeft: '1rem',
-      paddingRight: '1rem',
-      paddingTop: '0.75rem',
-      paddingBottom: '0.75rem',
-      textAlign: 'left',
-      fontSize: '0.75rem',
-      fontWeight: '500',
-      color: '#6b7280',
-      textTransform: 'uppercase',
-      letterSpacing: '0.05em'
-    },
-    tableBody: {
-      backgroundColor: '#ffffff'
-    },
-    tableRow: {
-      backgroundColor: '#ffffff'
-    },
-    tableCell: {
-      paddingLeft: '1rem',
-      paddingRight: '1rem',
-      paddingTop: '0.75rem',
-      paddingBottom: '0.75rem',
-      whiteSpace: 'nowrap',
-      fontSize: '0.875rem',
-      color: '#111827',
-      borderBottom: '1px solid #e5e7eb'
-    },
-    tableCellSecondary: {
-      color: '#6b7280'
-    },
     statusBadge: {
       display: 'inline-flex',
       alignItems: 'center',
@@ -256,65 +239,6 @@ const PendingConversationsPage = () => {
     },
     showButtonHover: {
       backgroundColor: 'rgba(16, 185, 129, 0.2)'
-    },
-    paginationContainer: {
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      padding: '1rem',
-      borderTop: '1px solid #e5e7eb'
-    },
-    paginationInfo: {
-      fontSize: '0.8125rem',
-      color: '#6b7280'
-    },
-    paginationControls: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: '0.5rem'
-    },
-    paginationButton: {
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      width: '2rem',
-      height: '2rem',
-      borderRadius: '0.375rem',
-      border: '1px solid #d1d5db',
-      backgroundColor: '#ffffff',
-      color: '#374151',
-      cursor: 'pointer',
-      fontSize: '0.875rem'
-    },
-    paginationButtonHover: {
-      backgroundColor: '#f9fafb'
-    },
-    paginationButtonDisabled: {
-      opacity: '0.5',
-      cursor: 'not-allowed'
-    },
-    paginationButtonActive: {
-      backgroundColor: '#10b981',
-      color: '#ffffff',
-      borderColor: '#10b981'
-    },
-    paginationButtonInactive: {
-      backgroundColor: '#ffffff',
-      color: '#10b981',
-      borderColor: '#10b981',
-      borderWidth: '1px',
-      borderStyle: 'solid'
-    },
-    pageNumber: {
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      width: '2rem',
-      height: '2rem',
-      borderRadius: '0.375rem',
-      cursor: 'pointer',
-      fontSize: '0.875rem',
-      border: '1px solid transparent'
     },
     // Modal styles
     modalOverlay: {
@@ -377,15 +301,6 @@ const PendingConversationsPage = () => {
         padding: 0.75rem;
       }
       
-      .tableWrapper {
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-      }
-      
-      .table {
-        min-width: 700px;
-      }
-      
       .pageTitle {
         font-size: 1.125rem;
       }
@@ -395,10 +310,28 @@ const PendingConversationsPage = () => {
         margin-bottom: 0.75rem;
       }
       
-      .paginationContainer {
+      .modal-body-mobile {
+        flex-direction: column !important;
+        overflow: auto !important;
+      }
+      
+      .details-panel-mobile {
+        width: 100% !important;
+        border-right: none !important;
+        border-bottom: 1px solid #e5e7eb !important;
+        overflow-y: auto !important;
+      }
+      
+      .chat-panel-mobile {
+        width: 100% !important;
+        overflow-y: auto !important;
+      }
+      
+      .modalContainer {
+        margin: 1rem;
+        max-width: calc(100% - 2rem);
         flex-direction: column;
-        gap: 1rem;
-        align-items: stretch;
+        overflow: auto;
       }
     }
     
@@ -414,20 +347,10 @@ const PendingConversationsPage = () => {
         padding: 0.75rem 0;
       }
       
-      .table {
-        min-width: 600px;
-      }
-      
-      .tableCell {
-        padding-left: 0.75rem;
-        padding-right: 0.75rem;
-        font-size: 0.75rem;
-      }
-      
-      .tableHeaderCell {
-        padding-left: 0.75rem;
-        padding-right: 0.75rem;
-        font-size: 0.625rem;
+      .modalContainer {
+        width: 95%;
+        height: 95vh;
+        overflow: auto;
       }
     }
   `
@@ -463,607 +386,425 @@ const PendingConversationsPage = () => {
       </div>
 
       <div style={styles.tableContainer}>
-        <div style={styles.tableWrapper}>
-          <table style={styles.table}>
-            <thead style={styles.tableHeader}>
-              <tr>
-                <th style={styles.tableHeaderCell}>Client</th>
-                <th style={styles.tableHeaderCell}>Agent</th>
-                <th style={styles.tableHeaderCell}>Date</th>
-                <th style={styles.tableHeaderCell}>Messages</th>
-                <th style={styles.tableHeaderCell}>Waiting Time</th>
-                <th style={styles.tableHeaderCell}>Last Message</th>
-                <th style={styles.tableHeaderCell}>Status</th>
-                <th style={styles.tableHeaderCell}>Actions</th>
-              </tr>
-            </thead>
-            <tbody style={styles.tableBody}>
-              {currentConversations.map((conversation) => (
-                <tr key={conversation.id} style={styles.tableRow}>
-                  <td style={{ ...styles.tableCell, fontWeight: '500' }}>
-                    <div style={{ display: 'flex', alignItems: 'center' }}>
-                      <User style={{ height: '1rem', width: '1rem', marginRight: '0.5rem', color: '#6b7280' }} />
-                      {conversation.client}
-                    </div>
-                  </td>
-                  <td style={{ ...styles.tableCell, ...styles.tableCellSecondary }}>
-                    <div style={{ display: 'flex', alignItems: 'center' }}>
-                      <User style={{ height: '1rem', width: '1rem', marginRight: '0.5rem', color: '#6b7280' }} />
-                      {conversation.agent}
-                    </div>
-                  </td>
-                  <td style={{ ...styles.tableCell, ...styles.tableCellSecondary }}>
-                    <div style={{ display: 'flex', alignItems: 'center' }}>
-                      <Calendar style={{ height: '1rem', width: '1rem', marginRight: '0.5rem', color: '#6b7280' }} />
-                      {conversation.date}
-                    </div>
-                  </td>
-                  <td style={{ ...styles.tableCell, ...styles.tableCellSecondary }}>
-                    <div style={{ display: 'flex', alignItems: 'center' }}>
-                      <MessageCircle style={{ height: '1rem', width: '1rem', marginRight: '0.5rem', color: '#6b7280' }} />
-                      {conversation.messages}
-                    </div>
-                  </td>
-                  <td style={{ ...styles.tableCell, ...styles.tableCellSecondary }}>{conversation.waitingTime}</td>
-                  <td style={{ ...styles.tableCell, ...styles.tableCellSecondary }}>{conversation.lastMessage}</td>
-                  <td style={styles.tableCell}>
-                    <span style={styles.statusBadge}>
-                      <Clock style={{ height: '1rem', width: '1rem', marginRight: '0.25rem' }} />
-                      Pending
-                    </span>
-                  </td>
-                  <td style={styles.tableCell}>
-                    <button
-                      onClick={() => handleShowConversation(conversation)}
-                      style={{
-                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                        color: '#10b981',
-                        fontWeight: '500',
-                        paddingTop: '0.25rem',
-                        paddingBottom: '0.25rem',
-                        paddingLeft: '0.75rem',
-                        paddingRight: '0.75rem',
-                        borderRadius: '0.375rem',
-                        border: '1px solid rgba(16, 185, 129, 0.3)',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.25rem',
-                        fontSize: '0.8125rem'
-                      }}
-                      onMouseEnter={(e) => {
-                        e.target.style.backgroundColor = 'rgba(16, 185, 129, 0.2)';
-                        e.target.style.borderColor = 'rgba(16, 185, 129, 0.5)';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.target.style.backgroundColor = 'rgba(16, 185, 129, 0.1)';
-                        e.target.style.borderColor = 'rgba(16, 185, 129, 0.3)';
-                      }}
-                    >
-                      <MessageCircle style={{ height: '1rem', width: '1rem' }} />
-                      Show
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <ResponsiveTable
+          columns={[
+            { key: 'client', header: 'Client', isPrimary: true },
+            { key: 'agent', header: 'Agent' },
+            { key: 'date', header: 'Date' },
+            { key: 'messages', header: 'Messages' },
+            { key: 'waitingTime', header: 'Waiting Time' },
+            { key: 'lastMessage', header: 'Last Message' },
+            { key: 'status', header: 'Status' },
+            { key: 'actions', header: 'Actions', sortable: false }
+          ]}
+          data={currentConversations.map(conversation => ({
+            id: conversation.id,
+            client: conversation.client,
+            agent: conversation.agent,
+            date: conversation.date,
+            messages: conversation.messages,
+            waitingTime: conversation.waitingTime,
+            lastMessage: conversation.lastMessage,
+            status: 'Pending',
+            conversation: conversation
+          }))}
+          renderCell={(row, column) => {
+            switch (column.key) {
+              case 'client':
+                return (
+                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <User style={{ height: '1rem', width: '1rem', marginRight: '0.5rem', color: '#6b7280' }} />
+                    {row.client}
+                  </div>
+                );
+              case 'agent':
+                return (
+                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <User style={{ height: '1rem', width: '1rem', marginRight: '0.5rem', color: '#6b7280' }} />
+                    {row.agent}
+                  </div>
+                );
+              case 'date':
+                return (
+                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <Calendar style={{ height: '1rem', width: '1rem', marginRight: '0.5rem', color: '#6b7280' }} />
+                    {row.date}
+                  </div>
+                );
+              case 'messages':
+                return (
+                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <MessageCircle style={{ height: '1rem', width: '1rem', marginRight: '0.5rem', color: '#6b7280' }} />
+                    {row.messages}
+                  </div>
+                );
+              case 'status':
+                return (
+                  <span style={styles.statusBadge}>
+                    <Clock style={{ height: '1rem', width: '1rem', marginRight: '0.25rem' }} />
+                    {row.status}
+                  </span>
+                );
+              case 'actions':
+                return (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleShowConversation(row.conversation);
+                    }}
+                    style={styles.showButton}
+                    onMouseEnter={(e) => {
+                      e.target.style.backgroundColor = styles.showButtonHover.backgroundColor;
+                      e.target.style.borderColor = 'rgba(16, 185, 129, 0.5)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.target.style.backgroundColor = 'rgba(16, 185, 129, 0.1)';
+                      e.target.style.borderColor = 'rgba(16, 185, 129, 0.3)';
+                    }}
+                  >
+                    <MessageCircle style={{ height: '1rem', width: '1rem' }} />
+                    Show
+                  </button>
+                );
+              default:
+                return row[column.key];
+            }
+          }}
+        />
 
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div style={styles.paginationContainer}>
-            <div style={styles.paginationInfo}>
-              Showing {startIndex + 1}-{Math.min(endIndex, filteredConversations.length)} of {filteredConversations.length} conversations
-            </div>
-            <div style={styles.paginationControls}>
-              <button
-                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                disabled={currentPage === 1}
-                style={{
-                  ...styles.paginationButton,
-                  ...(currentPage === 1 ? styles.paginationButtonDisabled : {})
-                }}
-                onMouseEnter={(e) => {
-                  if (currentPage !== 1) {
-                    e.target.style.backgroundColor = styles.paginationButtonHover.backgroundColor;
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (currentPage !== 1) {
-                    e.target.style.backgroundColor = styles.paginationButton.backgroundColor;
-                  }
-                }}
+        <ResponsivePagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          itemsPerPage={itemsPerPage}
+          totalItems={filteredConversations.length}
+          showInfo={true}
+          showNavigation={true}
+        />
+      </div>
+
+      {/* Chat View Modal */}
+      {showChatModal && selectedConversation && (
+        <div style={styles.modalOverlay}>
+          <div style={styles.modalContainer}>
+            <div style={styles.modalHeader}>
+              <h3 style={styles.modalTitle}>
+                Conversation with {selectedConversation.client}
+              </h3>
+              <button 
+                onClick={() => setShowChatModal(false)}
+                style={styles.modalCloseButton}
+                onMouseEnter={(e) => e.target.style.color = styles.modalCloseButtonHover.color}
+                onMouseLeave={(e) => e.target.style.color = styles.modalCloseButton.color}
               >
-                <svg style={{ height: '1rem', width: '1rem' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                </svg>
-              </button>
-              
-              {getPageNumbers().map((page, index) => (
-                <div key={index}>
-                  {page === '...' ? (
-                    <span style={{ ...styles.pageNumber, cursor: 'default', color: '#9ca3af' }}>...</span>
-                  ) : (
-                    <button
-                      onClick={() => setCurrentPage(page)}
-                      style={{
-                        ...styles.pageNumber,
-                        ...(currentPage === page ? styles.paginationButtonActive : styles.paginationButtonInactive)
-                      }}
-                      onMouseEnter={(e) => {
-                        if (currentPage !== page) {
-                          e.target.style.backgroundColor = styles.paginationButtonHover.backgroundColor;
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (currentPage !== page) {
-                          e.target.style.backgroundColor = styles.paginationButtonInactive.backgroundColor;
-                        }
-                      }}
-                    >
-                      {page}
-                    </button>
-                  )}
-                </div>
-              ))}
-              
-              <button
-                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                disabled={currentPage === totalPages}
-                style={{
-                  ...styles.paginationButton,
-                  ...(currentPage === totalPages ? styles.paginationButtonDisabled : {})
-                }}
-                onMouseEnter={(e) => {
-                  if (currentPage !== totalPages) {
-                    e.target.style.backgroundColor = styles.paginationButtonHover.backgroundColor;
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (currentPage !== totalPages) {
-                    e.target.style.backgroundColor = styles.paginationButton.backgroundColor;
-                  }
-                }}
-              >
-                <svg style={{ height: '1rem', width: '1rem' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                <svg style={{ height: '1.5rem', width: '1.5rem' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             </div>
-          </div>
-        )}
-        
-        {/* Chat View Modal */}
-        {showChatModal && selectedConversation && (
-          <div style={styles.modalOverlay}>
-            <div style={styles.modalContainer}>
-              <div style={styles.modalHeader}>
-                <h3 style={styles.modalTitle}>
-                  Conversation with {selectedConversation.client}
-                </h3>
-                <button 
-                  onClick={() => setShowChatModal(false)}
-                  style={styles.modalCloseButton}
-                  onMouseEnter={(e) => e.target.style.color = styles.modalCloseButtonHover.color}
-                  onMouseLeave={(e) => e.target.style.color = styles.modalCloseButton.color}
-                >
-                  <svg style={{ height: '1.5rem', width: '1.5rem' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-              
+            
+            <div style={{
+              display: 'flex',
+              height: '70vh',
+              backgroundColor: '#f0f9ff'
+            }} className="modal-body-mobile">
+              {/* Client Info Panel */}
               <div style={{
-                display: 'flex',
-                height: '70vh',
-                backgroundColor: '#f0f9ff'
-              }}>
-                {/* Client Info Panel */}
-                <div style={{
-                  width: '30%',
-                  borderRight: '1px solid #e5e7eb',
-                  padding: '1rem',
-                  backgroundColor: '#ffffff',
-                  overflowY: 'auto'
+                width: '30%',
+                borderRight: '1px solid #e5e7eb',
+                padding: '1rem',
+                backgroundColor: '#ffffff',
+                overflowY: 'auto'
+              }} className="details-panel-mobile">
+                <h4 style={{
+                  fontSize: '1rem',
+                  fontWeight: '600',
+                  color: '#10b981',
+                  marginBottom: '1rem',
+                  paddingBottom: '0.5rem',
+                  borderBottom: '1px solid #10b981',
+                  textAlign: 'center'
                 }}>
-                  <h4 style={{
-                    fontSize: '1rem',
+                  Conversation Details
+                </h4>
+                
+                <div style={{ marginBottom: '1rem' }}>
+                  <h5 style={{
+                    fontSize: '0.75rem',
                     fontWeight: '600',
                     color: '#10b981',
-                    marginBottom: '1rem',
-                    paddingBottom: '0.5rem',
-                    borderBottom: '1px solid #10b981',
-                    textAlign: 'center'
+                    marginBottom: '0.5rem',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.025em'
                   }}>
-                    Conversation Details
-                  </h4>
-                  
-                  <div style={{ marginBottom: '1rem' }}>
-                    <h5 style={{
-                      fontSize: '0.75rem',
-                      fontWeight: '600',
-                      color: '#10b981',
-                      marginBottom: '0.5rem',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.025em'
-                    }}>
-                      Client Information
-                    </h5>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                      <div>
-                        <div style={{
-                          fontSize: '0.75rem',
-                          color: '#6b7280',
-                          fontWeight: '500'
-                        }}>
-                          Client Name
-                        </div>
-                        <div style={{
-                          fontSize: '0.875rem',
-                          fontWeight: '500',
-                          color: '#111827',
-                          marginTop: '0.125rem'
-                        }}>
-                          {selectedConversation.client}
-                        </div>
+                    Client Information
+                  </h5>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                    <div>
+                      <div style={{
+                        fontSize: '0.75rem',
+                        color: '#6b7280',
+                        fontWeight: '500'
+                      }}>
+                        Client Name
                       </div>
-                      <div>
-                        <div style={{
-                          fontSize: '0.75rem',
-                          color: '#6b7280',
-                          fontWeight: '500'
-                        }}>
-                          Agent
-                        </div>
-                        <div style={{
-                          fontSize: '0.875rem',
-                          fontWeight: '500',
-                          color: '#111827',
-                          marginTop: '0.125rem'
-                        }}>
-                          {selectedConversation.agent}
-                        </div>
-                      </div>
-                      <div>
-                        <div style={{
-                          fontSize: '0.75rem',
-                          color: '#6b7280',
-                          fontWeight: '500'
-                        }}>
-                          Date
-                        </div>
-                        <div style={{
-                          fontSize: '0.875rem',
-                          fontWeight: '500',
-                          color: '#111827',
-                          marginTop: '0.125rem'
-                        }}>
-                          {selectedConversation.date}
-                        </div>
+                      <div style={{
+                        fontSize: '0.875rem',
+                        fontWeight: '500',
+                        color: '#111827',
+                        marginTop: '0.125rem'
+                      }}>
+                        {selectedConversation.client}
                       </div>
                     </div>
-                  </div>
-                  
-                  <div style={{ marginBottom: '1rem' }}>
-                    <h5 style={{
-                      fontSize: '0.75rem',
-                      fontWeight: '600',
-                      color: '#10b981',
-                      marginBottom: '0.5rem',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.025em'
-                    }}>
-                      Conversation Metrics
-                    </h5>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                      <div>
-                        <div style={{
-                          fontSize: '0.75rem',
-                          color: '#6b7280',
-                          fontWeight: '500'
-                        }}>
-                          Messages
-                        </div>
-                        <div style={{
-                          fontSize: '0.875rem',
-                          fontWeight: '500',
-                          color: '#111827',
-                          marginTop: '0.125rem'
-                        }}>
-                          {selectedConversation.messages}
-                        </div>
+                    <div>
+                      <div style={{
+                        fontSize: '0.75rem',
+                        color: '#6b7280',
+                        fontWeight: '500'
+                      }}>
+                        Agent
                       </div>
-                      <div>
-                        <div style={{
-                          fontSize: '0.75rem',
-                          color: '#6b7280',
-                          fontWeight: '500'
-                        }}>
-                          Waiting Time
-                        </div>
-                        <div style={{
-                          fontSize: '0.875rem',
-                          fontWeight: '500',
-                          color: '#111827',
-                          marginTop: '0.125rem'
-                        }}>
-                          {selectedConversation.waitingTime}
-                        </div>
+                      <div style={{
+                        fontSize: '0.875rem',
+                        fontWeight: '500',
+                        color: '#111827',
+                        marginTop: '0.125rem'
+                      }}>
+                        {selectedConversation.agent}
                       </div>
                     </div>
-                  </div>
-                  
-                  <div style={{ marginBottom: '1rem' }}>
-                    <h5 style={{
-                      fontSize: '0.75rem',
-                      fontWeight: '600',
-                      color: '#10b981',
-                      marginBottom: '0.5rem',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.025em'
-                    }}>
-                      Status
-                    </h5>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                      <div>
-                        <div style={{
-                          fontSize: '0.75rem',
-                          color: '#6b7280',
-                          fontWeight: '500'
-                        }}>
-                          Current Status
-                        </div>
-                        <div style={{
-                          fontSize: '0.875rem',
-                          fontWeight: '500',
-                          color: '#111827',
-                          marginTop: '0.125rem'
-                        }}>
-                          <span style={styles.statusBadge}>
-                            <Clock style={{ height: '1rem', width: '1rem', marginRight: '0.25rem' }} />
-                            Pending
-                          </span>
-                        </div>
+                    <div>
+                      <div style={{
+                        fontSize: '0.75rem',
+                        color: '#6b7280',
+                        fontWeight: '500'
+                      }}>
+                        Date
                       </div>
-                      <div>
-                        <div style={{
-                          fontSize: '0.75rem',
-                          color: '#6b7280',
-                          fontWeight: '500'
-                        }}>
-                          Last Message
-                        </div>
-                        <div style={{
-                          fontSize: '0.875rem',
-                          fontWeight: '500',
-                          color: '#111827',
-                          marginTop: '0.125rem'
-                        }}>
-                          {selectedConversation.lastMessage}
-                        </div>
+                      <div style={{
+                        fontSize: '0.875rem',
+                        fontWeight: '500',
+                        color: '#111827',
+                        marginTop: '0.125rem'
+                      }}>
+                        {selectedConversation.date}
                       </div>
                     </div>
                   </div>
                 </div>
                 
-                {/* Chat Panel */}
-                <div style={{
-                  flex: 1,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  backgroundColor: '#f0f9ff'
-                }}>
-                  {/* Chat Header */}
-                  <div style={{
-                    padding: '1rem',
-                    borderBottom: '1px solid #e5e7eb',
-                    backgroundColor: '#ffffff'
+                <div style={{ marginBottom: '1rem' }}>
+                  <h5 style={{
+                    fontSize: '0.75rem',
+                    fontWeight: '600',
+                    color: '#10b981',
+                    marginBottom: '0.5rem',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.025em'
                   }}>
-                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                    Conversation Metrics
+                  </h5>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                    <div>
                       <div style={{
-                        flexShrink: '0',
-                        height: '2.5rem',
-                        width: '2.5rem',
-                        borderRadius: '9999px',
-                        backgroundColor: '#d1fae5',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
+                        fontSize: '0.75rem',
+                        color: '#6b7280',
+                        fontWeight: '500'
                       }}>
-                        <span style={{
-                          color: '#065f46',
-                          fontWeight: '600'
-                        }}>
-                          {selectedConversation.client.charAt(0)}
+                        Messages
+                      </div>
+                      <div style={{
+                        fontSize: '0.875rem',
+                        fontWeight: '500',
+                        color: '#111827',
+                        marginTop: '0.125rem'
+                      }}>
+                        {selectedConversation.messages}
+                      </div>
+                    </div>
+                    <div>
+                      <div style={{
+                        fontSize: '0.75rem',
+                        color: '#6b7280',
+                        fontWeight: '500'
+                      }}>
+                        Waiting Time
+                      </div>
+                      <div style={{
+                        fontSize: '0.875rem',
+                        fontWeight: '500',
+                        color: '#111827',
+                        marginTop: '0.125rem'
+                      }}>
+                        {selectedConversation.waitingTime}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div style={{ marginBottom: '1rem' }}>
+                  <h5 style={{
+                    fontSize: '0.75rem',
+                    fontWeight: '600',
+                    color: '#10b981',
+                    marginBottom: '0.5rem',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.025em'
+                  }}>
+                    Status
+                  </h5>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                    <div>
+                      <div style={{
+                        fontSize: '0.75rem',
+                        color: '#6b7280',
+                        fontWeight: '500'
+                      }}>
+                        Current Status
+                      </div>
+                      <div style={{
+                        fontSize: '0.875rem',
+                        fontWeight: '500',
+                        color: '#111827',
+                        marginTop: '0.125rem'
+                      }}>
+                        <span style={styles.statusBadge}>
+                          <Clock style={{ height: '1rem', width: '1rem', marginRight: '0.25rem' }} />
+                          Pending
                         </span>
                       </div>
-                      <div style={{ marginLeft: '1rem' }}>
-                        <h3 style={{
-                          fontSize: '1rem',
-                          fontWeight: '600',
-                          color: '#111827'
-                        }}>
-                          {selectedConversation.client}
-                        </h3>
-                        <p style={{
-                          fontSize: '0.875rem',
-                          color: '#6b7280'
-                        }}>
-                          Pending Conversation
-                        </p>
+                    </div>
+                    <div>
+                      <div style={{
+                        fontSize: '0.75rem',
+                        color: '#6b7280',
+                        fontWeight: '500'
+                      }}>
+                        Last Message
+                      </div>
+                      <div style={{
+                        fontSize: '0.875rem',
+                        fontWeight: '500',
+                        color: '#111827',
+                        marginTop: '0.125rem'
+                      }}>
+                        {selectedConversation.lastMessage}
                       </div>
                     </div>
                   </div>
-                  
-                  {/* Messages Container */}
-                  <div style={{
-                    flex: 1,
-                    overflowY: 'auto',
-                    padding: '1rem',
-                    backgroundColor: '#f0f9ff'
-                  }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                      {/* Sample messages - in a real app, these would come from the conversation data */}
-                      <div style={{
-                        display: 'flex',
-                        justifyContent: 'flex-start'
+                </div>
+              </div>
+              
+              {/* Chat Panel */}
+              <div style={{
+                flex: 1,
+                display: 'flex',
+                flexDirection: 'column',
+                backgroundColor: '#f0f9ff',
+                overflowY: 'auto'
+              }} className="chat-panel-mobile">
+                {/* Chat Header */}
+                <div style={{
+                  padding: '1rem',
+                  borderBottom: '1px solid #e5e7eb',
+                  backgroundColor: '#ffffff'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <div style={{
+                      flexShrink: '0',
+                      height: '2.5rem',
+                      width: '2.5rem',
+                      borderRadius: '9999px',
+                      backgroundColor: '#d1fae5',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}>
+                      <span style={{
+                        color: '#065f46',
+                        fontWeight: '600'
                       }}>
-                        <div style={{
-                          maxWidth: '70%',
-                          paddingLeft: '1rem',
-                          paddingRight: '1rem',
-                          paddingTop: '0.75rem',
-                          paddingBottom: '0.75rem',
-                          borderRadius: '1rem',
-                          boxShadow: '0 1px 2px rgba(0, 0, 0, 0.1)',
-                          backgroundColor: '#ffffff',
-                          color: '#1f2937',
-                          borderBottomLeftRadius: '0.25rem'
-                        }}>
-                          <p style={{ marginBottom: '0.25rem' }}>Hello, I have a question about my order.</p>
-                          <p style={{
-                            fontSize: '0.75rem',
-                            color: '#9ca3af',
-                            textAlign: 'left'
-                          }}>
-                            10:30 AM
-                          </p>
-                        </div>
-                      </div>
-                      
-                      <div style={{
-                        display: 'flex',
-                        justifyContent: 'flex-end'
+                        {selectedConversation.client.charAt(0)}
+                      </span>
+                    </div>
+                    <div style={{ marginLeft: '1rem' }}>
+                      <h3 style={{
+                        fontSize: '1rem',
+                        fontWeight: '600',
+                        color: '#111827'
                       }}>
-                        <div style={{
-                          maxWidth: '70%',
-                          paddingLeft: '1rem',
-                          paddingRight: '1rem',
-                          paddingTop: '0.75rem',
-                          paddingBottom: '0.75rem',
-                          borderRadius: '1rem',
-                          boxShadow: '0 1px 2px rgba(0, 0, 0, 0.1)',
-                          backgroundColor: '#10b981',
-                          color: '#ffffff',
-                          borderBottomRightRadius: '0.25rem'
-                        }}>
-                          <p style={{ marginBottom: '0.25rem' }}>Hi there! I'd be happy to help you with your order. Can you please provide your order number?</p>
-                          <p style={{
-                            fontSize: '0.75rem',
-                            color: '#d1fae5',
-                            textAlign: 'right'
-                          }}>
-                            10:32 AM
-                          </p>
-                        </div>
-                      </div>
-                      
-                      <div style={{
-                        display: 'flex',
-                        justifyContent: 'flex-start'
+                        {selectedConversation.client}
+                      </h3>
+                      <p style={{
+                        fontSize: '0.875rem',
+                        color: '#6b7280'
                       }}>
-                        <div style={{
-                          maxWidth: '70%',
-                          paddingLeft: '1rem',
-                          paddingRight: '1rem',
-                          paddingTop: '0.75rem',
-                          paddingBottom: '0.75rem',
-                          borderRadius: '1rem',
-                          boxShadow: '0 1px 2px rgba(0, 0, 0, 0.1)',
-                          backgroundColor: '#ffffff',
-                          color: '#1f2937',
-                          borderBottomLeftRadius: '0.25rem'
-                        }}>
-                          <p style={{ marginBottom: '0.25rem' }}>Sure, it's #ORD-789456. I'm wondering about the delivery status.</p>
-                          <p style={{
-                            fontSize: '0.75rem',
-                            color: '#9ca3af',
-                            textAlign: 'left'
-                          }}>
-                            10:35 AM
-                          </p>
-                        </div>
-                      </div>
-                      
-                      <div style={{
-                        display: 'flex',
-                        justifyContent: 'flex-end'
-                      }}>
-                        <div style={{
-                          maxWidth: '70%',
-                          paddingLeft: '1rem',
-                          paddingRight: '1rem',
-                          paddingTop: '0.75rem',
-                          paddingBottom: '0.75rem',
-                          borderRadius: '1rem',
-                          boxShadow: '0 1px 2px rgba(0, 0, 0, 0.1)',
-                          backgroundColor: '#10b981',
-                          color: '#ffffff',
-                          borderBottomRightRadius: '0.25rem'
-                        }}>
-                          <p style={{ marginBottom: '0.25rem' }}>
-                            Thank you for providing that. I can see your order is currently being processed 
-                            and is expected to be shipped within 2 business days. Would you like me to provide 
-                            any additional information?
-                          </p>
-                          <p style={{
-                            fontSize: '0.75rem',
-                            color: '#d1fae5',
-                            textAlign: 'right'
-                          }}>
-                            10:38 AM
-                          </p>
-                        </div>
-                      </div>
-                      
-                      <div style={{
-                        display: 'flex',
-                        justifyContent: 'flex-start'
-                      }}>
-                        <div style={{
-                          maxWidth: '70%',
-                          paddingLeft: '1rem',
-                          paddingRight: '1rem',
-                          paddingTop: '0.75rem',
-                          paddingBottom: '0.75rem',
-                          borderRadius: '1rem',
-                          boxShadow: '0 1px 2px rgba(0, 0, 0, 0.1)',
-                          backgroundColor: '#ffffff',
-                          color: '#1f2937',
-                          borderBottomLeftRadius: '0.25rem'
-                        }}>
-                          <p style={{ marginBottom: '0.25rem' }}>That's helpful, thank you. I'll wait for the shipping confirmation.</p>
-                          <p style={{
-                            fontSize: '0.75rem',
-                            color: '#9ca3af',
-                            textAlign: 'left'
-                          }}>
-                            10:40 AM
-                          </p>
-                        </div>
-                      </div>
+                        Pending Conversation
+                      </p>
                     </div>
                   </div>
-                  
-                  {/* Status Banner */}
-                  <div style={{
-                    padding: '0.75rem',
-                    backgroundColor: '#fffbeb',
-                    color: '#92400e',
-                    textAlign: 'center',
-                    fontWeight: '500',
-                    borderTop: '1px solid #e5e7eb'
-                  }}>
-                    This conversation is currently pending
+                </div>
+                
+                {/* Messages Container */}
+                <div style={{
+                  flex: 1,
+                  overflowY: 'auto',
+                  padding: '1rem',
+                  backgroundColor: '#f0f9ff'
+                }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    {selectedConversation.conversationMessages && selectedConversation.conversationMessages.map((message) => (
+                      <div 
+                        key={message.id} 
+                        style={{
+                          display: 'flex',
+                          justifyContent: message.sender === 'agent' ? 'flex-end' : 'flex-start'
+                        }}
+                      >
+                        <div style={{
+                          maxWidth: '70%',
+                          paddingLeft: '1rem',
+                          paddingRight: '1rem',
+                          paddingTop: '0.75rem',
+                          paddingBottom: '0.75rem',
+                          borderRadius: '1rem',
+                          boxShadow: '0 1px 2px rgba(0, 0, 0, 0.1)',
+                          backgroundColor: message.sender === 'agent' ? '#10b981' : '#ffffff',
+                          color: message.sender === 'agent' ? '#ffffff' : '#1f2937',
+                          borderBottomLeftRadius: message.sender === 'client' ? '0.25rem' : undefined,
+                          borderBottomRightRadius: message.sender === 'agent' ? '0.25rem' : undefined
+                        }}>
+                          <p style={{ marginBottom: '0.25rem' }}>{message.content}</p>
+                          <p style={{
+                            fontSize: '0.75rem',
+                            color: message.sender === 'agent' ? '#d1fae5' : '#9ca3af',
+                            textAlign: message.sender === 'agent' ? 'right' : 'left'
+                          }}>
+                            {message.timestamp}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
                   </div>
+                </div>
+                
+                {/* Status Banner */}
+                <div style={{
+                  padding: '0.75rem',
+                  backgroundColor: '#fffbeb',
+                  color: '#92400e',
+                  textAlign: 'center',
+                  fontWeight: '500',
+                  borderTop: '1px solid #e5e7eb'
+                }}>
+                  This conversation is currently pending
                 </div>
               </div>
             </div>
           </div>
-        )}
-
-      </div>
+        </div>
+      )}
     </div>
   )
 }

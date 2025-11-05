@@ -1,6 +1,8 @@
 import { useState, useMemo } from 'react'
 import { Edit, User, Clock, Trash2, Plus, Users, Check, Search, ChevronLeft, ChevronRight } from 'lucide-react'
 import { showToast } from '../utils/toast'
+import ResponsiveTable from '../components/ResponsiveTable'
+import ResponsivePagination from '../components/ResponsivePagination'
 
 const AssignShiftsPage = () => {
   // Sample data for shifts
@@ -222,44 +224,6 @@ const AssignShiftsPage = () => {
       overflow: 'hidden',
       border: '1px solid #e5e7eb'
     },
-    table: {
-      minWidth: '100%',
-      borderCollapse: 'collapse'
-    },
-    tableHeader: {
-      backgroundColor: '#f9fafb'
-    },
-    tableHeaderCell: {
-      paddingLeft: '1rem',
-      paddingRight: '1rem',
-      paddingTop: '0.75rem',
-      paddingBottom: '0.75rem',
-      textAlign: 'left',
-      fontSize: '0.75rem',
-      fontWeight: '500',
-      color: '#6b7280',
-      textTransform: 'uppercase',
-      letterSpacing: '0.05em'
-    },
-    tableBody: {
-      backgroundColor: '#ffffff'
-    },
-    tableRow: {
-      backgroundColor: '#ffffff'
-    },
-    tableCell: {
-      paddingLeft: '1rem',
-      paddingRight: '1rem',
-      paddingTop: '0.75rem',
-      paddingBottom: '0.75rem',
-      whiteSpace: 'nowrap',
-      fontSize: '0.875rem',
-      color: '#111827',
-      borderBottom: '1px solid #e5e7eb'
-    },
-    tableCellSecondary: {
-      color: '#6b7280'
-    },
     userListCell: {
       position: 'relative'
     },
@@ -306,15 +270,6 @@ const AssignShiftsPage = () => {
       padding: '0.25rem 0',
       fontSize: '0.8125rem',
       color: '#6b7280'
-    },
-    actionCell: {
-      paddingLeft: '1rem',
-      paddingRight: '1rem',
-      paddingTop: '0.75rem',
-      paddingBottom: '0.75rem',
-      whiteSpace: 'nowrap',
-      fontSize: '0.875rem',
-      borderBottom: '1px solid #e5e7eb'
     },
     actionButton: {
       backgroundColor: 'transparent',
@@ -539,65 +494,6 @@ const AssignShiftsPage = () => {
     saveButtonHover: {
       backgroundColor: '#059669'
     },
-    paginationContainer: {
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      padding: '1rem',
-      borderTop: '1px solid #e5e7eb'
-    },
-    paginationInfo: {
-      fontSize: '0.8125rem',
-      color: '#6b7280'
-    },
-    paginationControls: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: '0.5rem'
-    },
-    paginationButton: {
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      width: '2rem',
-      height: '2rem',
-      borderRadius: '0.375rem',
-      border: '1px solid #d1d5db',
-      backgroundColor: '#ffffff',
-      color: '#374151',
-      cursor: 'pointer',
-      fontSize: '0.875rem'
-    },
-    paginationButtonHover: {
-      backgroundColor: '#f9fafb'
-    },
-    paginationButtonDisabled: {
-      opacity: '0.5',
-      cursor: 'not-allowed'
-    },
-    paginationButtonActive: {
-      backgroundColor: '#10b981',
-      color: '#ffffff',
-      borderColor: '#10b981'
-    },
-    paginationButtonInactive: {
-      backgroundColor: '#ffffff',
-      color: '#10b981',
-      borderColor: '#10b981',
-      borderWidth: '1px',
-      borderStyle: 'solid'
-    },
-    pageNumber: {
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      width: '2rem',
-      height: '2rem',
-      borderRadius: '0.375rem',
-      cursor: 'pointer',
-      fontSize: '0.875rem',
-      border: '1px solid transparent'
-    },
     userModalOverlay: {
       position: 'fixed',
       inset: '0',
@@ -683,15 +579,6 @@ const AssignShiftsPage = () => {
         padding: 0.75rem;
       }
       
-      .tableContainer {
-        overflow-x: auto;
-      }
-      
-      .modalContainer {
-        margin: 1rem;
-        max-width: calc(100% - 2rem);
-      }
-      
       .pageTitle {
         font-size: 1.125rem;
       }
@@ -703,12 +590,6 @@ const AssignShiftsPage = () => {
       
       .userGrid {
         gridTemplateColumns: repeat(1, minmax(0, 1fr));
-      }
-      
-      .paginationContainer {
-        flex-direction: column;
-        gap: 1rem;
-        align-items: stretch;
       }
     }
     
@@ -722,18 +603,6 @@ const AssignShiftsPage = () => {
         align-items: flex-start;
         gap: 1rem;
         padding: 0.75rem 0;
-      }
-      
-      .tableCell {
-        padding-left: 1rem;
-        padding-right: 1rem;
-        font-size: 0.75rem;
-      }
-      
-      .tableHeaderCell {
-        padding-left: 1rem;
-        padding-right: 1rem;
-        font-size: 0.625rem;
       }
       
       .addButton {
@@ -775,42 +644,6 @@ const AssignShiftsPage = () => {
     setCurrentPage(1)
   }, [searchTerm])
 
-  // Generate page numbers to display
-  const getPageNumbers = () => {
-    const pages = []
-    const maxVisiblePages = 5
-    
-    if (totalPages <= maxVisiblePages) {
-      for (let i = 1; i <= totalPages; i++) {
-        pages.push(i)
-      }
-    } else {
-      if (currentPage <= 3) {
-        for (let i = 1; i <= 4; i++) {
-          pages.push(i)
-        }
-        pages.push('...')
-        pages.push(totalPages)
-      } else if (currentPage >= totalPages - 2) {
-        pages.push(1)
-        pages.push('...')
-        for (let i = totalPages - 3; i <= totalPages; i++) {
-          pages.push(i)
-        }
-      } else {
-        pages.push(1)
-        pages.push('...')
-        for (let i = currentPage - 1; i <= currentPage + 1; i++) {
-          pages.push(i)
-        }
-        pages.push('...')
-        pages.push(totalPages)
-      }
-    }
-    
-    return pages
-  }
-
   return (
     <div style={styles.page}>
       <style>{mediaStyles}</style>
@@ -848,47 +681,58 @@ const AssignShiftsPage = () => {
       </div>
 
       <div style={styles.tableContainer}>
-        <table style={styles.table}>
-          <thead style={styles.tableHeader}>
-            <tr>
-              <th style={styles.tableHeaderCell}>Shift Name</th>
-              <th style={styles.tableHeaderCell}>Time Range</th>
-              <th style={styles.tableHeaderCell}>Assigned Users</th>
-              <th style={styles.tableHeaderCell}>Date</th>
-              <th style={styles.tableHeaderCell}>Actions</th>
-            </tr>
-          </thead>
-          <tbody style={styles.tableBody}>
-            {currentAssignments.map((assignment) => {
-              const shift = getShiftDetails(assignment.shiftId)
-              return (
-                <tr key={assignment.id} style={styles.tableRow}>
-                  <td style={{ ...styles.tableCell, fontWeight: '500' }}>
-                    <div style={{ display: 'flex', alignItems: 'center' }}>
-                      <Clock style={{ height: '1rem', width: '1rem', marginRight: '0.5rem', color: '#6b7280' }} />
-                      {shift.name}
-                    </div>
-                  </td>
-                  <td style={{ ...styles.tableCell, ...styles.tableCellSecondary }}>
-                    {shift.startTime} - {shift.endTime}
-                  </td>
-                  <td style={{ ...styles.tableCell, ...styles.userListCell }}>
+        <ResponsiveTable
+          columns={[
+            { key: 'shiftName', header: 'Shift Name', isPrimary: true },
+            { key: 'timeRange', header: 'Time Range' },
+            { key: 'assignedUsers', header: 'Assigned Users' },
+            { key: 'date', header: 'Date' },
+            { key: 'actions', header: 'Actions', sortable: false }
+          ]}
+          data={currentAssignments.map(assignment => {
+            const shift = getShiftDetails(assignment.shiftId)
+            return {
+              id: assignment.id,
+              shiftName: shift.name,
+              timeRange: `${shift.startTime} - ${shift.endTime}`,
+              assignedUsers: assignment.userIds.length,
+              date: assignment.date,
+              assignment: assignment,
+              userIds: assignment.userIds
+            }
+          })}
+          renderCell={(row, column) => {
+            switch (column.key) {
+              case 'shiftName':
+                return (
+                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <Clock style={{ height: '1rem', width: '1rem', marginRight: '0.5rem', color: '#6b7280' }} />
+                    {row.shiftName}
+                  </div>
+                );
+              case 'assignedUsers':
+                return (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleUserListClick(row.userIds);
+                    }}
+                    style={styles.userListButton}
+                    onMouseEnter={(e) => e.target.style.backgroundColor = styles.userListButtonHover.backgroundColor}
+                    onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
+                  >
+                    <Users style={{ height: '1rem', width: '1rem' }} />
+                    {row.assignedUsers} users
+                  </button>
+                );
+              case 'actions':
+                return (
+                  <div>
                     <button
-                      onClick={() => handleUserListClick(assignment.userIds)}
-                      style={styles.userListButton}
-                      onMouseEnter={(e) => e.target.style.backgroundColor = styles.userListButtonHover.backgroundColor}
-                      onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
-                    >
-                      <Users style={{ height: '1rem', width: '1rem' }} />
-                      {assignment.userIds.length} users
-                    </button>
-                  </td>
-                  <td style={{ ...styles.tableCell, ...styles.tableCellSecondary }}>
-                    {assignment.date}
-                  </td>
-                  <td style={styles.actionCell}>
-                    <button
-                      onClick={() => handleEditAssignment(assignment)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEditAssignment(row.assignment);
+                      }}
                       style={styles.actionButton}
                       title="Edit Assignment"
                       onMouseEnter={(e) => e.target.style.backgroundColor = styles.actionButtonHover.backgroundColor}
@@ -897,7 +741,10 @@ const AssignShiftsPage = () => {
                       <Edit style={{ height: '1rem', width: '1rem' }} />
                     </button>
                     <button
-                      onClick={() => handleDeleteAssignment(assignment.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteAssignment(row.assignment.id);
+                      }}
                       style={{ ...styles.actionButton, ...styles.actionButtonDanger }}
                       title="Delete Assignment"
                       onMouseEnter={(e) => e.target.style.backgroundColor = styles.actionButtonDangerHover.backgroundColor}
@@ -905,92 +752,23 @@ const AssignShiftsPage = () => {
                     >
                       <Trash2 style={{ height: '1rem', width: '1rem' }} />
                     </button>
-                  </td>
-                </tr>
-              )
-            })}
-          </tbody>
-        </table>
+                  </div>
+                );
+              default:
+                return row[column.key];
+            }
+          }}
+        />
 
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div style={styles.paginationContainer}>
-            <div style={styles.paginationInfo}>
-              Showing {startIndex + 1}-{Math.min(endIndex, filteredAssignments.length)} of {filteredAssignments.length} assignments
-            </div>
-            <div style={styles.paginationControls}>
-              <button
-                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                disabled={currentPage === 1}
-                style={{
-                  ...styles.paginationButton,
-                  ...(currentPage === 1 ? styles.paginationButtonDisabled : {})
-                }}
-                onMouseEnter={(e) => {
-                  if (currentPage !== 1) {
-                    e.target.style.backgroundColor = styles.paginationButtonHover.backgroundColor;
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (currentPage !== 1) {
-                    e.target.style.backgroundColor = styles.paginationButton.backgroundColor;
-                  }
-                }}
-              >
-                <ChevronLeft style={{ height: '1rem', width: '1rem' }} />
-              </button>
-              
-              {getPageNumbers().map((page, index) => (
-                <div key={index}>
-                  {page === '...' ? (
-                    <span style={{ ...styles.pageNumber, cursor: 'default', color: '#9ca3af' }}>...</span>
-                  ) : (
-                    <button
-                      onClick={() => setCurrentPage(page)}
-                      style={{
-                        ...styles.pageNumber,
-                        ...(currentPage === page ? styles.paginationButtonActive : styles.paginationButtonInactive)
-                      }}
-                      onMouseEnter={(e) => {
-                        if (currentPage !== page) {
-                          e.target.style.backgroundColor = styles.paginationButtonHover.backgroundColor;
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (currentPage !== page) {
-                          e.target.style.backgroundColor = styles.paginationButtonInactive.backgroundColor;
-                        }
-                      }}
-                    >
-                      {page}
-                    </button>
-                  )}
-                </div>
-              ))}
-              
-              <button
-                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                disabled={currentPage === totalPages}
-                style={{
-                  ...styles.paginationButton,
-                  ...(currentPage === totalPages ? styles.paginationButtonDisabled : {})
-                }}
-                onMouseEnter={(e) => {
-                  if (currentPage !== totalPages) {
-                    e.target.style.backgroundColor = styles.paginationButtonHover.backgroundColor;
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (currentPage !== totalPages) {
-                    e.target.style.backgroundColor = styles.paginationButton.backgroundColor;
-                  }
-                }}
-              >
-                <ChevronRight style={{ height: '1rem', width: '1rem' }} />
-              </button>
-            </div>
-          </div>
-        )}
+        <ResponsivePagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          itemsPerPage={itemsPerPage}
+          totalItems={filteredAssignments.length}
+          showInfo={true}
+          showNavigation={true}
+        />
       </div>
 
       {/* Modal */}

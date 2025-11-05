@@ -22,7 +22,9 @@ import {
   Key,
   UserCheck,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  Menu,
+  X
 } from 'lucide-react'
 import NotificationsCenter from '../components/NotificationsCenter'
 import { useUser } from '../context/UserContext'
@@ -35,6 +37,8 @@ const DashboardLayout = () => {
     shifts: true
   })
   const [showUserDropdown, setShowUserDropdown] = useState(false)
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+  const [windowWidth, setWindowWidth] = useState(window.innerWidth)
   const { currentUser, notifications } = useUser()
   const navigate = useNavigate()
   const location = useLocation()
@@ -43,6 +47,43 @@ const DashboardLayout = () => {
     // In a real app, you would clear user session
     navigate('/')
   }
+
+  // Toggle sidebar visibility on mobile
+  const toggleSidebar = () => {
+    setIsSidebarOpen(!isSidebarOpen)
+  }
+
+  // Track window width for responsive behavior
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowWidth(window.innerWidth)
+      // Close sidebar when window is resized to larger than 1188px
+      if (window.innerWidth >= 1188 && isSidebarOpen) {
+        setIsSidebarOpen(false)
+      }
+    }
+
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [isSidebarOpen])
+
+  // Close sidebar when clicking outside on mobile
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      const sidebar = document.querySelector('.mobile-sidebar')
+      const menuButton = document.querySelector('.mobile-menu-button')
+      
+      if (windowWidth < 1188 && isSidebarOpen && sidebar && !sidebar.contains(event.target) && 
+          menuButton && !menuButton.contains(event.target)) {
+        setIsSidebarOpen(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [isSidebarOpen, windowWidth])
 
   // Toggle expanded menu
   const toggleMenu = (menu) => {
@@ -421,13 +462,85 @@ const DashboardLayout = () => {
       scrollbar-width: thin;
       scrollbar-color: #a7f3d0 #f3f4f6;
     }
+    
+    /* Smooth glide transition for mobile sidebar */
+    .mobile-sidebar {
+      transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+    
+    .mobile-sidebar.open {
+      transform: translateX(0);
+    }
+    
+    @media (max-width: 1187px) {
+      .mobile-sidebar {
+        transform: translateX(-100%);
+      }
+      
+      .mobile-sidebar.open {
+        transform: translateX(0);
+      }
+    }
   `
 
   return (
     <div style={styles.container}>
       <style>{scrollbarStyles}</style>
-      {/* Sidebar */}
-      <div style={styles.sidebar}>
+      
+      {/* Sidebar overlay for mobile */}
+      <div 
+        className={`sidebar-overlay ${isSidebarOpen ? 'open' : ''}`}
+        onClick={toggleSidebar}
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          zIndex: 999,
+          display: isSidebarOpen ? 'block' : 'none',
+          opacity: isSidebarOpen ? 1 : 0,
+          transition: 'opacity 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)'
+        }}
+      ></div>
+      
+      {/* Sidebar - hide completely on large screens unless toggled */}
+      <div 
+        className={`mobile-sidebar ${isSidebarOpen ? 'open' : ''}`}
+        style={{
+          ...styles.sidebar,
+          position: windowWidth >= 1188 ? 'relative' : 'fixed',
+          top: windowWidth >= 1188 ? '0' : '1rem',
+          left: windowWidth >= 1188 ? '0' : '1rem',
+          height: windowWidth >= 1188 ? 'calc(100vh - 2rem)' : 'calc(100vh - 2rem)',
+          width: '16rem',
+          zIndex: 1000,
+          transform: windowWidth >= 1188 ? 'translateX(0)' : (isSidebarOpen ? 'translateX(0)' : 'translateX(-100%)'),
+          transition: 'transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+          margin: windowWidth >= 1188 ? '0 0 0 0.5rem' : '0',
+          borderRadius: '0.75rem',
+          display: windowWidth >= 1188 ? 'flex' : (isSidebarOpen ? 'flex' : 'none')
+        }}
+      >
+        {/* Close button for mobile sidebar - only show on small screens */}
+        {windowWidth < 1188 && (
+          <div style={{ 
+            position: 'absolute', 
+            top: '1rem', 
+            right: '1rem', 
+            zIndex: 1001,
+            backgroundColor: '#ffffff',
+            border: '1px solid #e5e7eb',
+            borderRadius: '0.5rem',
+            padding: '0.25rem',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease-in-out'
+          }} onClick={toggleSidebar}>
+            <X style={{ height: '1.25rem', width: '1.25rem', color: '#374151' }} />
+          </div>
+        )}
+        
         <div style={styles.sidebarHeader}>
           <div style={styles.logoContainer}>
             <MessageCircle style={styles.logo} />
@@ -657,8 +770,7 @@ const DashboardLayout = () => {
                 <span>Shift Log</span>
               </a>
             </div>
-          )
-        }
+          )}
         
         <div
           style={{
@@ -787,18 +899,28 @@ const DashboardLayout = () => {
       </div>
 
       {/* Main content */}
-      <div style={styles.main}>
+      <div style={{...styles.main, marginLeft: windowWidth >= 1188 ? '1rem' : '0'}}>
         {/* Top navigation */}
         <header style={styles.header}>
           <div style={styles.headerContent}>
-            <div style={styles.headerTitle}>
-              {location.pathname.includes('/dashboard/admin') ? 'Staff Management' : 
-               location.pathname.includes('/dashboard/shifts/manage') ? 'Manage Shifts' : 
-               location.pathname.includes('/dashboard/shifts/assign') ? 'Assign Shifts' : 
-               location.pathname.includes('/dashboard/shifts/log') ? 'Shift Log' : 
-               location.pathname.includes('/dashboard/shifts') ? 'Shift Management' : 
-               location.pathname.includes('/dashboard/clients') ? 'Client Management' : 
-               'Dashboard'}
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              {/* Menu button only shown on small screens */}
+              {windowWidth < 1188 && (
+                <button 
+                  className="mobile-menu-button"
+                  style={{
+                    marginRight: '1rem',
+                    backgroundColor: 'transparent',
+                    border: 'none',
+                    cursor: 'pointer',
+                    transition: 'all 5.2s ease-in-out'
+                  }}
+                  onClick={toggleSidebar}
+                >
+                  <Menu style={{ height: '1.5rem', width: '1.5rem', color: '#374151' }} />
+                </button>
+              )}
+              <h1 style={styles.headerTitle}>W-CS</h1>
             </div>
             <div style={styles.headerActions}>
               <button
@@ -823,12 +945,13 @@ const DashboardLayout = () => {
                   <User style={styles.userAvatarIcon} />
                 </div>
                 <span 
+                  className="user-name-mobile"
                   style={styles.userName}
                   onClick={() => setShowUserDropdown(!showUserDropdown)}
                 >
                   {currentUser.name}
                 </span>
-                
+                  
                 {showUserDropdown && (
                   <div 
                     style={styles.userDropdown}
@@ -892,8 +1015,10 @@ const DashboardLayout = () => {
                 onMouseEnter={(e) => e.target.style.color = styles.logoutButtonHover.color}
                 onMouseLeave={(e) => e.target.style.color = styles.logoutButton.color}
               >
-                <LogOut style={styles.logoutIcon} />
-                Logout
+                <LogOut style={{...styles.logoutIcon, ...{ marginLeft: 0 }}} />
+                <span className="logout-label-mobile" style={{ marginLeft: '0.25rem' }}>
+                  Logout
+                </span>
               </button>
             </div>
           </div>

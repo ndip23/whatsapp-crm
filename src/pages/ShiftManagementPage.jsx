@@ -1,6 +1,8 @@
 import { useState, useMemo } from 'react'
-import { Edit, Trash2, Plus, Search, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Edit, Trash2, Plus, Search } from 'lucide-react'
 import { showToast } from '../utils/toast'
+import ResponsiveTable from '../components/ResponsiveTable'
+import ResponsivePagination from '../components/ResponsivePagination'
 
 const ShiftManagementPage = () => {
   const [shifts, setShifts] = useState([
@@ -88,42 +90,6 @@ const ShiftManagementPage = () => {
     setCurrentPage(1)
   }, [searchTerm])
 
-  // Generate page numbers to display
-  const getPageNumbers = () => {
-    const pages = []
-    const maxVisiblePages = 5
-    
-    if (totalPages <= maxVisiblePages) {
-      for (let i = 1; i <= totalPages; i++) {
-        pages.push(i)
-      }
-    } else {
-      if (currentPage <= 3) {
-        for (let i = 1; i <= 4; i++) {
-          pages.push(i)
-        }
-        pages.push('...')
-        pages.push(totalPages)
-      } else if (currentPage >= totalPages - 2) {
-        pages.push(1)
-        pages.push('...')
-        for (let i = totalPages - 3; i <= totalPages; i++) {
-          pages.push(i)
-        }
-      } else {
-        pages.push(1)
-        pages.push('...')
-        for (let i = currentPage - 1; i <= currentPage + 1; i++) {
-          pages.push(i)
-        }
-        pages.push('...')
-        pages.push(totalPages)
-      }
-    }
-    
-    return pages
-  }
-
   const styles = {
     page: {
       padding: '1rem',
@@ -199,52 +165,8 @@ const ShiftManagementPage = () => {
       overflow: 'hidden',
       border: '1px solid #e5e7eb'
     },
-    table: {
-      minWidth: '100%',
-      borderCollapse: 'collapse'
-    },
-    tableHeader: {
-      backgroundColor: '#f9fafb'
-    },
-    tableHeaderCell: {
-      paddingLeft: '1rem',
-      paddingRight: '1rem',
-      paddingTop: '0.75rem',
-      paddingBottom: '0.75rem',
-      textAlign: 'left',
-      fontSize: '0.75rem',
-      fontWeight: '500',
-      color: '#6b7280',
-      textTransform: 'uppercase',
-      letterSpacing: '0.05em'
-    },
-    tableBody: {
-      backgroundColor: '#ffffff'
-    },
-    tableRow: {
-      backgroundColor: '#ffffff'
-    },
-    tableCell: {
-      paddingLeft: '1rem',
-      paddingRight: '1rem',
-      paddingTop: '0.75rem',
-      paddingBottom: '0.75rem',
-      whiteSpace: 'nowrap',
-      fontSize: '0.875rem',
-      color: '#111827',
-      borderBottom: '1px solid #e5e7eb'
-    },
     tableCellSecondary: {
       color: '#6b7280'
-    },
-    actionCell: {
-      paddingLeft: '1rem',
-      paddingRight: '1rem',
-      paddingTop: '0.75rem',
-      paddingBottom: '0.75rem',
-      whiteSpace: 'nowrap',
-      fontSize: '0.875rem',
-      borderBottom: '1px solid #e5e7eb'
     },
     actionButton: {
       backgroundColor: 'transparent',
@@ -381,65 +303,6 @@ const ShiftManagementPage = () => {
     },
     saveButtonHover: {
       backgroundColor: '#059669'
-    },
-    paginationContainer: {
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      padding: '1rem',
-      borderTop: '1px solid #e5e7eb'
-    },
-    paginationInfo: {
-      fontSize: '0.8125rem',
-      color: '#6b7280'
-    },
-    paginationControls: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: '0.5rem'
-    },
-    paginationButton: {
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      width: '2rem',
-      height: '2rem',
-      borderRadius: '0.375rem',
-      border: '1px solid #d1d5db',
-      backgroundColor: '#ffffff',
-      color: '#374151',
-      cursor: 'pointer',
-      fontSize: '0.875rem'
-    },
-    paginationButtonHover: {
-      backgroundColor: '#f9fafb'
-    },
-    paginationButtonDisabled: {
-      opacity: '0.5',
-      cursor: 'not-allowed'
-    },
-    paginationButtonActive: {
-      backgroundColor: '#10b981',
-      color: '#ffffff',
-      borderColor: '#10b981'
-    },
-    paginationButtonInactive: {
-      backgroundColor: '#ffffff',
-      color: '#10b981',
-      borderColor: '#10b981',
-      borderWidth: '1px',
-      borderStyle: 'solid'
-    },
-    pageNumber: {
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      width: '2rem',
-      height: '2rem',
-      borderRadius: '0.375rem',
-      cursor: 'pointer',
-      fontSize: '0.875rem',
-      border: '1px solid transparent'
     }
   }
 
@@ -448,10 +311,6 @@ const ShiftManagementPage = () => {
     @media (max-width: 768px) {
       .page {
         padding: 0.75rem;
-      }
-      
-      .tableContainer {
-        overflow-x: auto;
       }
       
       .modalContainer {
@@ -467,12 +326,6 @@ const ShiftManagementPage = () => {
         max-width: 100%;
         margin-bottom: 0.75rem;
       }
-      
-      .paginationContainer {
-        flex-direction: column;
-        gap: 1rem;
-        align-items: stretch;
-      }
     }
     
     @media (max-width: 480px) {
@@ -485,18 +338,6 @@ const ShiftManagementPage = () => {
         align-items: flex-start;
         gap: 1rem;
         padding: 0.75rem 0;
-      }
-      
-      .tableCell {
-        padding-left: 1rem;
-        padding-right: 1rem;
-        font-size: 0.75rem;
-      }
-      
-      .tableHeaderCell {
-        padding-left: 1rem;
-        padding-right: 1rem;
-        font-size: 0.625rem;
       }
       
       .addButton {
@@ -543,125 +384,63 @@ const ShiftManagementPage = () => {
       </div>
 
       <div style={styles.tableContainer}>
-        <table style={styles.table}>
-          <thead style={styles.tableHeader}>
-            <tr>
-              <th style={styles.tableHeaderCell}>Name</th>
-              <th style={styles.tableHeaderCell}>Start Time</th>
-              <th style={styles.tableHeaderCell}>End Time</th>
-              <th style={styles.tableHeaderCell}>Actions</th>
-            </tr>
-          </thead>
-          <tbody style={styles.tableBody}>
-            {currentShifts.map((shift) => (
-              <tr key={shift.id} style={styles.tableRow}>
-                <td style={{ ...styles.tableCell, fontWeight: '500' }}>{shift.name}</td>
-                <td style={{ ...styles.tableCell, ...styles.tableCellSecondary }}>{shift.startTime}</td>
-                <td style={{ ...styles.tableCell, ...styles.tableCellSecondary }}>{shift.endTime}</td>
-                <td style={styles.actionCell}>
-                  <button
-                    onClick={() => handleEditShift(shift)}
-                    style={styles.actionButton}
-                    title="Edit Shift"
-                    onMouseEnter={(e) => e.target.style.backgroundColor = styles.actionButtonHover.backgroundColor}
-                    onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
-                  >
-                    <Edit style={{ height: '1rem', width: '1rem' }} />
-                  </button>
-                  <button
-                    onClick={() => handleDeleteShift(shift.id)}
-                    style={{ ...styles.actionButton, ...styles.actionButtonDanger }}
-                    title="Delete Shift"
-                    onMouseEnter={(e) => e.target.style.backgroundColor = styles.actionButtonDangerHover.backgroundColor}
-                    onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
-                  >
-                    <Trash2 style={{ height: '1rem', width: '1rem' }} />
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div style={styles.paginationContainer}>
-            <div style={styles.paginationInfo}>
-              Showing {startIndex + 1}-{Math.min(endIndex, filteredShifts.length)} of {filteredShifts.length} shifts
-            </div>
-            <div style={styles.paginationControls}>
-              <button
-                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                disabled={currentPage === 1}
-                style={{
-                  ...styles.paginationButton,
-                  ...(currentPage === 1 ? styles.paginationButtonDisabled : {})
-                }}
-                onMouseEnter={(e) => {
-                  if (currentPage !== 1) {
-                    e.target.style.backgroundColor = styles.paginationButtonHover.backgroundColor;
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (currentPage !== 1) {
-                    e.target.style.backgroundColor = styles.paginationButton.backgroundColor;
-                  }
-                }}
-              >
-                <ChevronLeft style={{ height: '1rem', width: '1rem' }} />
-              </button>
-              
-              {getPageNumbers().map((page, index) => (
-                <div key={index}>
-                  {page === '...' ? (
-                    <span style={{ ...styles.pageNumber, cursor: 'default', color: '#9ca3af' }}>...</span>
-                  ) : (
+        <ResponsiveTable
+          columns={[
+            { key: 'name', header: 'Name', isPrimary: true },
+            { key: 'startTime', header: 'Start Time' },
+            { key: 'endTime', header: 'End Time' },
+            { key: 'actions', header: 'Actions', sortable: false }
+          ]}
+          data={currentShifts.map(shift => ({
+            id: shift.id,
+            name: shift.name,
+            startTime: shift.startTime,
+            endTime: shift.endTime,
+            shift: shift
+          }))}
+          renderCell={(row, column) => {
+            switch (column.key) {
+              case 'startTime':
+              case 'endTime':
+                return <span style={styles.tableCellSecondary}>{row[column.key]}</span>;
+              case 'actions':
+                return (
+                  <div>
                     <button
-                      onClick={() => setCurrentPage(page)}
-                      style={{
-                        ...styles.pageNumber,
-                        ...(currentPage === page ? styles.paginationButtonActive : styles.paginationButtonInactive)
-                      }}
-                      onMouseEnter={(e) => {
-                        if (currentPage !== page) {
-                          e.target.style.backgroundColor = styles.paginationButtonHover.backgroundColor;
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (currentPage !== page) {
-                          e.target.style.backgroundColor = styles.paginationButtonInactive.backgroundColor;
-                        }
-                      }}
+                      onClick={() => handleEditShift(row.shift)}
+                      style={styles.actionButton}
+                      title="Edit Shift"
+                      onMouseEnter={(e) => e.target.style.backgroundColor = styles.actionButtonHover.backgroundColor}
+                      onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
                     >
-                      {page}
+                      <Edit style={{ height: '1rem', width: '1rem' }} />
                     </button>
-                  )}
-                </div>
-              ))}
-              
-              <button
-                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                disabled={currentPage === totalPages}
-                style={{
-                  ...styles.paginationButton,
-                  ...(currentPage === totalPages ? styles.paginationButtonDisabled : {})
-                }}
-                onMouseEnter={(e) => {
-                  if (currentPage !== totalPages) {
-                    e.target.style.backgroundColor = styles.paginationButtonHover.backgroundColor;
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (currentPage !== totalPages) {
-                    e.target.style.backgroundColor = styles.paginationButton.backgroundColor;
-                  }
-                }}
-              >
-                <ChevronRight style={{ height: '1rem', width: '1rem' }} />
-              </button>
-            </div>
-          </div>
-        )}
+                    <button
+                      onClick={() => handleDeleteShift(row.shift.id)}
+                      style={{ ...styles.actionButton, ...styles.actionButtonDanger }}
+                      title="Delete Shift"
+                      onMouseEnter={(e) => e.target.style.backgroundColor = styles.actionButtonDangerHover.backgroundColor}
+                      onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
+                    >
+                      <Trash2 style={{ height: '1rem', width: '1rem' }} />
+                    </button>
+                  </div>
+                );
+              default:
+                return row[column.key];
+            }
+          }}
+        />
+
+        <ResponsivePagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          itemsPerPage={itemsPerPage}
+          totalItems={filteredShifts.length}
+          showInfo={true}
+          showNavigation={true}
+        />
       </div>
 
       {/* Modal */}

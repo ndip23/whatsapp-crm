@@ -1,5 +1,7 @@
 import { useState, useMemo } from 'react'
-import { MessageCircle, CheckCircle, Clock, AlertCircle, Search, ChevronLeft, ChevronRight } from 'lucide-react'
+import { MessageCircle, CheckCircle, Clock, AlertCircle, Search } from 'lucide-react'
+import ResponsiveTable from '../components/ResponsiveTable'
+import ResponsivePagination from '../components/ResponsivePagination'
 
 const ShiftLogPage = () => {
   // Sample data for shift logs
@@ -418,7 +420,8 @@ const ShiftLogPage = () => {
     modalBody: {
       display: 'flex',
       flex: '1',
-      overflow: 'hidden'
+      overflow: 'auto',
+      flexDirection: 'row'
     },
     // Left panel for conversation details
     detailsPanel: {
@@ -469,7 +472,8 @@ const ShiftLogPage = () => {
       flex: 1,
       display: 'flex',
       flexDirection: 'column',
-      backgroundColor: '#f0f9ff'
+      backgroundColor: '#f0f9ff',
+      overflowY: 'auto'
     },
     chatHeader: {
       padding: '1rem',
@@ -649,6 +653,7 @@ const ShiftLogPage = () => {
         margin: 1rem;
         max-width: calc(100% - 2rem);
         flex-direction: column;
+        overflow: auto;
       }
       
       .detailsPanel {
@@ -659,6 +664,23 @@ const ShiftLogPage = () => {
       
       .chatPanel {
         width: 100%;
+      }
+      
+      .modal-body-mobile {
+        flex-direction: column !important;
+        overflow: auto !important;
+      }
+      
+      .details-panel-mobile {
+        width: 100% !important;
+        border-right: none !important;
+        border-bottom: 1px solid #e5e7eb !important;
+        overflow-y: auto !important;
+      }
+      
+      .chat-panel-mobile {
+        width: 100% !important;
+        overflow-y: auto !important;
       }
       
       .pageTitle {
@@ -678,6 +700,32 @@ const ShiftLogPage = () => {
         flex-direction: column;
         gap: 1rem;
         align-items: stretch;
+      }
+      
+      .conversation-item-mobile {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.25rem;
+      }
+      
+      .conversation-details-mobile {
+        width: 100%;
+        justify-content: space-between;
+      }
+      
+      .status-badge-mobile {
+        font-size: 0.625rem;
+        padding-left: 0.375rem;
+        padding-right: 0.375rem;
+        padding-top: 0.125rem;
+        padding-bottom: 0.125rem;
+      }
+      
+      .view-button-mobile {
+        font-size: 0.75rem;
+        padding: 0.125rem 0.375rem;
+        align-self: flex-end;
+        margin-top: 0.25rem;
       }
     }
     
@@ -708,6 +756,16 @@ const ShiftLogPage = () => {
       .modalContainer {
         width: 95%;
         height: 95vh;
+        overflow: auto;
+      }
+      
+      .status-badge-mobile {
+        font-size: 0.625rem;
+      }
+      
+      .view-button-mobile {
+        font-size: 0.6875rem;
+        padding: 0.125rem 0.25rem;
       }
     }
   `
@@ -761,39 +819,46 @@ const ShiftLogPage = () => {
       </div>
 
       <div style={styles.tableContainer}>
-        <table style={styles.table}>
-          <thead style={styles.tableHeader}>
-            <tr>
-              <th style={styles.tableHeaderCell}>Shift</th>
-              <th style={styles.tableHeaderCell}>Date</th>
-              <th style={styles.tableHeaderCell}>Assigned Users</th>
-              <th style={styles.tableHeaderCell}>Conversations</th>
-              <th style={styles.tableHeaderCell}>Status Summary</th>
-            </tr>
-          </thead>
-          <tbody style={styles.tableBody}>
-            {currentShiftLogs.map((log) => (
-              <tr 
-                key={log.id} 
-                style={styles.tableRow}
-                onMouseEnter={(e) => e.target.style.backgroundColor = styles.tableRowHover.backgroundColor}
-                onMouseLeave={(e) => e.target.style.backgroundColor = styles.tableRow.backgroundColor}
-                onClick={() => setSelectedLog(log)}
-              >
-                <td style={{ ...styles.tableCell, fontWeight: '500' }}>
+        <ResponsiveTable
+          columns={[
+            { key: 'shift', header: 'Shift', isPrimary: true },
+            { key: 'date', header: 'Date' },
+            { key: 'assignedUsers', header: 'Assigned Users' },
+            { key: 'conversations', header: 'Conversations' },
+            { key: 'statusSummary', header: 'Status Summary' }
+          ]}
+          data={currentShiftLogs.map(log => ({
+            id: log.id,
+            shift: {
+              name: log.shiftName,
+              time: `${log.startTime} - ${log.endTime}`
+            },
+            date: log.date,
+            assignedUsers: log.assignedUsers,
+            conversations: log.conversations,
+            statusSummary: log.conversations,
+            log: log
+          }))}
+          onRowClick={(row) => setSelectedLog(row.log)}
+          renderCell={(row, column) => {
+            switch (column.key) {
+              case 'shift':
+                return (
                   <div>
-                    {log.shiftName}
+                    <div style={{ fontWeight: '500' }}>
+                      {row.shift.name}
+                    </div>
+                    <div style={{ ...styles.tableCellSecondary, fontSize: '0.75rem', marginTop: '0.25rem' }}>
+                      {row.shift.time}
+                    </div>
                   </div>
-                  <div style={{ ...styles.tableCellSecondary, fontSize: '0.75rem', marginTop: '0.25rem' }}>
-                    {log.startTime} - {log.endTime}
-                  </div>
-                </td>
-                <td style={{ ...styles.tableCell, ...styles.tableCellSecondary }}>
-                  {log.date}
-                </td>
-                <td style={styles.tableCell}>
+                );
+              case 'date':
+                return <span style={{ ...styles.tableCell, ...styles.tableCellSecondary }}>{row.date}</span>;
+              case 'assignedUsers':
+                return (
                   <div style={styles.userContainer}>
-                    {log.assignedUsers.map(user => (
+                    {row.assignedUsers.map(user => (
                       <div key={user.id} style={styles.userItem}>
                         <div style={styles.userAvatar}>
                           <span style={styles.userAvatarText}>
@@ -804,15 +869,26 @@ const ShiftLogPage = () => {
                       </div>
                     ))}
                   </div>
-                </td>
-                <td style={styles.tableCell}>
+                );
+              case 'conversations':
+                return (
                   <div style={styles.conversationContainer}>
-                    {log.conversations.map(conversation => (
-                      <div key={conversation.id} style={styles.conversationItem}>
-                        <div style={styles.conversationDetails}>
+                    {row.conversations.map(conversation => (
+                      <div 
+                        key={conversation.id} 
+                        style={styles.conversationItem}
+                        className="conversation-item conversation-item-mobile"
+                      >
+                        <div 
+                          style={styles.conversationDetails}
+                          className="conversation-details conversation-details-mobile"
+                        >
                           <MessageCircle style={{ height: '1rem', width: '1rem', color: '#6b7280' }} />
                           <span>{conversation.client}</span>
-                          <span style={{ ...styles.statusBadge, ...getStatusStyle(conversation.status) }}>
+                          <span 
+                            style={{ ...styles.statusBadge, ...getStatusStyle(conversation.status) }}
+                            className="status-badge status-badge-mobile"
+                          >
                             {getStatusIcon(conversation.status)}
                             <span style={{ marginLeft: '0.25rem' }}>
                               {getStatusText(conversation.status)}
@@ -825,6 +901,7 @@ const ShiftLogPage = () => {
                             viewConversation(conversation)
                           }}
                           style={styles.viewButton}
+                          className="view-button view-button-mobile"
                           onMouseEnter={(e) => {
                             e.target.style.backgroundColor = styles.viewButtonHover.backgroundColor
                             e.target.style.borderColor = styles.viewButtonHover.borderColor
@@ -840,107 +917,39 @@ const ShiftLogPage = () => {
                       </div>
                     ))}
                   </div>
-                </td>
-                <td style={styles.tableCell}>
+                );
+              case 'statusSummary':
+                return (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                       <CheckCircle style={{ height: '1rem', width: '1rem', color: '#10b981' }} />
-                      <span>{log.conversations.filter(c => c.status === 'solved').length} Solved</span>
+                      <span>{row.statusSummary.filter(c => c.status === 'solved').length} Solved</span>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                       <Clock style={{ height: '1rem', width: '1rem', color: '#f59e0b' }} />
-                      <span>{log.conversations.filter(c => c.status === 'pending').length} Pending</span>
+                      <span>{row.statusSummary.filter(c => c.status === 'pending').length} Pending</span>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                       <AlertCircle style={{ height: '1rem', width: '1rem', color: '#ef4444' }} />
-                      <span>{log.conversations.filter(c => c.status === 'escalated').length} Escalated</span>
+                      <span>{row.statusSummary.filter(c => c.status === 'escalated').length} Escalated</span>
                     </div>
                   </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                );
+              default:
+                return row[column.key];
+            }
+          }}
+        />
 
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div style={styles.paginationContainer}>
-            <div style={styles.paginationInfo}>
-              Showing {startIndex + 1}-{Math.min(endIndex, filteredShiftLogs.length)} of {filteredShiftLogs.length} shift logs
-            </div>
-            <div style={styles.paginationControls}>
-              <button
-                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                disabled={currentPage === 1}
-                style={{
-                  ...styles.paginationButton,
-                  ...(currentPage === 1 ? styles.paginationButtonDisabled : {})
-                }}
-                onMouseEnter={(e) => {
-                  if (currentPage !== 1) {
-                    e.target.style.backgroundColor = styles.paginationButtonHover.backgroundColor;
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (currentPage !== 1) {
-                    e.target.style.backgroundColor = styles.paginationButton.backgroundColor;
-                  }
-                }}
-              >
-                <ChevronLeft style={{ height: '1rem', width: '1rem' }} />
-              </button>
-              
-              {getPageNumbers().map((page, index) => (
-                <div key={index}>
-                  {page === '...' ? (
-                    <span style={{ ...styles.pageNumber, cursor: 'default', color: '#9ca3af' }}>...</span>
-                  ) : (
-                    <button
-                      onClick={() => setCurrentPage(page)}
-                      style={{
-                        ...styles.pageNumber,
-                        ...(currentPage === page ? styles.paginationButtonActive : styles.paginationButtonInactive)
-                      }}
-                      onMouseEnter={(e) => {
-                        if (currentPage !== page) {
-                          e.target.style.backgroundColor = styles.paginationButtonHover.backgroundColor;
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (currentPage !== page) {
-                          e.target.style.backgroundColor = styles.paginationButtonInactive.backgroundColor;
-                        }
-                      }}
-                    >
-                      {page}
-                    </button>
-                  )}
-                </div>
-              ))}
-              
-              <button
-                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                disabled={currentPage === totalPages}
-                style={{
-                  ...styles.paginationButton,
-                  ...(currentPage === totalPages ? styles.paginationButtonDisabled : {})
-                }}
-                onMouseEnter={(e) => {
-                  if (currentPage !== totalPages) {
-                    e.target.style.backgroundColor = styles.paginationButtonHover.backgroundColor;
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (currentPage !== totalPages) {
-                    e.target.style.backgroundColor = styles.paginationButton.backgroundColor;
-                  }
-                }}
-              >
-                <ChevronRight style={{ height: '1rem', width: '1rem' }} />
-              </button>
-            </div>
-          </div>
-        )}
+        <ResponsivePagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          itemsPerPage={itemsPerPage}
+          totalItems={filteredShiftLogs.length}
+          showInfo={true}
+          showNavigation={true}
+        />
       </div>
 
       {/* Enhanced Conversation Modal */}
@@ -963,9 +972,9 @@ const ShiftLogPage = () => {
               </button>
             </div>
             
-            <div style={styles.modalBody}>
+            <div style={styles.modalBody} className="modal-body-mobile">
               {/* Left Panel - Conversation Details */}
-              <div style={styles.detailsPanel}>
+              <div style={styles.detailsPanel} className="details-panel-mobile">
                 <h4 style={styles.detailsTitle}>
                   Conversation Details
                 </h4>
@@ -1043,7 +1052,7 @@ const ShiftLogPage = () => {
               </div>
               
               {/* Right Panel - Chat View */}
-              <div style={styles.chatPanel}>
+              <div style={styles.chatPanel} className="chat-panel-mobile">
                 {/* Chat Header */}
                 <div style={styles.chatHeader}>
                   <div style={styles.clientInfo}>

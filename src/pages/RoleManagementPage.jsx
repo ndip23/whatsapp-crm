@@ -1,6 +1,8 @@
 import { useState, useMemo } from 'react'
 import { Plus, Edit, Trash2, Save, X, Search, ChevronLeft, ChevronRight, User, Shield } from 'lucide-react'
 import { showToast } from '../utils/toast'
+import ResponsiveTable from '../components/ResponsiveTable'
+import ResponsivePagination from '../components/ResponsivePagination'
 
 const RoleManagementPage = () => {
   // Sample roles data
@@ -232,42 +234,6 @@ const RoleManagementPage = () => {
     setShowUsersModal(true)
   }
 
-  // Generate page numbers to display
-  const getPageNumbers = () => {
-    const pages = []
-    const maxVisiblePages = 5
-    
-    if (totalPages <= maxVisiblePages) {
-      for (let i = 1; i <= totalPages; i++) {
-        pages.push(i)
-      }
-    } else {
-      if (currentPage <= 3) {
-        for (let i = 1; i <= 4; i++) {
-          pages.push(i)
-        }
-        pages.push('...')
-        pages.push(totalPages)
-      } else if (currentPage >= totalPages - 2) {
-        pages.push(1)
-        pages.push('...')
-        for (let i = totalPages - 3; i <= totalPages; i++) {
-          pages.push(i)
-        }
-      } else {
-        pages.push(1)
-        pages.push('...')
-        for (let i = currentPage - 1; i <= currentPage + 1; i++) {
-          pages.push(i)
-        }
-        pages.push('...')
-        pages.push(totalPages)
-      }
-    }
-    
-    return pages
-  }
-
   const styles = {
     page: {
       padding: '1rem',
@@ -336,44 +302,6 @@ const RoleManagementPage = () => {
       overflow: 'hidden',
       border: '1px solid #e5e7eb'
     },
-    table: {
-      minWidth: '100%',
-      borderCollapse: 'collapse'
-    },
-    tableHeader: {
-      backgroundColor: '#f9fafb'
-    },
-    tableHeaderCell: {
-      paddingLeft: '1rem',
-      paddingRight: '1rem',
-      paddingTop: '0.5rem',
-      paddingBottom: '0.5rem',
-      textAlign: 'left',
-      fontSize: '0.75rem',
-      fontWeight: '500',
-      color: '#6b7280',
-      textTransform: 'uppercase',
-      letterSpacing: '0.05em'
-    },
-    tableBody: {
-      backgroundColor: '#ffffff'
-    },
-    tableRow: {
-      backgroundColor: '#ffffff'
-    },
-    tableCell: {
-      paddingLeft: '1rem',
-      paddingRight: '1rem',
-      paddingTop: '0.75rem',
-      paddingBottom: '0.75rem',
-      whiteSpace: 'nowrap',
-      fontSize: '0.8125rem',
-      color: '#111827',
-      cursor: 'pointer'
-    },
-    tableCellSecondary: {
-      color: '#6b7280'
-    },
     badge: {
       paddingLeft: '0.5rem',
       paddingRight: '0.5rem',
@@ -391,14 +319,6 @@ const RoleManagementPage = () => {
       backgroundColor: '#ede9fe',
       color: '#5b21b6'
     },
-    actionCell: {
-      paddingLeft: '1rem',
-      paddingRight: '1rem',
-      paddingTop: '0.75rem',
-      paddingBottom: '0.75rem',
-      whiteSpace: 'nowrap',
-      fontSize: '0.8125rem'
-    },
     actionButton: {
       backgroundColor: 'transparent',
       border: 'none',
@@ -415,64 +335,6 @@ const RoleManagementPage = () => {
     },
     actionButtonDanger: {
       color: '#ef4444'
-    },
-    paginationContainer: {
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      padding: '1rem',
-      borderTop: '1px solid #e5e7eb'
-    },
-    paginationInfo: {
-      fontSize: '0.8125rem',
-      color: '#6b7280'
-    },
-    paginationControls: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: '0.5rem'
-    },
-    paginationButton: {
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      width: '2rem',
-      height: '2rem',
-      borderRadius: '0.375rem',
-      border: '1px solid #d1d5db',
-      backgroundColor: '#ffffff',
-      color: '#374151',
-      cursor: 'pointer',
-      fontSize: '0.875rem'
-    },
-    paginationButtonDisabled: {
-      opacity: '0.5',
-      cursor: 'not-allowed'
-    },
-    paginationButtonActive: {
-      backgroundColor: '#10b981',
-      color: '#ffffff',
-      borderColor: '#10b981'
-    },
-    paginationButtonInactive: {
-      backgroundColor: '#ffffff',
-      color: '#10b981',
-      borderColor: '#10b981',
-      borderWidth: '1px',
-      borderStyle: 'solid'
-    },
-    pageNumber: {
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      width: '2rem',
-      height: '2rem',
-      borderRadius: '0.375rem',
-      cursor: 'pointer',
-      fontSize: '0.875rem',
-      border: '1px solid #10b981', // Primary color border
-      backgroundColor: '#ffffff', // White background for non-active pages
-      color: '#10b981' // Primary color text
     },
     modalOverlay: {
       position: 'fixed',
@@ -931,15 +793,6 @@ const RoleManagementPage = () => {
         padding: 0.75rem;
       }
       
-      .tableContainer {
-        overflow-x: auto;
-      }
-      
-      .modalContainer {
-        margin: 1rem;
-        max-width: calc(100% - 2rem);
-      }
-      
       .pageTitle {
         font-size: 1.125rem;
       }
@@ -947,12 +800,6 @@ const RoleManagementPage = () => {
       .searchContainer {
         maxWidth: 100%;
         margin-bottom: 0.75rem;
-      }
-      
-      .paginationContainer {
-        flex-direction: column;
-        gap: 1rem;
-        align-items: stretch;
       }
     }
     
@@ -966,18 +813,6 @@ const RoleManagementPage = () => {
         align-items: flex-start;
         gap: 1rem;
         padding: 0.75rem 0;
-      }
-      
-      .tableCell {
-        padding-left: 1rem;
-        padding-right: 1rem;
-        font-size: 0.75rem;
-      }
-      
-      .tableHeaderCell {
-        padding-left: 1rem;
-        padding-right: 1rem;
-        font-size: 0.625rem;
       }
       
       .addButton {
@@ -1087,120 +922,82 @@ const RoleManagementPage = () => {
       </div>
 
       <div style={styles.tableContainer}>
-        <table style={styles.table}>
-          <thead style={styles.tableHeader}>
-            <tr>
-              <th style={styles.tableHeaderCell}>Role Name</th>
-              <th style={styles.tableHeaderCell}>Description</th>
-              <th style={styles.tableHeaderCell}>Permissions</th>
-              <th style={styles.tableHeaderCell}>Users</th>
-              <th style={styles.tableHeaderCell}>Actions</th>
-            </tr>
-          </thead>
-          <tbody style={styles.tableBody}>
-            {currentRoles.length > 0 ? (
-              currentRoles.map((role) => (
-                <tr 
-                  key={role.id} 
-                  style={styles.tableRow}
-                >
-                  <td style={{ ...styles.tableCell, fontWeight: '500' }}>{role.name}</td>
-                  <td style={{ ...styles.tableCell, ...styles.tableCellSecondary }}>{role.description}</td>
-                  <td style={styles.tableCell}>
-                    <span 
-                      style={{ ...styles.badge, ...styles.badgePrimary, cursor: 'pointer' }}
-                      onClick={() => handleViewPermissions(role)}
-                    >
-                      {role.permissions.length} permissions
-                    </span>
-                  </td>
-                  <td style={styles.tableCell}>
-                    <span 
-                      style={{ ...styles.badge, ...styles.badgeSecondary, cursor: 'pointer' }}
-                      onClick={() => handleViewUsers(role)}
-                    >
-                      {role.users.length} users
-                    </span>
-                  </td>
-                  <td style={styles.actionCell}>
+        <ResponsiveTable
+          columns={[
+            { key: 'name', header: 'Role Name', isPrimary: true },
+            { key: 'description', header: 'Description' },
+            { key: 'permissions', header: 'Permissions' },
+            { key: 'users', header: 'Users' },
+            { key: 'actions', header: 'Actions', sortable: false }
+          ]}
+          data={currentRoles.map(role => ({
+            id: role.id,
+            name: role.name,
+            description: role.description,
+            permissions: role.permissions.length,
+            users: role.users.length,
+            role: role
+          }))}
+          renderCell={(row, column) => {
+            switch (column.key) {
+              case 'permissions':
+                return (
+                  <span 
+                    style={{ ...styles.badge, ...styles.badgePrimary, cursor: 'pointer' }}
+                    onClick={() => handleViewPermissions(row.role)}
+                  >
+                    {row.permissions} permissions
+                  </span>
+                );
+              case 'users':
+                return (
+                  <span 
+                    style={{ ...styles.badge, ...styles.badgeSecondary, cursor: 'pointer' }}
+                    onClick={() => handleViewUsers(row.role)}
+                  >
+                    {row.users} users
+                  </span>
+                );
+              case 'actions':
+                return (
+                  <div>
                     <button
-                      onClick={() => handleEditRole(role)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEditRole(row.role);
+                      }}
                       style={styles.actionButton}
                       title="Edit Role"
                     >
                       <Edit style={{ height: '1rem', width: '1rem' }} />
                     </button>
                     <button
-                      onClick={() => handleDeleteRole(role)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteRole(row.role);
+                      }}
                       style={{ ...styles.actionButton, ...styles.actionButtonDanger }}
                       title="Delete Role"
                     >
                       <Trash2 style={{ height: '1rem', width: '1rem' }} />
                     </button>
-                  </td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan="5" style={{ ...styles.tableCell, textAlign: 'center', fontStyle: 'italic', color: '#6b7280' }}>
-                  No roles found
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+                  </div>
+                );
+              default:
+                return row[column.key];
+            }
+          }}
+        />
 
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div style={styles.paginationContainer}>
-            <div style={styles.paginationInfo}>
-              Showing {startIndex + 1}-{Math.min(endIndex, filteredRoles.length)} of {filteredRoles.length} roles
-            </div>
-            <div style={styles.paginationControls}>
-              <button
-                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                disabled={currentPage === 1}
-                style={{
-                  ...styles.paginationButton,
-                  ...(currentPage === 1 ? styles.paginationButtonDisabled : {})
-                }}
-              >
-                <ChevronLeft style={{ height: '1rem', width: '1rem' }} />
-              </button>
-              
-              {getPageNumbers().map((page, index) => (
-                <div key={index}>
-                  {page === '...' ? (
-                    <span style={{ ...styles.pageNumber, cursor: 'default', color: '#9ca3af', border: 'none', backgroundColor: 'transparent' }}>...</span>
-                  ) : (
-                    <button
-                      onClick={() => setCurrentPage(page)}
-                      style={{
-                        ...styles.pageNumber,
-                        ...(currentPage === page 
-                          ? { ...styles.paginationButtonActive, border: '1px solid #10b981' } 
-                          : { backgroundColor: '#ffffff', color: '#10b981', border: '1px solid #10b981' })
-                      }}
-                    >
-                      {page}
-                    </button>
-                  )}
-                </div>
-              ))}
-              
-              <button
-                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                disabled={currentPage === totalPages}
-                style={{
-                  ...styles.paginationButton,
-                  ...(currentPage === totalPages ? styles.paginationButtonDisabled : {})
-                }}
-              >
-                <ChevronRight style={{ height: '1rem', width: '1rem' }} />
-              </button>
-            </div>
-          </div>
-        )}
+        <ResponsivePagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          itemsPerPage={itemsPerPage}
+          totalItems={filteredRoles.length}
+          showInfo={true}
+          showNavigation={true}
+        />
       </div>
 
       {/* Permissions View Modal */}

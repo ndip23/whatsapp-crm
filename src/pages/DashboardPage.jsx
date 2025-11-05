@@ -1,13 +1,16 @@
 import { useState } from 'react'
 import { useChat } from '../context/ChatContext'
-import { Search, Paperclip, Send, MessageCircle, Clock, User, CheckCircle, Maximize2, X, PieChart } from 'lucide-react'
+import { Search, Paperclip, Send, MessageCircle, Clock, User, CheckCircle, Maximize2, X, PieChart, Menu, Info, MessageSquare } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart as RechartsPieChart, Pie, Cell } from 'recharts'
+import ResponsiveTable from '../components/ResponsiveTable'
 
 const DashboardPage = () => {
   const { conversations, activeConversation, selectConversation, sendMessage } = useChat()
   const [message, setMessage] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
   const [isChatExpanded, setIsChatExpanded] = useState(false)
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [isClientInfoOpen, setIsClientInfoOpen] = useState(false)
   const [isAnalyticsExpanded, setIsAnalyticsExpanded] = useState(false)
   const [isAgentPerformanceExpanded, setIsAgentPerformanceExpanded] = useState(false)
   const [conversationStatus, setConversationStatus] = useState('pending')
@@ -105,7 +108,7 @@ const DashboardPage = () => {
 
   const styles = {
     page: {
-      padding: '1rem'
+      padding: '0'
     },
     pageTitle: {
       fontSize: '1.5rem',
@@ -121,7 +124,7 @@ const DashboardPage = () => {
     },
     chatInterface: {
       display: 'flex',
-      height: 'calc(100vh - 200px)'
+      height: 'calc(100vh - 90px)'
     },
     // Conversations panel
     conversationsPanel: {
@@ -804,10 +807,12 @@ const DashboardPage = () => {
       
       .conversationsPanel {
         width: 33.333333%;
+        display: block;
       }
       
       .clientInfoPanel {
         width: 25%;
+        display: block;
       }
       
       .statsGrid {
@@ -817,11 +822,155 @@ const DashboardPage = () => {
       .chartsGrid {
         gridTemplateColumns: repeat(2, minmax(0, 1fr));
       }
+      
+      /* Show panels in expanded view on desktop */
+      .expandedChatInterface .conversationsPanel {
+        display: block;
+      }
+      
+      .expandedChatInterface .clientInfoPanel {
+        display: block;
+      }
     }
     
     @media (min-width: 1024px) {
       .statsGrid {
         gridTemplateColumns: repeat(2, minmax(0, 1fr));
+      }
+    }
+    
+    /* Mobile responsiveness - align inner containers with header width */
+    @media (max-width: 767px) {
+      /* Make inner containers have 0 outer left and right margins while maintaining inner padding and vertical margins */
+      .chatContainer,
+      .statsGrid,
+      .chartsGrid,
+      .detailedTableContainer,
+      .tableContainer {
+        margin-left: 0;
+        margin-right: 0;
+      }
+      
+      /* Remove rounded corners on mobile */
+      .chatContainer,
+      .statsGrid,
+      .chartsGrid,
+      .detailedTableContainer,
+      .tableContainer,
+      .statsCard,
+      .chartCard {
+        border-radius: 0;
+      }
+      
+      /* Reduce padding on mobile for better visibility */
+      .searchContainer {
+        padding: 0.5rem;
+      }
+      
+      .conversationsList {
+        padding: 0;
+      }
+      
+      .conversationItem {
+        padding: 0.75rem;
+        min-height: 2.5rem; /* Better touch target size */
+      }
+      
+      .chatHeader {
+        padding: 0.75rem;
+      }
+      
+      .messagesContainer {
+        padding: 0.5rem;
+      }
+      
+      .inputContainer {
+        padding: 0.5rem;
+      }
+      
+      .clientInfoPanel {
+        padding: 0.5rem;
+      }
+      
+      .clientInfoSection {
+        margin-bottom: 0.75rem;
+      }
+      
+      /* Chat interface optimizations for mobile - hide side panels by default */
+      .chatInterface {
+        height: calc(100vh - 200px);
+        flex-direction: column;
+      }
+      
+      .conversationsPanel {
+        display: none;
+      }
+      
+      .clientInfoPanel {
+        display: none;
+      }
+      
+      /* Ensure chat panel takes full width on mobile */
+      .chatPanel {
+        width: 100%;
+      }
+      
+      /* Mobile chat container optimizations */
+      .chatContainer .chatInterface {
+        height: calc(100vh - 230px);
+      }
+      
+      /* Hide conversation and client info panels on mobile by default */
+      .chatContainer .conversationsPanel {
+        display: none;
+      }
+      
+      .chatContainer .clientInfoPanel {
+        display: none;
+      }
+      
+      /* Ensure chat panel takes full width on mobile */
+      .chatContainer .chatPanel {
+        width: 100%;
+      }
+      
+      /* Expanded chat interface optimizations for mobile */
+      .expandedChatInterface .chatInterface {
+        flex-direction: column;
+      }
+      
+      .expandedChatInterface .conversationsPanel {
+        width: 100%;
+        border-right: none;
+        border-bottom: 1px solid #e5e7eb;
+        display: none;
+      }
+      
+      .expandedChatInterface .clientInfoPanel {
+        width: 100%;
+        border-left: none;
+        border-top: 1px solid #e5e7eb;
+        display: none;
+      }
+      
+      .messageBubble {
+        max-width: 85%;
+        padding-left: 0.75rem;
+        padding-right: 0.75rem;
+        padding-top: 0.5rem;
+        padding-bottom: 0.5rem;
+      }
+      
+      .lastMessage {
+        font-size: 0.75rem;
+      }
+      
+      .clientName {
+        font-size: 0.8125rem;
+      }
+      
+      .clientNameHeader {
+        font-size: 0.875rem;
       }
     }
     
@@ -850,12 +999,166 @@ const DashboardPage = () => {
       scrollbar-width: thin;
       scrollbar-color: #a7f3d0 #f3f4f6;
     }
+    
+    /* Animations */
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    
+    @keyframes slideIn {
+      from { transform: translateX(-100%); }
+      to { transform: translateX(0); }
+    }
+    
+    @keyframes slideInRight {
+      from { transform: translateX(100%); }
+      to { transform: translateX(0); }
+    }
   `
 
   // Chat Container
   const chatContainerStyle = {
     ...styles.chatContainer,
-    position: 'relative'
+    position: 'relative',
+    display: 'flex',
+    flexDirection: 'column'
+  }
+  
+  // Chat footer
+  const chatFooterStyle = {
+    display: 'flex',
+    justifyContent: 'space-between',
+    padding: '0.75rem',
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    borderTop: '1px solid #e5e7eb'
+  }
+  
+  // Information button
+  const infoButtonStyle = {
+    backgroundColor: 'rgba(59, 130, 246, 0.6)',
+    color: '#ffffff',
+    border: '1px solid rgba(59, 130, 246, 0.6)',
+    borderRadius: '0.5rem',
+    padding: '0.5rem',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    transition: 'all 0.2s ease',
+    width: '2.5rem',
+    height: '2.5rem',
+    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
+  }
+  
+  const infoButtonHoverStyle = {
+    backgroundColor: 'rgba(37, 99, 235, 0.8)',
+    borderColor: 'rgba(37, 99, 235, 0.8)',
+    transform: 'scale(1.05)'
+  }
+  
+  // Client info sidebar
+  const clientInfoSidebarStyle = {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    width: '90%',
+    maxWidth: '350px',
+    height: '100%',
+    backgroundColor: '#ffffff',
+    boxShadow: '-5px 0 15px -5px rgba(0, 0, 0, 0.1)',
+    zIndex: 1001,
+    display: 'flex',
+    flexDirection: 'column',
+    animation: 'slideInRight 0.3s ease-out forwards'
+  }
+  
+  const clientInfoSidebarHeaderStyle = {
+    padding: '1rem',
+    borderBottom: '1px solid #e5e7eb',
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center'
+  }
+  
+  const clientInfoSidebarTitleStyle = {
+    fontSize: '1.125rem',
+    fontWeight: '600',
+    color: '#111827',
+    margin: 0
+  }
+  
+  const clientInfoSidebarContentStyle = {
+    flex: 1,
+    overflowY: 'auto',
+    padding: '1rem'
+  }
+
+  // Mobile menu button
+  const mobileMenuButtonStyle = {
+    backgroundColor: 'rgba(16, 185, 129, 0.6)',
+    color: '#ffffff',
+    border: '1px solid rgba(16, 185, 129, 0.6)',
+    borderRadius: '0.5rem',
+    padding: '0.5rem',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    transition: 'all 0.2s ease',
+    width: '2.5rem',
+    height: '2.5rem',
+    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
+  }
+
+  const mobileMenuButtonHoverStyle = {
+    backgroundColor: 'rgba(5, 150, 105, 0.8)',
+    borderColor: 'rgba(5, 150, 105, 0.8)',
+    transform: 'scale(1.05)'
+  }
+
+  // Mobile overlay styles
+  const mobileOverlayStyle = {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    zIndex: 1000,
+    display: 'flex',
+    animation: 'fadeIn 0.3s ease-out forwards'
+  }
+
+  const mobilePanelStyle = {
+    backgroundColor: '#ffffff',
+    width: '90%',
+    maxWidth: '350px',
+    height: '100%',
+    display: 'flex',
+    flexDirection: 'column',
+    boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+    animation: 'slideIn 0.3s ease-out forwards'
+  }
+
+  const closeButtonStyleMobile = {
+    position: 'absolute',
+    top: '0.75rem',
+    right: '0.75rem',
+    backgroundColor: '#ef4444',
+    color: '#ffffff',
+    border: '1px solid #ef4444',
+    borderRadius: '0.5rem',
+    padding: '0.5rem',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: '10',
+    transition: 'all 0.2s ease',
+    width: '2.5rem',
+    height: '2.5rem',
+    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
   }
 
   const expandButtonStyle = {
@@ -932,7 +1235,7 @@ const DashboardPage = () => {
 
   const expandedChatInterfaceStyle = {
     ...styles.chatInterface,
-    height: '100%',
+    height: 'calc(100% - 50px)', // Increased height to give more space for messages
     flex: '1'
   }
 
@@ -1009,7 +1312,7 @@ const DashboardPage = () => {
       <style>{mediaStyles}</style>
       
       {/* WhatsApp-style chat interface */}
-      <div style={chatContainerStyle}>
+      <div className="chatContainer" style={chatContainerStyle}>
         {!isChatExpanded && (
           <button 
             style={expandButtonStyle}
@@ -1028,8 +1331,8 @@ const DashboardPage = () => {
         )}
         
         <div className="chatInterface" style={styles.chatInterface}>
-          {/* Left Panel - Conversations List */}
-          <div className="conversationsPanel" style={styles.conversationsPanel}>
+          {/* Left Panel - Conversations List - Hidden on mobile */}
+          <div className="conversationsPanel" style={{...styles.conversationsPanel, display: 'none'}}>
             <div style={styles.searchContainer}>
               <div style={styles.searchWrapper}>
                 <div style={styles.searchIcon}>
@@ -1105,7 +1408,7 @@ const DashboardPage = () => {
           </div>
 
           {/* Center Panel - Chat Window */}
-          <div style={styles.chatPanel}>
+          <div style={{...styles.chatPanel, flex: '1', width: '100%'}}>
             {activeConversation ? (
               <>
                 <div style={styles.chatHeader}>
@@ -1174,7 +1477,7 @@ const DashboardPage = () => {
                       type="text"
                       value={message}
                       onChange={(e) => setMessage(e.target.value)}
-                      placeholder="Type a message..."
+                      placeholder="Type message here"
                       style={styles.messageInput}
                       onFocus={(e) => {
                         e.target.style.borderColor = styles.messageInputFocus.borderColor;
@@ -1203,8 +1506,8 @@ const DashboardPage = () => {
             )}
           </div>
 
-          {/* Right Panel - Client Info */}
-          <div className="clientInfoPanel" style={styles.clientInfoPanel}>
+          {/* Right Panel - Client Info - Hidden on mobile */}
+          <div className="clientInfoPanel" style={{...styles.clientInfoPanel, width: '25%', display: 'none'}}>
             {activeConversation && (
               <div>
                 <h3 style={styles.clientInfoTitle}>Client Information</h3>
@@ -1224,42 +1527,6 @@ const DashboardPage = () => {
                       <dd style={styles.detailValue}>USA</dd>
                     </div>
                   </dl>
-                </div>
-                
-                <div style={styles.clientInfoSection}>
-                  <h4 style={styles.sectionTitle}>Status</h4>
-                  <div style={{ display: 'flex', gap: '0.25rem', marginTop: '0.5rem', flexWrap: 'wrap' }}>
-                    <button
-                      style={{
-                        ...styles.statusButton,
-                        ...(conversationStatus === 'solved' ? styles.statusButtonActive : {}),
-                        padding: '0.25rem 0.5rem'
-                      }}
-                      onClick={() => handleStatusChange('solved')}
-                    >
-                      <span style={{ fontSize: '0.75rem', fontWeight: '500' }}>Solved</span>
-                    </button>
-                    <button
-                      style={{
-                        ...styles.statusButton,
-                        ...(conversationStatus === 'pending' ? styles.statusButtonActive : {}),
-                        padding: '0.25rem 0.5rem'
-                      }}
-                      onClick={() => handleStatusChange('pending')}
-                    >
-                      <span style={{ fontSize: '0.75rem', fontWeight: '500' }}>Pending</span>
-                    </button>
-                    <button
-                      style={{
-                        ...styles.statusButton,
-                        ...(conversationStatus === 'escalated' ? styles.statusButtonActive : {}),
-                        padding: '0.25rem 0.5rem'
-                      }}
-                      onClick={() => handleStatusChange('escalated')}
-                    >
-                      <span style={{ fontSize: '0.75rem', fontWeight: '500' }}>Escalated</span>
-                    </button>
-                  </div>
                 </div>
                 
                 <div style={styles.clientInfoSection}>
@@ -1335,6 +1602,322 @@ const DashboardPage = () => {
             )}
           </div>
         </div>
+        
+        {/* Chat footer with mobile buttons */}
+        <div style={chatFooterStyle}>
+          {/* Mobile menu button - hidden when overlay is open */}
+          {!isMobileMenuOpen && (
+            <button 
+              style={mobileMenuButtonStyle}
+              onClick={() => setIsMobileMenuOpen(true)}
+              onMouseEnter={(e) => {
+                e.target.style.backgroundColor = mobileMenuButtonHoverStyle.backgroundColor;
+                e.target.style.borderColor = mobileMenuButtonHoverStyle.borderColor;
+                e.target.style.transform = mobileMenuButtonHoverStyle.transform;
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.backgroundColor = mobileMenuButtonStyle.backgroundColor;
+                e.target.style.borderColor = mobileMenuButtonStyle.borderColor;
+                e.target.style.transform = '';
+              }}
+            >
+              <MessageSquare style={{ height: '1.25rem', width: '1.25rem' }} />
+            </button>
+          )}
+          
+          {/* Information button */}
+          {activeConversation && (
+            <button 
+              style={infoButtonStyle}
+              onClick={() => setIsClientInfoOpen(true)}
+              onMouseEnter={(e) => {
+                e.target.style.backgroundColor = infoButtonHoverStyle.backgroundColor;
+                e.target.style.borderColor = infoButtonHoverStyle.borderColor;
+                e.target.style.transform = infoButtonHoverStyle.transform;
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.backgroundColor = infoButtonStyle.backgroundColor;
+                e.target.style.borderColor = infoButtonStyle.borderColor;
+                e.target.style.transform = '';
+              }}
+            >
+              <Info style={{ height: '1.25rem', width: '1.25rem' }} />
+            </button>
+          )}
+        </div>
+        
+        {/* Mobile overlay for conversations and client info */}
+        {isMobileMenuOpen && (
+          <div style={mobileOverlayStyle} onClick={(e) => {
+            // Only close if clicking on the overlay backdrop, not the panel itself
+            if (e.target === e.currentTarget) {
+              setIsMobileMenuOpen(false);
+            }
+          }}>
+            <div style={mobilePanelStyle}>
+              <button 
+                style={closeButtonStyleMobile}
+                onClick={() => setIsMobileMenuOpen(false)}
+                onMouseEnter={(e) => {
+                  e.target.style.backgroundColor = '#dc2626';
+                  e.target.style.borderColor = '#dc2626';
+                  e.target.style.transform = 'scale(1.05)';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.backgroundColor = closeButtonStyleMobile.backgroundColor;
+                  e.target.style.borderColor = closeButtonStyleMobile.borderColor;
+                  e.target.style.transform = '';
+                }}
+              >
+                <X style={{ height: '1rem', width: '1rem' }} />
+              </button>
+              
+              {/* Combined Panel for Conversations and Client Info */}
+              <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+                {/* Conversations Panel */}
+                <div className="conversationsPanel" style={{...styles.conversationsPanel, width: '100%', borderRight: 'none', borderBottom: '1px solid #e5e7eb', flex: '1', minHeight: '0'}}>
+                  <div style={styles.searchContainer}>
+                    <div style={styles.searchWrapper}>
+                      <div style={styles.searchIcon}>
+                        <Search style={{ height: '1.25rem', width: '1.25rem', color: '#9ca3af' }} />
+                      </div>
+                      <input
+                        type="text"
+                        placeholder="Search conversations..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        style={styles.searchInput}
+                        onFocus={(e) => {
+                          e.target.style.borderColor = styles.searchInputFocus.borderColor;
+                          e.target.style.boxShadow = `0 0 0 1px ${styles.searchInputFocus.ring}`;
+                        }}
+                        onBlur={(e) => {
+                          e.target.style.borderColor = '';
+                          e.target.style.boxShadow = '';
+                        }}
+                      />
+                    </div>
+                  </div>
+                  <div style={{...styles.conversationsList, flex: '1', minHeight: '0'}}>
+                    {filteredConversations.map((conversation) => (
+                      <div
+                        key={conversation.id}
+                        style={{
+                          ...styles.conversationItem,
+                          ...(activeConversation.id === conversation.id ? styles.conversationItemActive : {})
+                        }}
+                        onClick={() => {
+                          selectConversation(conversation);
+                          // Close overlay after selecting conversation
+                          setIsMobileMenuOpen(false);
+                        }}
+                        onMouseEnter={(e) => {
+                          if (activeConversation.id !== conversation.id) {
+                            e.target.style.backgroundColor = styles.conversationItemHover.backgroundColor;
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (activeConversation.id !== conversation.id) {
+                            e.target.style.backgroundColor = styles.conversationItem.backgroundColor;
+                          }
+                        }}
+                      >
+                        <div style={styles.avatarContainer}>
+                          <div style={styles.avatar}>
+                            <span style={styles.avatarText}>
+                              {conversation.client.charAt(0)}
+                            </span>
+                          </div>
+                        </div>
+                        <div style={styles.conversationDetails}>
+                          <div style={styles.conversationHeader}>
+                            <h3 style={styles.clientName}>
+                              {conversation.client}
+                            </h3>
+                            <span style={styles.time}>
+                              {conversation.time}
+                            </span>
+                          </div>
+                          <div style={styles.conversationFooter}>
+                            <p style={styles.lastMessage}>
+                              {conversation.lastMessage}
+                            </p>
+                            {conversation.unread > 0 && (
+                              <span style={styles.unreadBadge}>
+                                {conversation.unread}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {/* Client Info Sidebar */}
+        {isClientInfoOpen && (
+          <div style={{...mobileOverlayStyle, backgroundColor: 'rgba(0, 0, 0, 0.3)', zIndex: 999}} onClick={(e) => {
+            // Only close if clicking on the overlay backdrop
+            if (e.target === e.currentTarget) {
+              setIsClientInfoOpen(false);
+            }
+          }}>
+            <div style={clientInfoSidebarStyle}>
+              <div style={clientInfoSidebarHeaderStyle}>
+                <h3 style={clientInfoSidebarTitleStyle}>Client Information</h3>
+                <button 
+                  style={closeButtonStyleMobile}
+                  onClick={() => setIsClientInfoOpen(false)}
+                  onMouseEnter={(e) => {
+                    e.target.style.backgroundColor = '#dc2626';
+                    e.target.style.borderColor = '#dc2626';
+                    e.target.style.transform = 'scale(1.05)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.backgroundColor = closeButtonStyleMobile.backgroundColor;
+                    e.target.style.borderColor = closeButtonStyleMobile.borderColor;
+                    e.target.style.transform = '';
+                  }}
+                >
+                  <X style={{ height: '1rem', width: '1rem' }} />
+                </button>
+              </div>
+              <div style={clientInfoSidebarContentStyle}>
+                {activeConversation && (
+                  <div>
+                    <div style={styles.clientInfoSection}>
+                      <h4 style={styles.sectionTitle}>Client Details</h4>
+                      <dl style={styles.detailsList}>
+                        <div style={styles.detailItem}>
+                          <dt style={styles.detailLabel}>Name</dt>
+                          <dd style={styles.detailValue}>{activeConversation.client}</dd>
+                        </div>
+                        <div style={styles.detailItem}>
+                          <dt style={styles.detailLabel}>Phone Number</dt>
+                          <dd style={styles.detailValue}>+1 234 567 8900</dd>
+                        </div>
+                        <div style={styles.detailItem}>
+                          <dt style={styles.detailLabel}>Country</dt>
+                          <dd style={styles.detailValue}>USA</dd>
+                        </div>
+                      </dl>
+                    </div>
+                    
+                    <div style={styles.clientInfoSection}>
+                      <h4 style={styles.sectionTitle}>Status</h4>
+                      <div style={{ display: 'flex', gap: '0.25rem', marginTop: '0.5rem', flexWrap: 'wrap' }}>
+                        <button
+                          style={{
+                            ...styles.statusButton,
+                            ...(conversationStatus === 'solved' ? styles.statusButtonActive : {}),
+                            padding: '0.25rem 0.5rem'
+                          }}
+                          onClick={() => handleStatusChange('solved')}
+                        >
+                          <span style={{ fontSize: '0.75rem', fontWeight: '500' }}>Solved</span>
+                        </button>
+                        <button
+                          style={{
+                            ...styles.statusButton,
+                            ...(conversationStatus === 'pending' ? styles.statusButtonActive : {}),
+                            padding: '0.25rem 0.5rem'
+                          }}
+                          onClick={() => handleStatusChange('pending')}
+                        >
+                          <span style={{ fontSize: '0.75rem', fontWeight: '500' }}>Pending</span>
+                        </button>
+                        <button
+                          style={{
+                            ...styles.statusButton,
+                            ...(conversationStatus === 'escalated' ? styles.statusButtonActive : {}),
+                            padding: '0.25rem 0.5rem'
+                          }}
+                          onClick={() => handleStatusChange('escalated')}
+                        >
+                          <span style={{ fontSize: '0.75rem', fontWeight: '500' }}>Escalated</span>
+                        </button>
+                      </div>
+                    </div>
+                    
+                    <div style={styles.clientInfoSection}>
+                      <h4 style={styles.sectionTitle}>Tags</h4>
+                      <div style={styles.tagsContainer}>
+                        <span style={{ ...styles.tag, ...styles.tagNew }}>
+                          New Lead
+                        </span>
+                        <span style={{ ...styles.tag, ...styles.tagVip }}>
+                          VIP
+                        </span>
+                      </div>
+                      <button 
+                        style={styles.addTagButton}
+                        onMouseEnter={(e) => e.target.style.color = styles.addTagButtonHover.color}
+                        onMouseLeave={(e) => e.target.style.color = styles.addTagButton.color}
+                      >
+                        + Add Tag
+                      </button>
+                    </div>
+                    
+                    <div style={styles.clientInfoSection}>
+                      <h4 style={styles.sectionTitle}>Notes</h4>
+                      <div style={styles.notesList}>
+                        <div style={styles.noteItem}>
+                          <p style={styles.noteText}>Initial inquiry about product features</p>
+                          <p style={styles.noteTime}>2 hours ago</p>
+                        </div>
+                      </div>
+                      <button 
+                        style={styles.addTagButton}
+                        onMouseEnter={(e) => e.target.style.color = styles.addTagButtonHover.color}
+                        onMouseLeave={(e) => e.target.style.color = styles.addTagButton.color}
+                      >
+                        + Add Note
+                      </button>
+                    </div>
+                    
+                    <div style={styles.clientInfoSection}>
+                      <h4 style={styles.sectionTitle}>Follow-up Reminder</h4>
+                      <div style={styles.reminderContainer}>
+                        <input
+                          type="datetime-local"
+                          style={styles.reminderInput}
+                        />
+                        <button 
+                          style={styles.reminderButton}
+                          onMouseEnter={(e) => e.target.style.backgroundColor = styles.reminderButtonHover.backgroundColor}
+                          onMouseLeave={(e) => e.target.style.backgroundColor = styles.reminderButton.backgroundColor}
+                        >
+                          Save
+                        </button>
+                      </div>
+                    </div>
+                    
+                    <div style={styles.actionButtons}>
+                      <button 
+                        style={styles.saveButton}
+                        onMouseEnter={(e) => e.target.style.backgroundColor = styles.saveButtonHover.backgroundColor}
+                        onMouseLeave={(e) => e.target.style.backgroundColor = styles.saveButton.backgroundColor}
+                      >
+                        Save
+                      </button>
+                      <button 
+                        style={styles.cancelButton}
+                        onMouseEnter={(e) => e.target.style.backgroundColor = styles.cancelButtonHover.backgroundColor}
+                        onMouseLeave={(e) => e.target.style.backgroundColor = styles.cancelButton.backgroundColor}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Expanded Chat View */}
@@ -1356,9 +1939,9 @@ const DashboardPage = () => {
               <X style={{ height: '1rem', width: '1rem' }} />
             </button>
             
-            <div style={expandedChatInterfaceStyle}>
-              {/* Left Panel - Conversations List */}
-              <div className="conversationsPanel" style={{...styles.conversationsPanel, width: '30%'}}>
+            <div className="expandedChatInterface" style={expandedChatInterfaceStyle}>
+              {/* Left Panel - Conversations List - Hidden on mobile */}
+              <div className="conversationsPanel" style={{...styles.conversationsPanel, width: '30%', display: 'none'}}>
                 <div style={styles.searchContainer}>
                   <div style={styles.searchWrapper}>
                     <div style={styles.searchIcon}>
@@ -1434,7 +2017,7 @@ const DashboardPage = () => {
               </div>
 
               {/* Center Panel - Chat Window */}
-              <div style={{...styles.chatPanel, flex: '1'}}>
+              <div style={{...styles.chatPanel, flex: '1', width: '100%'}}>
                 {activeConversation ? (
                   <>
                     <div style={styles.chatHeader}>
@@ -1503,7 +2086,7 @@ const DashboardPage = () => {
                           type="text"
                           value={message}
                           onChange={(e) => setMessage(e.target.value)}
-                          placeholder="Type a message..."
+                          placeholder="Type message here"
                           style={styles.messageInput}
                           onFocus={(e) => {
                             e.target.style.borderColor = styles.messageInputFocus.borderColor;
@@ -1532,8 +2115,8 @@ const DashboardPage = () => {
                 )}
               </div>
 
-              {/* Right Panel - Client Info */}
-              <div className="clientInfoPanel" style={{...styles.clientInfoPanel, width: '25%'}}>
+              {/* Right Panel - Client Info - Hidden on mobile */}
+              <div className="clientInfoPanel" style={{...styles.clientInfoPanel, width: '25%', display: 'none'}}>
                 {activeConversation && (
                   <div>
                     <h3 style={styles.clientInfoTitle}>Client Information</h3>
@@ -1633,7 +2216,7 @@ const DashboardPage = () => {
       )}
 
       {/* Stats Cards - Now in two-column layout */}
-      <div style={styles.statsGrid}>
+      <div className="statsGrid" style={styles.statsGrid}>
         <div 
           style={styles.statsCard}
           onMouseEnter={(e) => {
@@ -1762,77 +2345,72 @@ const DashboardPage = () => {
       </div>
 
       {/* Detailed Agent Performance Table */}
-      <div style={styles.detailedTableContainer}>
+      <div className="detailedTableContainer" style={styles.detailedTableContainer}>
         <div style={{ paddingLeft: '1rem', paddingRight: '1rem', paddingTop: '1rem', paddingBottom: '1rem', borderBottom: '1px solid #e5e7eb' }}>
           <h3 style={{ fontSize: '1.125rem', fontWeight: '500', color: '#111827' }}>Agent Performance Details</h3>
         </div>
-        <table style={styles.detailedTable}>
-          <thead style={styles.detailedTableHeader}>
-            <tr>
-              <th style={styles.detailedTableHeaderCell}>Agent</th>
-              <th style={styles.detailedTableHeaderCell}>Total Conversations</th>
-              <th style={styles.detailedTableHeaderCell}>Solved</th>
-              <th style={styles.detailedTableHeaderCell}>Unsolved</th>
-              <th style={styles.detailedTableHeaderCell}>Escalated</th>
-              <th style={styles.detailedTableHeaderCell}>Avg. Response Time</th>
-              <th style={styles.detailedTableHeaderCell}>Status</th>
-            </tr>
-          </thead>
-          <tbody style={styles.detailedTableBody}>
-            {agentPerformanceData.map((agent, index) => (
-              <tr key={index} style={styles.detailedTableRow}>
-                <td style={{ ...styles.detailedTableCell, fontWeight: '500' }}>{agent.name}</td>
-                <td style={{ ...styles.detailedTableCell, ...styles.detailedTableCellSecondary }}>{agent.totalConversations}</td>
-                <td style={{ ...styles.detailedTableCell, color: '#10b981' }}>{agent.solved}</td>
-                <td style={{ ...styles.detailedTableCell, color: '#f59e0b' }}>{agent.unsolved}</td>
-                <td style={{ ...styles.detailedTableCell, color: '#ef4444' }}>{agent.escalated}</td>
-                <td style={{ ...styles.detailedTableCell, ...styles.detailedTableCellSecondary }}>{agent.responseTime}</td>
-                <td style={styles.detailedTableCell}>
-                  <span style={{ 
-                    ...styles.statusBadge, 
-                    ...(agent.status === 'Active' ? styles.statusActive : styles.statusAway) 
-                  }}>
-                    {agent.status}
-                  </span>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <ResponsiveTable
+          columns={[
+            { key: 'name', header: 'Agent', isPrimary: true },
+            { key: 'totalConversations', header: 'Total Conversations' },
+            { key: 'solved', header: 'Solved' },
+            { key: 'unsolved', header: 'Unsolved' },
+            { key: 'escalated', header: 'Escalated' },
+            { key: 'responseTime', header: 'Avg. Response Time' },
+            { key: 'status', header: 'Status' }
+          ]}
+          data={agentPerformanceData}
+          renderCell={(row, column) => {
+            if (column.key === 'solved') {
+              return <span style={{ color: '#10b981' }}>{row.solved}</span>;
+            } else if (column.key === 'unsolved') {
+              return <span style={{ color: '#f59e0b' }}>{row.unsolved}</span>;
+            } else if (column.key === 'escalated') {
+              return <span style={{ color: '#ef4444' }}>{row.escalated}</span>;
+            } else if (column.key === 'status') {
+              return (
+                <span style={{ 
+                  ...styles.statusBadge, 
+                  ...(row.status === 'Active' ? styles.statusActive : styles.statusAway) 
+                }}>
+                  {row.status}
+                </span>
+              );
+            } else {
+              return row[column.key];
+            }
+          }}
+        />
       </div>
 
       {/* Agent Performance Table - Moved from Monitoring & Reporting */}
-      <div style={styles.tableContainer}>
+      <div className="tableContainer" style={styles.tableContainer}>
         <div style={{ paddingLeft: '1.5rem', paddingRight: '1.5rem', paddingTop: '1rem', paddingBottom: '1rem', borderBottom: '1px solid #e5e7eb' }}>
           <h3 style={{ fontSize: '1.125rem', fontWeight: '500', color: '#111827' }}>Agent Performance</h3>
         </div>
-        <table style={styles.table}>
-          <thead style={styles.tableHeader}>
-            <tr>
-              <th style={styles.tableHeaderCell}>Name</th>
-              <th style={styles.tableHeaderCell}>Conversations Handled</th>
-              <th style={styles.tableHeaderCell}>Avg. Response Time</th>
-              <th style={styles.tableHeaderCell}>Status</th>
-            </tr>
-          </thead>
-          <tbody style={styles.tableBody}>
-            {agentData.map((agent, index) => (
-              <tr key={index} style={styles.tableRow}>
-                <td style={{ ...styles.tableCell, fontWeight: '500' }}>{agent.name}</td>
-                <td style={{ ...styles.tableCell, ...styles.tableCellSecondary }}>{agent.handled}</td>
-                <td style={{ ...styles.tableCell, ...styles.tableCellSecondary }}>{agent.responseTime}</td>
-                <td style={styles.tableCell}>
-                  <span style={{ 
-                    ...styles.statusBadge, 
-                    ...(agent.status === 'Active' ? styles.statusActive : styles.statusAway) 
-                  }}>
-                    {agent.status}
-                  </span>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <ResponsiveTable
+          columns={[
+            { key: 'name', header: 'Name', isPrimary: true },
+            { key: 'handled', header: 'Conversations Handled' },
+            { key: 'responseTime', header: 'Avg. Response Time' },
+            { key: 'status', header: 'Status' }
+          ]}
+          data={agentData}
+          renderCell={(row, column) => {
+            if (column.key === 'status') {
+              return (
+                <span style={{ 
+                  ...styles.statusBadge, 
+                  ...(row.status === 'Active' ? styles.statusActive : styles.statusAway) 
+                }}>
+                  {row.status}
+                </span>
+              );
+            } else {
+              return row[column.key];
+            }
+          }}
+        />
       </div>
 
       {/* Expanded Analytics View */}
@@ -1954,39 +2532,38 @@ const DashboardPage = () => {
               
               {/* Detailed Agent Performance Table in Expanded View */}
               <div style={{...styles.detailedTableContainer, marginTop: '2rem', maxHeight: '400px', overflow: 'auto'}}>
-                <table style={styles.detailedTable}>
-                  <thead style={styles.detailedTableHeader}>
-                    <tr>
-                      <th style={styles.detailedTableHeaderCell}>Agent</th>
-                      <th style={styles.detailedTableHeaderCell}>Total Conversations</th>
-                      <th style={styles.detailedTableHeaderCell}>Solved</th>
-                      <th style={styles.detailedTableHeaderCell}>Unsolved</th>
-                      <th style={styles.detailedTableHeaderCell}>Escalated</th>
-                      <th style={styles.detailedTableHeaderCell}>Avg. Response Time</th>
-                      <th style={styles.detailedTableHeaderCell}>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody style={styles.detailedTableBody}>
-                    {agentPerformanceData.map((agent, index) => (
-                      <tr key={index} style={styles.detailedTableRow}>
-                        <td style={{ ...styles.detailedTableCell, fontWeight: '500' }}>{agent.name}</td>
-                        <td style={{ ...styles.detailedTableCell, ...styles.detailedTableCellSecondary }}>{agent.totalConversations}</td>
-                        <td style={{ ...styles.detailedTableCell, color: '#10b981' }}>{agent.solved}</td>
-                        <td style={{ ...styles.detailedTableCell, color: '#f59e0b' }}>{agent.unsolved}</td>
-                        <td style={{ ...styles.detailedTableCell, color: '#ef4444' }}>{agent.escalated}</td>
-                        <td style={{ ...styles.detailedTableCell, ...styles.detailedTableCellSecondary }}>{agent.responseTime}</td>
-                        <td style={styles.detailedTableCell}>
-                          <span style={{ 
-                            ...styles.statusBadge, 
-                            ...(agent.status === 'Active' ? styles.statusActive : styles.statusAway) 
-                          }}>
-                            {agent.status}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                <ResponsiveTable
+                  columns={[
+                    { key: 'name', header: 'Agent', isPrimary: true },
+                    { key: 'totalConversations', header: 'Total Conversations' },
+                    { key: 'solved', header: 'Solved' },
+                    { key: 'unsolved', header: 'Unsolved' },
+                    { key: 'escalated', header: 'Escalated' },
+                    { key: 'responseTime', header: 'Avg. Response Time' },
+                    { key: 'status', header: 'Status' }
+                  ]}
+                  data={agentPerformanceData}
+                  renderCell={(row, column) => {
+                    if (column.key === 'solved') {
+                      return <span style={{ color: '#10b981' }}>{row.solved}</span>;
+                    } else if (column.key === 'unsolved') {
+                      return <span style={{ color: '#f59e0b' }}>{row.unsolved}</span>;
+                    } else if (column.key === 'escalated') {
+                      return <span style={{ color: '#ef4444' }}>{row.escalated}</span>;
+                    } else if (column.key === 'status') {
+                      return (
+                        <span style={{ 
+                          ...styles.statusBadge, 
+                          ...(row.status === 'Active' ? styles.statusActive : styles.statusAway) 
+                        }}>
+                          {row.status}
+                        </span>
+                      );
+                    } else {
+                      return row[column.key];
+                    }
+                  }}
+                />
               </div>
             </div>
           </div>

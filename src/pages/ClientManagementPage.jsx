@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Search, Filter } from 'lucide-react'
+import ResponsiveTable from '../components/ResponsiveTable'
 
 const ClientManagementPage = () => {
   const [clients] = useState([
@@ -101,49 +102,6 @@ const ClientManagementPage = () => {
       borderRadius: '0.5rem',
       boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
       overflow: 'hidden'
-    },
-    table: {
-      minWidth: '100%',
-      borderCollapse: 'collapse',
-      divideY: '1px solid #e5e7eb'
-    },
-    tableHeader: {
-      backgroundColor: '#f9fafb'
-    },
-    tableHeaderCell: {
-      paddingLeft: '1.5rem',
-      paddingRight: '1.5rem',
-      paddingTop: '0.75rem',
-      paddingBottom: '0.75rem',
-      textAlign: 'left',
-      fontSize: '0.75rem',
-      fontWeight: '500',
-      color: '#6b7280',
-      textTransform: 'uppercase',
-      letterSpacing: '0.05em'
-    },
-    tableBody: {
-      backgroundColor: '#ffffff',
-      divideY: '1px solid #e5e7eb'
-    },
-    tableRow: {
-      backgroundColor: '#ffffff',
-      cursor: 'pointer'
-    },
-    tableRowHover: {
-      backgroundColor: '#f9fafb'
-    },
-    tableCell: {
-      paddingLeft: '1.5rem',
-      paddingRight: '1.5rem',
-      paddingTop: '1rem',
-      paddingBottom: '1rem',
-      whiteSpace: 'nowrap',
-      fontSize: '0.875rem',
-      color: '#111827'
-    },
-    tableCellSecondary: {
-      color: '#6b7280'
     },
     tagContainer: {
       display: 'flex',
@@ -357,31 +315,28 @@ const ClientManagementPage = () => {
 
       {/* Clients Table */}
       <div style={styles.tableContainer}>
-        <table style={styles.table}>
-          <thead style={styles.tableHeader}>
-            <tr>
-              <th style={styles.tableHeaderCell}>Client Name</th>
-              <th style={styles.tableHeaderCell}>Phone</th>
-              <th style={styles.tableHeaderCell}>Country</th>
-              <th style={styles.tableHeaderCell}>Assigned Agent</th>
-              <th style={styles.tableHeaderCell}>Tags</th>
-            </tr>
-          </thead>
-          <tbody style={styles.tableBody}>
-            {filteredClients.map((client) => (
-              <tr 
-                key={client.id} 
-                style={styles.tableRow}
-                onMouseEnter={(e) => e.target.style.backgroundColor = styles.tableRowHover.backgroundColor}
-                onMouseLeave={(e) => e.target.style.backgroundColor = styles.tableRow.backgroundColor}
-              >
-                <td style={{ ...styles.tableCell, fontWeight: '500' }}>{client.name}</td>
-                <td style={{ ...styles.tableCell, ...styles.tableCellSecondary }}>{client.phone}</td>
-                <td style={{ ...styles.tableCell, ...styles.tableCellSecondary }}>{client.country}</td>
-                <td style={{ ...styles.tableCell, ...styles.tableCellSecondary }}>{client.agent}</td>
-                <td style={styles.tableCell}>
+        <ResponsiveTable
+          columns={[
+            { key: 'name', header: 'Client Name', isPrimary: true },
+            { key: 'phone', header: 'Phone' },
+            { key: 'country', header: 'Country' },
+            { key: 'agent', header: 'Assigned Agent' },
+            { key: 'tags', header: 'Tags' }
+          ]}
+          data={filteredClients.map(client => ({
+            id: client.id,
+            name: client.name,
+            phone: client.phone,
+            country: client.country,
+            agent: client.agent,
+            tags: client.tags
+          }))}
+          renderCell={(row, column) => {
+            switch (column.key) {
+              case 'tags':
+                return (
                   <div style={styles.tagContainer}>
-                    {client.tags.map(tag => (
+                    {row.tags.map(tag => (
                       <span 
                         key={tag} 
                         style={{ 
@@ -396,11 +351,12 @@ const ClientManagementPage = () => {
                       </span>
                     ))}
                   </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                );
+              default:
+                return row[column.key];
+            }
+          }}
+        />
       </div>
 
       {/* Client Detail Panel */}

@@ -171,10 +171,76 @@ const ProfilePage = () => {
     }
   }
 
+  // Media queries for responsive design
+  const mediaStyles = `
+    @media (max-width: 768px) {
+      .profile-container {
+        padding: 1rem;
+      }
+      
+      .profile-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+      }
+      
+      .profile-title {
+        font-size: 1.25rem;
+      }
+      
+      .profile-section {
+        flex-direction: column;
+        gap: 1.5rem;
+      }
+      
+      .avatar-section {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      
+      .avatar {
+        height: 6rem;
+        width: 6rem;
+      }
+      
+      .avatar-icon {
+        height: 3rem;
+        width: 3rem;
+      }
+      
+      .button-group {
+        flex-direction: column;
+      }
+      
+      .button-group button {
+        width: 100%;
+      }
+    }
+    
+    @media (max-width: 480px) {
+      .profile-container {
+        padding: 0.75rem;
+      }
+      
+      .avatar {
+        height: 5rem;
+        width: 5rem;
+      }
+      
+      .avatar-icon {
+        height: 2.5rem;
+        width: 2.5rem;
+      }
+    }
+  `
+
   return (
-    <div style={styles.container}>
-      <div style={styles.header}>
-        <h1 style={styles.title}>User Profile</h1>
+    <div style={styles.container} className="profile-container">
+      <style>{mediaStyles}</style>
+      <div style={styles.header} className="profile-header">
+        <h1 style={styles.title} className="profile-title">User Profile</h1>
         {!isEditing && (
           <button
             style={styles.editButton}
@@ -187,10 +253,10 @@ const ProfilePage = () => {
         )}
       </div>
 
-      <div style={styles.profileSection}>
-        <div style={styles.avatarSection}>
-          <div style={styles.avatar}>
-            <svg style={styles.avatarIcon} fill="currentColor" viewBox="0 0 20 20">
+      <div style={styles.profileSection} className="profile-section">
+        <div style={styles.avatarSection} className="avatar-section">
+          <div style={styles.avatar} className="avatar">
+            <svg style={styles.avatarIcon} className="avatar-icon" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
             </svg>
           </div>
@@ -205,7 +271,7 @@ const ProfilePage = () => {
           )}
         </div>
 
-        <div style={styles.infoSection}>
+        <div style={styles.infoSection} className="info-section">
           <form onSubmit={handleSubmit}>
             <div style={styles.formGroup}>
               <label style={styles.label}>First Name</label>
@@ -358,7 +424,7 @@ const ProfilePage = () => {
             </div>
 
             {isEditing && (
-              <div style={styles.buttonGroup}>
+              <div style={styles.buttonGroup} className="button-group">
                 <button
                   type="button"
                   style={styles.cancelButton}

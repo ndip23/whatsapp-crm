@@ -1,6 +1,8 @@
 import { useState, useMemo } from 'react'
-import { Edit, Trash2, UserPlus, Search, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Edit, Trash2, UserPlus, Search } from 'lucide-react'
 import { showToast } from '../utils/toast'
+import ResponsiveTable from '../components/ResponsiveTable'
+import ResponsivePagination from '../components/ResponsivePagination'
 
 const AdminManagementPage = () => {
   const [users, setUsers] = useState([
@@ -899,73 +901,80 @@ const AdminManagementPage = () => {
       </div>
 
       <div style={styles.tableContainer}>
-        <table style={styles.table}>
-          <thead style={styles.tableHeader}>
-            <tr>
-              <th style={styles.tableHeaderCell}>Name</th>
-              <th style={styles.tableHeaderCell}>Phone Number</th>
-              <th style={styles.tableHeaderCell}>Email</th>
-              <th style={styles.tableHeaderCell}>Status</th>
-              <th style={styles.tableHeaderCell}>Actions</th>
-            </tr>
-          </thead>
-          <tbody style={styles.tableBody}>
-            {currentUsers.length > 0 ? (
-              currentUsers.map((user) => (
-                <tr 
-                  key={user.id} 
-                  style={styles.tableRow}
-                >
-                  <td style={{ ...styles.tableCell, fontWeight: '500' }}>{getFullName(user)}</td>
-                  <td style={{ ...styles.tableCell, ...styles.tableCellSecondary }}>{user.phoneNumber}</td>
-                  <td style={{ ...styles.tableCell, ...styles.tableCellSecondary }}>{user.email}</td>
-                  <td style={styles.tableCell}>
-                    <span style={{ 
-                      ...styles.statusBadge, 
-                      ...(user.status === 'Active' ? styles.statusActive : styles.statusSuspended) 
-                    }}>
-                      {user.status}
-                    </span>
-                  </td>
-                  <td style={styles.actionCell}>
+        <ResponsiveTable
+          columns={[
+            { key: 'name', header: 'Name', isPrimary: true },
+            { key: 'phoneNumber', header: 'Phone Number' },
+            { key: 'email', header: 'Email' },
+            { key: 'status', header: 'Status' },
+            { key: 'actions', header: 'Actions', sortable: false }
+          ]}
+          data={currentUsers.map(user => ({
+            id: user.id,
+            name: getFullName(user),
+            phoneNumber: user.phoneNumber,
+            email: user.email,
+            status: user.status,
+            user: user
+          }))}
+          renderCell={(row, column) => {
+            switch (column.key) {
+              case 'status':
+                return (
+                  <span style={{ 
+                    ...styles.statusBadge, 
+                    ...(row.status === 'Active' ? styles.statusActive : styles.statusSuspended) 
+                  }}>
+                    {row.status}
+                  </span>
+                );
+              case 'actions':
+                return (
+                  <div style={{ display: 'flex', gap: '0.25rem' }}>
                     <button
-                      onClick={() => handleEditUser(user)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEditUser(row.user);
+                      }}
                       style={styles.actionButton}
                       onMouseEnter={(e) => {
-                        e.target.style.color = styles.actionButtonHover.color
-                        e.target.style.backgroundColor = styles.actionButtonHover.backgroundColor
+                        e.target.style.color = styles.actionButtonHover.color;
+                        e.target.style.backgroundColor = styles.actionButtonHover.backgroundColor;
                       }}
                       onMouseLeave={(e) => {
-                        e.target.style.color = styles.actionButton.color
-                        e.target.style.backgroundColor = 'transparent'
+                        e.target.style.color = styles.actionButton.color;
+                        e.target.style.backgroundColor = 'transparent';
                       }}
                       title="Edit User"
                     >
                       <Edit style={{ height: '1rem', width: '1rem' }} />
                     </button>
                     <button
-                      onClick={() => handleSuspendUser(user.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleSuspendUser(row.user.id);
+                      }}
                       style={{ 
                         ...styles.actionButton, 
-                        ...(user.status === 'Active' ? styles.actionButtonWarning : styles.actionButtonHover) 
+                        ...(row.status === 'Active' ? styles.actionButtonWarning : styles.actionButtonHover) 
                       }}
                       onMouseEnter={(e) => {
-                        e.target.style.color = user.status === 'Active' 
+                        e.target.style.color = row.status === 'Active' 
                           ? styles.actionButtonWarningHover.color 
-                          : styles.actionButtonHover.color
-                        e.target.style.backgroundColor = user.status === 'Active' 
+                          : styles.actionButtonHover.color;
+                        e.target.style.backgroundColor = row.status === 'Active' 
                           ? styles.actionButtonWarningHover.backgroundColor 
-                          : styles.actionButtonHover.backgroundColor
+                          : styles.actionButtonHover.backgroundColor;
                       }}
                       onMouseLeave={(e) => {
-                        e.target.style.color = user.status === 'Active' 
+                        e.target.style.color = row.status === 'Active' 
                           ? styles.actionButtonWarning.color 
-                          : styles.actionButton.color
-                        e.target.style.backgroundColor = 'transparent'
+                          : styles.actionButton.color;
+                        e.target.style.backgroundColor = 'transparent';
                       }}
-                      title={user.status === 'Active' ? 'Suspend User' : 'Activate User'}
+                      title={row.status === 'Active' ? 'Suspend User' : 'Activate User'}
                     >
-                      {user.status === 'Active' ? (
+                      {row.status === 'Active' ? (
                         <svg style={{ height: '1rem', width: '1rem' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636m12.728 12.728L18.364 5.636M5.636 18.364l12.728-12.728" />
                         </svg>
@@ -976,98 +985,41 @@ const AdminManagementPage = () => {
                       )}
                     </button>
                     <button
-                      onClick={() => handleDeleteClick(user)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteClick(row.user);
+                      }}
                       style={{ ...styles.actionButton, ...styles.actionButtonDanger }}
                       onMouseEnter={(e) => {
-                        e.target.style.color = styles.actionButtonDangerHover.color
-                        e.target.style.backgroundColor = styles.actionButtonDangerHover.backgroundColor
+                        e.target.style.color = styles.actionButtonDangerHover.color;
+                        e.target.style.backgroundColor = styles.actionButtonDangerHover.backgroundColor;
                       }}
                       onMouseLeave={(e) => {
-                        e.target.style.color = styles.actionButtonDanger.color
-                        e.target.style.backgroundColor = 'transparent'
+                        e.target.style.color = styles.actionButtonDanger.color;
+                        e.target.style.backgroundColor = 'transparent';
                       }}
                       title="Delete User"
                     >
                       <Trash2 style={{ height: '1rem', width: '1rem' }} />
                     </button>
-                  </td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan="5" style={{ ...styles.tableCell, textAlign: 'center', fontStyle: 'italic', color: '#6b7280' }}>
-                  No staff members found
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+                  </div>
+                );
+              default:
+                return row[column.key];
+            }
+          }}
+          onRowClick={(row) => handleEditUser(row.user)}
+        />
 
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div style={styles.paginationContainer}>
-            <div style={styles.paginationInfo}>
-              Showing {startIndex + 1}-{Math.min(endIndex, filteredUsers.length)} of {filteredUsers.length} staff members
-            </div>
-            <div style={styles.paginationControls}>
-              <button
-                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                disabled={currentPage === 1}
-                style={{
-                  ...styles.paginationButton,
-                  ...(currentPage === 1 ? styles.paginationButtonDisabled : {}),
-                  ...(currentPage === 1 ? {} : {
-                    onMouseEnter: (e) => e.target.style.backgroundColor = styles.paginationButtonHover.backgroundColor,
-                    onMouseLeave: (e) => e.target.style.backgroundColor = styles.paginationButton.backgroundColor
-                  })
-                }}
-              >
-                <ChevronLeft style={{ height: '1rem', width: '1rem' }} />
-              </button>
-              
-              {getPageNumbers().map((page, index) => (
-                <div key={index}>
-                  {page === '...' ? (
-                    <span style={{ ...styles.pageNumber, cursor: 'default', color: '#9ca3af' }}>...</span>
-                  ) : (
-                    <button
-                      onClick={() => setCurrentPage(page)}
-                      style={{
-                        ...styles.pageNumber,
-                        ...(currentPage === page ? styles.paginationButtonActive : styles.paginationButtonInactive),
-                        ...(currentPage === page ? {} : {
-                          onMouseEnter: (e) => {
-                            e.target.style.backgroundColor = '#f0fdf4'
-                          },
-                          onMouseLeave: (e) => {
-                            e.target.style.backgroundColor = styles.paginationButtonInactive.backgroundColor
-                          }
-                        })
-                      }}
-                    >
-                      {page}
-                    </button>
-                  )}
-                </div>
-              ))}
-              
-              <button
-                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                disabled={currentPage === totalPages}
-                style={{
-                  ...styles.paginationButton,
-                  ...(currentPage === totalPages ? styles.paginationButtonDisabled : {}),
-                  ...(currentPage === totalPages ? {} : {
-                    onMouseEnter: (e) => e.target.style.backgroundColor = styles.paginationButtonHover.backgroundColor,
-                    onMouseLeave: (e) => e.target.style.backgroundColor = styles.paginationButton.backgroundColor
-                  })
-                }}
-              >
-                <ChevronRight style={{ height: '1rem', width: '1rem' }} />
-              </button>
-            </div>
-          </div>
-        )}
+        <ResponsivePagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          itemsPerPage={itemsPerPage}
+          totalItems={filteredUsers.length}
+          showInfo={true}
+          showNavigation={true}
+        />
       </div>
 
       {/* Add/Edit User Modal */}

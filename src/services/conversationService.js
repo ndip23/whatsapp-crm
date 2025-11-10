@@ -21,6 +21,15 @@ export const setFollowUp = async (credentials) => {
   return response;
 };
 export const closeConversation = async (conversationId) => {
-  const response = await apiClient.put(`api/conversations/${conversationId}/close`);
+  const response = await apiClient.put(`/conversations/${conversationId}/close`);
+  return response;
+};
+
+export const startConversation = async (conversationId) => {
+  const response = await apiClient.put(`/conversations/${conversationId}/start-typing`);
+  return response;
+};
+export const stopConversation = async (conversationId) => {
+  const response = await apiClient.put(`/conversations/${conversationId}/stop-typing`);
   return response;
 };

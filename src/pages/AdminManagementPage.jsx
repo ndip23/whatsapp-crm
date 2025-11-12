@@ -1,10 +1,11 @@
 import { useState, useMemo } from 'react'
-import { Edit, Trash2, UserPlus, Search } from 'lucide-react'
+import { Edit, Trash2, UserPlus, Search, Shield } from 'lucide-react'
 import { showToast } from '../utils/toast'
 import ResponsiveTable from '../components/ResponsiveTable'
 import ResponsivePagination from '../components/ResponsivePagination'
 
 const AdminManagementPage = () => {
+  // Sample users data
   const [users, setUsers] = useState([
     { 
       id: 1, 
@@ -116,66 +117,94 @@ const AdminManagementPage = () => {
     }
   ])
 
+  // Sample admins data
+  const [admins, setAdmins] = useState([
+    { 
+      id: 1, 
+      firstName: 'Admin', 
+      middleName: '', 
+      lastName: 'User', 
+      phoneNumber: '+1234567890', 
+      email: 'admin@example.com', 
+      status: 'Active',
+      role: 'Super Admin'
+    },
+    { 
+      id: 2, 
+      firstName: 'System', 
+      middleName: '', 
+      lastName: 'Administrator', 
+      phoneNumber: '+0987654321', 
+      email: 'system.admin@example.com', 
+      status: 'Active',
+      role: 'Admin'
+    }
+  ])
+
+  const [activeTab, setActiveTab] = useState('users') // 'users' or 'admins'
   const [showModal, setShowModal] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [userToDelete, setUserToDelete] = useState(null)
   const [editingUser, setEditingUser] = useState(null)
   const [formData, setFormData] = useState({
-    firstName: '',
-    middleName: '',
-    lastName: '',
+    fullName: '',
     phoneNumber: '',
-    email: ''
+    email: '',
+    role: '' // For admins only
   })
   const [searchTerm, setSearchTerm] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 5
 
-  // Filter users based on search term
-  const filteredUsers = useMemo(() => {
-    if (!searchTerm) return users
+  // Get current data based on active tab
+  const currentData = activeTab === 'users' ? users : admins
+
+  // Filter data based on search term
+  const filteredData = useMemo(() => {
+    if (!searchTerm) return currentData
     
     const term = searchTerm.toLowerCase()
-    return users.filter(user => 
-      user.firstName.toLowerCase().includes(term) ||
-      (user.middleName && user.middleName.toLowerCase().includes(term)) ||
-      user.lastName.toLowerCase().includes(term) ||
-      user.phoneNumber.toLowerCase().includes(term) ||
-      user.email.toLowerCase().includes(term)
+    return currentData.filter(item => 
+      item.firstName.toLowerCase().includes(term) ||
+      (item.middleName && item.middleName.toLowerCase().includes(term)) ||
+      item.lastName.toLowerCase().includes(term) ||
+      item.phoneNumber.toLowerCase().includes(term) ||
+      item.email.toLowerCase().includes(term) ||
+      (activeTab === 'admins' && item.role.toLowerCase().includes(term))
     )
-  }, [users, searchTerm])
+  }, [currentData, searchTerm, activeTab])
 
   // Pagination logic
-  const totalPages = Math.ceil(filteredUsers.length / itemsPerPage)
+  const totalPages = Math.ceil(filteredData.length / itemsPerPage)
   const startIndex = (currentPage - 1) * itemsPerPage
   const endIndex = startIndex + itemsPerPage
-  const currentUsers = filteredUsers.slice(startIndex, endIndex)
+  const currentItems = filteredData.slice(startIndex, endIndex)
 
-  // Reset to first page when search term changes
+  // Reset to first page when search term or tab changes
   useMemo(() => {
     setCurrentPage(1)
-  }, [searchTerm])
+  }, [searchTerm, activeTab])
 
   const handleAddUser = () => {
     setEditingUser(null)
     setFormData({ 
-      firstName: '', 
-      middleName: '', 
-      lastName: '', 
+      fullName: '', 
       phoneNumber: '', 
-      email: '' 
+      email: '',
+      role: activeTab === 'admins' ? 'Admin' : '' // Default role for admins
     })
     setShowModal(true)
   }
 
   const handleEditUser = (user) => {
     setEditingUser(user)
+    // Combine first, middle, and last names into a single fullName field
+    const fullName = `${user.firstName}${user.middleName ? ' ' + user.middleName : ''}${user.lastName ? ' ' + user.lastName : ''}`.trim()
     setFormData({
-      firstName: user.firstName,
-      middleName: user.middleName,
-      lastName: user.lastName,
+      fullName: fullName,
       phoneNumber: user.phoneNumber,
-      email: user.email
+      email: user.email,
+      role: user.role || '' // For admins
     })
     setShowModal(true)
   }
@@ -187,24 +216,37 @@ const AdminManagementPage = () => {
 
   const confirmDeleteUser = () => {
     if (userToDelete) {
-      setUsers(users.filter(user => user.id !== userToDelete.id))
-      showToast(`User ${userToDelete.firstName} deleted successfully`, 'success')
+      if (activeTab === 'users') {
+        setUsers(users.filter(user => user.id !== userToDelete.id))
+      } else {
+        setAdmins(admins.filter(admin => admin.id !== userToDelete.id))
+      }
+      showToast(`${activeTab === 'users' ? 'User' : 'Admin'} ${userToDelete.firstName} deleted successfully`, 'success')
       setShowDeleteConfirm(false)
       setUserToDelete(null)
     }
   }
 
   const handleSuspendUser = (id) => {
-    setUsers(users.map(user => 
-      user.id === id 
-        ? { ...user, status: user.status === 'Active' ? 'Suspended' : 'Active' }
-        : user
-    ))
-    const user = users.find(u => u.id === id)
+    if (activeTab === 'users') {
+      setUsers(users.map(user => 
+        user.id === id 
+          ? { ...user, status: user.status === 'Active' ? 'Suspended' : 'Active' }
+          : user
+      ))
+    } else {
+      setAdmins(admins.map(admin => 
+        admin.id === id 
+          ? { ...admin, status: admin.status === 'Active' ? 'Suspended' : 'Active' }
+          : admin
+      ))
+    }
+    
+    const item = currentData.find(u => u.id === id)
     showToast(
-      user.status === 'Active' 
-        ? `User ${user.firstName} suspended successfully` 
-        : `User ${user.firstName} activated successfully`, 
+      item.status === 'Active' 
+        ? `${activeTab === 'users' ? 'User' : 'Admin'} ${item.firstName} suspended successfully` 
+        : `${activeTab === 'users' ? 'User' : 'Admin'} ${item.firstName} activated successfully`, 
       'success'
     )
   }
@@ -213,7 +255,7 @@ const AdminManagementPage = () => {
     e.preventDefault()
     
     // Simple validation
-    if (!formData.firstName || !formData.lastName || !formData.email || !formData.phoneNumber) {
+    if (!formData.fullName || !formData.email || !formData.phoneNumber) {
       showToast('Please fill in all required fields', 'error')
       return
     }
@@ -232,31 +274,66 @@ const AdminManagementPage = () => {
       return
     }
     
+    // Split fullName into first, middle, and last names
+    const nameParts = formData.fullName.trim().split(/\s+/)
+    const firstName = nameParts[0] || ''
+    const middleName = nameParts.length > 2 ? nameParts.slice(1, -1).join(' ') : ''
+    const lastName = nameParts.length > 1 ? nameParts[nameParts.length - 1] : ''
+    
+    if (!firstName || !lastName) {
+      showToast('Please enter both first and last name in the full name field', 'error')
+      return
+    }
+    
+    const userData = {
+      firstName,
+      middleName,
+      lastName,
+      phoneNumber: formData.phoneNumber,
+      email: formData.email,
+      role: formData.role || '' // For admins
+    }
+    
     if (editingUser) {
-      // Update existing user
-      setUsers(users.map(user => 
-        user.id === editingUser.id 
-          ? { ...user, ...formData }
-          : user
-      ))
-      showToast('User updated successfully', 'success')
+      // Update existing user/admin
+      if (activeTab === 'users') {
+        setUsers(users.map(user => 
+          user.id === editingUser.id 
+            ? { ...user, ...userData }
+            : user
+        ))
+      } else {
+        setAdmins(admins.map(admin => 
+          admin.id === editingUser.id 
+            ? { ...admin, ...userData }
+            : admin
+        ))
+      }
+      showToast(`${activeTab === 'users' ? 'User' : 'Admin'} updated successfully`, 'success')
     } else {
-      // Add new user
-      const newUser = {
-        id: users.length + 1,
-        ...formData,
+      // Add new user/admin
+      const newItem = {
+        id: currentData.length + 1,
+        ...userData,
         status: 'Active'
       }
-      setUsers([...users, newUser])
-      showToast('User added successfully', 'success')
+      
+      if (activeTab === 'users') {
+        setUsers([...users, newItem])
+      } else {
+        setAdmins([...admins, newItem])
+      }
+      showToast(`${activeTab === 'users' ? 'User' : 'Admin'} added successfully`, 'success')
     }
     setShowModal(false)
   }
 
   const getFullName = (user) => {
+    // Updated to work with the new data structure
     return `${user.firstName} ${user.middleName ? user.middleName + ' ' : ''}${user.lastName}`
   }
 
+  // Styles object
   const styles = {
     page: {
       padding: '1rem',
@@ -278,21 +355,20 @@ const AdminManagementPage = () => {
       margin: 0
     },
     addButton: {
-      backgroundColor: '#10b981',
-      color: '#ffffff',
-      fontWeight: '500',
-      paddingTop: '0.375rem',
-      paddingBottom: '0.375rem',
-      paddingLeft: '0.75rem',
-      paddingRight: '0.75rem',
-      borderRadius: '0.375rem',
-      border: 'none',
-      cursor: 'pointer',
       display: 'flex',
       alignItems: 'center',
       gap: '0.5rem',
-      fontSize: '0.875rem',
-      transition: 'background-color 0.2s ease'
+      backgroundColor: '#10b981',
+      color: '#ffffff',
+      fontWeight: '500',
+      paddingTop: '0.5rem',
+      paddingBottom: '0.5rem',
+      paddingLeft: '1rem',
+      paddingRight: '1rem',
+      borderRadius: '0.375rem',
+      border: 'none',
+      cursor: 'pointer',
+      fontSize: '0.875rem'
     },
     addButtonHover: {
       backgroundColor: '#059669'
@@ -311,8 +387,7 @@ const AdminManagementPage = () => {
       border: '1px solid #d1d5db',
       borderRadius: '0.375rem',
       outline: 'none',
-      fontSize: '0.875rem',
-      transition: 'border-color 0.2s ease, box-shadow 0.2s ease'
+      fontSize: '0.875rem'
     },
     searchInputFocus: {
       borderColor: '#10b981',
@@ -334,193 +409,83 @@ const AdminManagementPage = () => {
       overflow: 'hidden',
       border: '1px solid #e5e7eb'
     },
-    table: {
-      minWidth: '100%',
-      borderCollapse: 'collapse'
-    },
-    tableHeader: {
-      backgroundColor: '#f9fafb'
-    },
-    tableHeaderCell: {
-      paddingLeft: '1rem',
-      paddingRight: '1rem',
-      paddingTop: '0.5rem',
-      paddingBottom: '0.5rem',
-      textAlign: 'left',
-      fontSize: '0.75rem',
-      fontWeight: '500',
-      color: '#6b7280',
-      textTransform: 'uppercase',
-      letterSpacing: '0.05em'
-    },
-    tableBody: {
-      backgroundColor: '#ffffff'
-    },
-    tableRow: {
-      backgroundColor: '#ffffff',
-      transition: 'background-color 0.2s ease'
-    },
-    tableCell: {
-      paddingLeft: '1rem',
-      paddingRight: '1rem',
-      paddingTop: '0.75rem',
-      paddingBottom: '0.75rem',
-      whiteSpace: 'nowrap',
-      fontSize: '0.8125rem',
-      color: '#111827',
-      cursor: 'pointer'
-    },
-    tableCellSecondary: {
-      color: '#6b7280'
-    },
     statusBadge: {
-      paddingLeft: '0.375rem',
-      paddingRight: '0.375rem',
-      paddingTop: '0.125rem',
-      paddingBottom: '0.125rem',
+      display: 'inline-flex',
+      alignItems: 'center',
+      paddingLeft: '0.5rem',
+      paddingRight: '0.5rem',
+      paddingTop: '0.25rem',
+      paddingBottom: '0.25rem',
       borderRadius: '9999px',
       fontSize: '0.75rem',
       fontWeight: '500'
     },
     statusActive: {
       backgroundColor: '#d1fae5',
-      color: '#065f46'
+      color: '#065f46',
+      border: '1px solid #10b981'
     },
     statusSuspended: {
       backgroundColor: '#fee2e2',
-      color: '#991b1b'
-    },
-    actionCell: {
-      paddingLeft: '1rem',
-      paddingRight: '1rem',
-      paddingTop: '0.75rem',
-      paddingBottom: '0.75rem',
-      whiteSpace: 'nowrap',
-      fontSize: '0.8125rem'
+      color: '#991b1b',
+      border: '1px solid #ef4444'
     },
     actionButton: {
-      backgroundColor: 'transparent',
-      border: 'none',
-      cursor: 'pointer',
-      color: '#6b7280',
-      padding: '0.25rem',
-      borderRadius: '0.25rem',
-      marginLeft: '0.125rem',
-      width: '1.75rem',
-      height: '1.75rem',
-      display: 'inline-flex',
+      display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      transition: 'all 0.2s ease'
+      height: '2rem',
+      width: '2rem',
+      borderRadius: '0.375rem',
+      border: '1px solid #e5e7eb',
+      backgroundColor: 'transparent',
+      color: '#6b7280',
+      cursor: 'pointer'
     },
     actionButtonHover: {
-      color: '#111827',
-      backgroundColor: '#f3f4f6'
-    },
-    actionButtonDanger: {
-      color: '#ef4444'
-    },
-    actionButtonDangerHover: {
-      color: '#b91c1c',
-      backgroundColor: '#fef2f2'
+      backgroundColor: '#f3f4f6',
+      color: '#111827'
     },
     actionButtonWarning: {
       color: '#f59e0b'
     },
     actionButtonWarningHover: {
-      color: '#d97706',
-      backgroundColor: '#fffbeb'
+      backgroundColor: '#fffbeb',
+      color: '#d97706'
     },
-    paginationContainer: {
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      padding: '1rem',
-      borderTop: '1px solid #e5e7eb'
+    actionButtonDanger: {
+      color: '#ef4444'
     },
-    paginationInfo: {
-      fontSize: '0.8125rem',
-      color: '#6b7280'
-    },
-    paginationControls: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: '0.5rem'
-    },
-    paginationButton: {
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      width: '2rem',
-      height: '2rem',
-      borderRadius: '0.375rem',
-      border: '1px solid #d1d5db',
-      backgroundColor: '#ffffff',
-      color: '#374151',
-      cursor: 'pointer',
-      fontSize: '0.875rem',
-      transition: 'all 0.2s ease'
-    },
-    paginationButtonHover: {
-      backgroundColor: '#f9fafb'
-    },
-    paginationButtonDisabled: {
-      opacity: '0.5',
-      cursor: 'not-allowed'
-    },
-    paginationButtonActive: {
-      backgroundColor: '#10b981',
-      color: '#ffffff',
-      borderColor: '#10b981'
-    },
-    pageNumber: {
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      width: '2rem',
-      height: '2rem',
-      borderRadius: '0.375rem',
-      cursor: 'pointer',
-      fontSize: '0.875rem',
-      transition: 'all 0.2s ease',
-      border: '1px solid transparent'
-    },
-    paginationButtonActive: {
-      backgroundColor: '#10b981',
-      color: '#ffffff',
-      borderColor: '#10b981'
-    },
-    paginationButtonInactive: {
-      backgroundColor: '#ffffff',
-      color: '#10b981',
-      borderColor: '#10b981',
-      borderWidth: '1px',
-      borderStyle: 'solid'
+    actionButtonDangerHover: {
+      backgroundColor: '#fee2e2',
+      color: '#dc2626'
     },
     modalOverlay: {
       position: 'fixed',
       inset: '0',
-      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      backgroundColor: 'rgba(0, 0, 0, 0)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
       padding: '1rem',
       zIndex: '50',
       opacity: 0,
-      transition: 'opacity 0.2s ease'
+      transition: 'opacity 0.3s ease, visibility 0.3s ease',
+      visibility: 'hidden'
     },
     modalOverlayVisible: {
-      opacity: 1
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      opacity: 1,
+      visibility: 'visible'
     },
     modalContainer: {
       backgroundColor: '#ffffff',
       borderRadius: '0.5rem',
-      boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.05)',
+      boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
       width: '100%',
       maxWidth: '32rem',
-      border: '1px solid #e5e7eb',
-      transform: 'scale(0.98)',
-      transition: 'transform 0.2s ease, opacity 0.2s ease',
+      transform: 'scale(0.95)',
+      transition: 'transform 0.3s ease, opacity 0.3s ease',
       opacity: 0
     },
     modalContainerVisible: {
@@ -528,8 +493,8 @@ const AdminManagementPage = () => {
       opacity: 1
     },
     modalHeader: {
-      paddingLeft: '1.25rem',
-      paddingRight: '1.25rem',
+      paddingLeft: '1.5rem',
+      paddingRight: '1.5rem',
       paddingTop: '1rem',
       paddingBottom: '1rem',
       borderBottom: '1px solid #e5e7eb',
@@ -539,7 +504,7 @@ const AdminManagementPage = () => {
     },
     modalTitle: {
       fontSize: '1.125rem',
-      fontWeight: '600',
+      fontWeight: '500',
       color: '#111827'
     },
     modalCloseButton: {
@@ -548,38 +513,31 @@ const AdminManagementPage = () => {
       border: 'none',
       cursor: 'pointer',
       borderRadius: '0.25rem',
-      width: '2rem',
-      height: '2rem',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      transition: 'background-color 0.2s ease'
+      padding: '0.25rem'
     },
     modalCloseButtonHover: {
-      backgroundColor: '#f3f4f6',
-      color: '#111827'
+      backgroundColor: '#f3f4f6'
     },
     modalForm: {
-      padding: '1.25rem'
+      padding: '1.5rem'
     },
     formRow: {
       display: 'flex',
-      gap: '0.75rem',
-      marginBottom: '0.75rem'
+      gap: '1rem'
     },
     formGroup: {
-      flex: '1',
-      marginBottom: '0.75rem'
+      flex: 1,
+      marginBottom: '1rem'
     },
     formGroupFull: {
-      marginBottom: '0.75rem'
+      marginBottom: '1rem'
     },
     formLabel: {
       display: 'block',
-      fontSize: '0.8125rem',
+      fontSize: '0.875rem',
       fontWeight: '500',
-      color: '#374151',
-      marginBottom: '0.375rem'
+      color: '#111827',
+      marginBottom: '0.25rem'
     },
     formInput: {
       display: 'block',
@@ -591,28 +549,17 @@ const AdminManagementPage = () => {
       border: '1px solid #d1d5db',
       borderRadius: '0.375rem',
       outline: 'none',
-      fontSize: '0.875rem',
-      transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
-      backgroundColor: '#ffffff'
-    },
-    formInputFocus: {
-      borderColor: '#10b981',
-      boxShadow: '0 0 0 3px rgba(16, 185, 129, 0.1)'
-    },
-    formInputError: {
-      borderColor: '#f87171'
+      fontSize: '0.875rem'
     },
     modalFooter: {
-      paddingLeft: '1.25rem',
-      paddingRight: '1.25rem',
+      paddingLeft: '1.5rem',
+      paddingRight: '1.5rem',
       paddingTop: '1rem',
       paddingBottom: '1rem',
       backgroundColor: '#f9fafb',
       display: 'flex',
       justifyContent: 'flex-end',
-      gap: '0.5rem',
-      borderBottomLeftRadius: '0.5rem',
-      borderBottomRightRadius: '0.5rem'
+      gap: '0.75rem'
     },
     cancelButton: {
       paddingLeft: '1rem',
@@ -625,8 +572,7 @@ const AdminManagementPage = () => {
       fontWeight: '500',
       color: '#374151',
       backgroundColor: '#ffffff',
-      cursor: 'pointer',
-      transition: 'background-color 0.2s ease'
+      cursor: 'pointer'
     },
     cancelButtonHover: {
       backgroundColor: '#f9fafb'
@@ -642,67 +588,64 @@ const AdminManagementPage = () => {
       color: '#ffffff',
       backgroundColor: '#10b981',
       border: 'none',
-      cursor: 'pointer',
-      transition: 'background-color 0.2s ease'
+      cursor: 'pointer'
     },
     saveButtonHover: {
       backgroundColor: '#059669'
     },
-    // Enhanced confirmation dialog styles
     confirmOverlay: {
       position: 'fixed',
       inset: '0',
-      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      backgroundColor: 'rgba(0, 0, 0, 0)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
       padding: '1rem',
       zIndex: '50',
       opacity: 0,
-      transition: 'opacity 0.2s ease'
+      transition: 'opacity 0.3s ease, visibility 0.3s ease',
+      visibility: 'hidden'
     },
     confirmOverlayVisible: {
-      opacity: 1
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      opacity: 1,
+      visibility: 'visible'
     },
     confirmContainer: {
       backgroundColor: '#ffffff',
       borderRadius: '0.5rem',
-      boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.05)',
+      boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
       width: '100%',
       maxWidth: '28rem',
-      border: '1px solid #e5e7eb',
-      transform: 'scale(0.98)',
-      transition: 'transform 0.2s ease, opacity 0.2s ease',
-      opacity: 0,
-      overflow: 'hidden'
+      transform: 'scale(0.95)',
+      transition: 'transform 0.3s ease, opacity 0.3s ease',
+      opacity: 0
     },
     confirmContainerVisible: {
       transform: 'scale(1)',
       opacity: 1
     },
     confirmHeader: {
-      paddingLeft: '1.25rem',
-      paddingRight: '1.25rem',
+      paddingLeft: '1.5rem',
+      paddingRight: '1.5rem',
       paddingTop: '1rem',
       paddingBottom: '1rem',
       borderBottom: '1px solid #e5e7eb',
       display: 'flex',
       justifyContent: 'space-between',
-      alignItems: 'center',
-      backgroundColor: '#fef2f2'
+      alignItems: 'center'
     },
     confirmTitle: {
       fontSize: '1.125rem',
-      fontWeight: '600',
-      color: '#b91c1c'
+      fontWeight: '500',
+      color: '#111827'
     },
     confirmBody: {
-      padding: '1.25rem'
+      padding: '1.5rem'
     },
     confirmMessage: {
       fontSize: '0.875rem',
       color: '#374151',
-      marginBottom: '1.25rem',
       lineHeight: '1.5'
     },
     confirmUserName: {
@@ -710,16 +653,14 @@ const AdminManagementPage = () => {
       color: '#111827'
     },
     confirmFooter: {
-      paddingLeft: '1.25rem',
-      paddingRight: '1.25rem',
+      paddingLeft: '1.5rem',
+      paddingRight: '1.5rem',
       paddingTop: '1rem',
       paddingBottom: '1rem',
       backgroundColor: '#f9fafb',
       display: 'flex',
       justifyContent: 'flex-end',
-      gap: '0.5rem',
-      borderBottomLeftRadius: '0.5rem',
-      borderBottomRightRadius: '0.5rem'
+      gap: '0.75rem'
     },
     confirmCancelButton: {
       paddingLeft: '1rem',
@@ -732,8 +673,7 @@ const AdminManagementPage = () => {
       fontWeight: '500',
       color: '#374151',
       backgroundColor: '#ffffff',
-      cursor: 'pointer',
-      transition: 'background-color 0.2s ease'
+      cursor: 'pointer'
     },
     confirmCancelButtonHover: {
       backgroundColor: '#f9fafb'
@@ -749,8 +689,7 @@ const AdminManagementPage = () => {
       color: '#ffffff',
       backgroundColor: '#ef4444',
       border: 'none',
-      cursor: 'pointer',
-      transition: 'background-color 0.2s ease'
+      cursor: 'pointer'
     },
     confirmDeleteButtonHover: {
       backgroundColor: '#dc2626'
@@ -764,18 +703,14 @@ const AdminManagementPage = () => {
         padding: 0.75rem;
       }
       
-      .tableContainer {
-        overflow-x: auto;
-      }
-      
       .modalContainer {
         margin: 1rem;
         max-width: calc(100% - 2rem);
       }
       
-      .formRow {
-        flex-direction: column;
-        gap: 0;
+      .confirmContainer {
+        margin: 1rem;
+        max-width: calc(100% - 2rem);
       }
       
       .pageTitle {
@@ -783,14 +718,13 @@ const AdminManagementPage = () => {
       }
       
       .searchContainer {
-        maxWidth: 100%;
+        max-width: 100%;
         margin-bottom: 0.75rem;
       }
       
-      .paginationContainer {
+      .formRow {
         flex-direction: column;
-        gap: 1rem;
-        align-items: stretch;
+        gap: 0;
       }
     }
     
@@ -806,70 +740,45 @@ const AdminManagementPage = () => {
         padding: 0.75rem 0;
       }
       
-      .tableCell {
-        padding-left: 1rem;
-        padding-right: 1rem;
-        font-size: 0.75rem;
-      }
-      
-      .tableHeaderCell {
-        padding-left: 1rem;
-        padding-right: 1rem;
-        font-size: 0.625rem;
+      .addButton span {
+        display: none;
       }
       
       .addButton {
-        padding: 0.25rem 0.5rem;
-        font-size: 0.75rem;
+        padding: 0.5rem;
       }
-    }
-    
-    /* Animation keyframes */
-    @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
-    }
-    
-    @keyframes slideIn {
-      from { transform: translateY(-20px); opacity: 0; }
-      to { transform: translateY(0); opacity: 1; }
+      
+      .addButton svg {
+        margin-right: 0;
+      }
     }
   `
 
-  // Generate page numbers to display
-  const getPageNumbers = () => {
-    const pages = []
-    const maxVisiblePages = 5
+  // Pagination helper function
+  const getPageNumbers = (currentPage, totalPages) => {
+    const delta = 2
+    const range = []
+    const rangeWithDots = []
     
-    if (totalPages <= maxVisiblePages) {
-      for (let i = 1; i <= totalPages; i++) {
-        pages.push(i)
-      }
-    } else {
-      if (currentPage <= 3) {
-        for (let i = 1; i <= 4; i++) {
-          pages.push(i)
-        }
-        pages.push('...')
-        pages.push(totalPages)
-      } else if (currentPage >= totalPages - 2) {
-        pages.push(1)
-        pages.push('...')
-        for (let i = totalPages - 3; i <= totalPages; i++) {
-          pages.push(i)
-        }
-      } else {
-        pages.push(1)
-        pages.push('...')
-        for (let i = currentPage - 1; i <= currentPage + 1; i++) {
-          pages.push(i)
-        }
-        pages.push('...')
-        pages.push(totalPages)
-      }
+    for (let i = Math.max(2, currentPage - delta); i <= Math.min(totalPages - 1, currentPage + delta); i++) {
+      range.push(i)
     }
     
-    return pages
+    if (currentPage - delta > 2) {
+      rangeWithDots.push(1, '...')
+    } else {
+      rangeWithDots.push(1)
+    }
+    
+    rangeWithDots.push(...range)
+    
+    if (currentPage + delta < totalPages - 1) {
+      rangeWithDots.push('...', totalPages)
+    } else {
+      rangeWithDots.push(totalPages)
+    }
+    
+    return rangeWithDots
   }
 
   return (
@@ -884,7 +793,44 @@ const AdminManagementPage = () => {
           onMouseLeave={(e) => e.target.style.backgroundColor = styles.addButton.backgroundColor}
         >
           <UserPlus style={{ height: '1rem', width: '1rem' }} />
-          <span>Add User</span>
+          <span>Add {activeTab === 'users' ? 'User' : 'Admin'}</span>
+        </button>
+      </div>
+
+      {/* Tabs for Users and Admins */}
+      <div style={{ 
+        display: 'flex', 
+        gap: '1rem', 
+        marginBottom: '1rem',
+        borderBottom: '1px solid #e5e7eb'
+      }}>
+        <button
+          onClick={() => setActiveTab('users')}
+          style={{
+            ...styles.addButton,
+            backgroundColor: activeTab === 'users' ? '#10b981' : '#f3f4f6',
+            color: activeTab === 'users' ? '#ffffff' : '#374151',
+            border: 'none',
+            borderRadius: '0.375rem 0.375rem 0 0',
+            borderBottom: activeTab === 'users' ? 'none' : '1px solid #e5e7eb'
+          }}
+        >
+          <UserPlus style={{ height: '1rem', width: '1rem', marginRight: '0.5rem' }} />
+          <span>Users</span>
+        </button>
+        <button
+          onClick={() => setActiveTab('admins')}
+          style={{
+            ...styles.addButton,
+            backgroundColor: activeTab === 'admins' ? '#10b981' : '#f3f4f6',
+            color: activeTab === 'admins' ? '#ffffff' : '#374151',
+            border: 'none',
+            borderRadius: '0.375rem 0.375rem 0 0',
+            borderBottom: activeTab === 'admins' ? 'none' : '1px solid #e5e7eb'
+          }}
+        >
+          <Shield style={{ height: '1rem', width: '1rem', marginRight: '0.5rem' }} />
+          <span>Admins</span>
         </button>
       </div>
 
@@ -893,7 +839,7 @@ const AdminManagementPage = () => {
         <Search style={styles.searchIcon} />
         <input
           type="text"
-          placeholder="Search staff..."
+          placeholder={`Search ${activeTab}...`}
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           style={styles.searchInput}
@@ -906,16 +852,18 @@ const AdminManagementPage = () => {
             { key: 'name', header: 'Name', isPrimary: true },
             { key: 'phoneNumber', header: 'Phone Number' },
             { key: 'email', header: 'Email' },
+            ...(activeTab === 'admins' ? [{ key: 'role', header: 'Role' }] : []),
             { key: 'status', header: 'Status' },
             { key: 'actions', header: 'Actions', sortable: false }
           ]}
-          data={currentUsers.map(user => ({
-            id: user.id,
-            name: getFullName(user),
-            phoneNumber: user.phoneNumber,
-            email: user.email,
-            status: user.status,
-            user: user
+          data={currentItems.map(item => ({
+            id: item.id,
+            name: getFullName(item),
+            phoneNumber: item.phoneNumber,
+            email: item.email,
+            ...(activeTab === 'admins' ? { role: item.role } : {}),
+            status: item.status,
+            item: item
           }))}
           renderCell={(row, column) => {
             switch (column.key) {
@@ -934,7 +882,7 @@ const AdminManagementPage = () => {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleEditUser(row.user);
+                        handleEditUser(row.item);
                       }}
                       style={styles.actionButton}
                       onMouseEnter={(e) => {
@@ -945,14 +893,14 @@ const AdminManagementPage = () => {
                         e.target.style.color = styles.actionButton.color;
                         e.target.style.backgroundColor = 'transparent';
                       }}
-                      title="Edit User"
+                      title={`Edit ${activeTab === 'users' ? 'User' : 'Admin'}`}
                     >
                       <Edit style={{ height: '1rem', width: '1rem' }} />
                     </button>
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleSuspendUser(row.user.id);
+                        handleSuspendUser(row.item.id);
                       }}
                       style={{ 
                         ...styles.actionButton, 
@@ -972,7 +920,7 @@ const AdminManagementPage = () => {
                           : styles.actionButton.color;
                         e.target.style.backgroundColor = 'transparent';
                       }}
-                      title={row.status === 'Active' ? 'Suspend User' : 'Activate User'}
+                      title={row.status === 'Active' ? `Suspend ${activeTab === 'users' ? 'User' : 'Admin'}` : `Activate ${activeTab === 'users' ? 'User' : 'Admin'}`}
                     >
                       {row.status === 'Active' ? (
                         <svg style={{ height: '1rem', width: '1rem' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -987,7 +935,7 @@ const AdminManagementPage = () => {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleDeleteClick(row.user);
+                        handleDeleteClick(row.item);
                       }}
                       style={{ ...styles.actionButton, ...styles.actionButtonDanger }}
                       onMouseEnter={(e) => {
@@ -998,7 +946,7 @@ const AdminManagementPage = () => {
                         e.target.style.color = styles.actionButtonDanger.color;
                         e.target.style.backgroundColor = 'transparent';
                       }}
-                      title="Delete User"
+                      title={`Delete ${activeTab === 'users' ? 'User' : 'Admin'}`}
                     >
                       <Trash2 style={{ height: '1rem', width: '1rem' }} />
                     </button>
@@ -1008,7 +956,7 @@ const AdminManagementPage = () => {
                 return row[column.key];
             }
           }}
-          onRowClick={(row) => handleEditUser(row.user)}
+          onRowClick={(row) => handleEditUser(row.item)}
         />
 
         <ResponsivePagination
@@ -1016,13 +964,13 @@ const AdminManagementPage = () => {
           totalPages={totalPages}
           onPageChange={setCurrentPage}
           itemsPerPage={itemsPerPage}
-          totalItems={filteredUsers.length}
+          totalItems={filteredData.length}
           showInfo={true}
           showNavigation={true}
         />
       </div>
 
-      {/* Add/Edit User Modal */}
+      {/* Add/Edit User/Admin Modal */}
       {showModal && (
         <div 
           style={{ 
@@ -1038,7 +986,7 @@ const AdminManagementPage = () => {
           >
             <div style={styles.modalHeader}>
               <h3 style={styles.modalTitle}>
-                {editingUser ? 'Edit User' : 'Add New User'}
+                {editingUser ? `Edit ${activeTab === 'users' ? 'User' : 'Admin'}` : `Add New ${activeTab === 'users' ? 'User' : 'Admin'}`}
               </h3>
               <button 
                 onClick={() => setShowModal(false)}
@@ -1052,55 +1000,14 @@ const AdminManagementPage = () => {
               </button>
             </div>
             <form onSubmit={handleSubmit} style={styles.modalForm}>
-              <div style={styles.formRow}>
-                <div style={styles.formGroup}>
-                  <label style={styles.formLabel}>
-                    First Name *
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.firstName}
-                    onChange={(e) => setFormData({...formData, firstName: e.target.value})}
-                    style={styles.formInput}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = styles.formInputFocus.borderColor
-                      e.target.style.boxShadow = styles.formInputFocus.boxShadow
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = '#d1d5db'
-                      e.target.style.boxShadow = 'none'
-                    }}
-                  />
-                </div>
-                <div style={styles.formGroup}>
-                  <label style={styles.formLabel}>
-                    Middle Name
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.middleName}
-                    onChange={(e) => setFormData({...formData, middleName: e.target.value})}
-                    style={styles.formInput}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = styles.formInputFocus.borderColor
-                      e.target.style.boxShadow = styles.formInputFocus.boxShadow
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = '#d1d5db'
-                      e.target.style.boxShadow = 'none'
-                    }}
-                  />
-                </div>
-              </div>
-              
               <div style={styles.formGroupFull}>
                 <label style={styles.formLabel}>
-                  Last Name *
+                  Full Name *
                 </label>
                 <input
                   type="text"
-                  value={formData.lastName}
-                  onChange={(e) => setFormData({...formData, lastName: e.target.value})}
+                  value={formData.fullName}
+                  onChange={(e) => setFormData({...formData, fullName: e.target.value})}
                   style={styles.formInput}
                   onFocus={(e) => {
                     e.target.style.borderColor = styles.formInputFocus.borderColor
@@ -1110,6 +1017,7 @@ const AdminManagementPage = () => {
                     e.target.style.borderColor = '#d1d5db'
                     e.target.style.boxShadow = 'none'
                   }}
+                  placeholder="Enter full name (first and last name required)"
                 />
               </div>
               
@@ -1153,6 +1061,33 @@ const AdminManagementPage = () => {
                 />
               </div>
               
+              {/* Role field for admins only */}
+              {activeTab === 'admins' && (
+                <div style={styles.formGroupFull}>
+                  <label style={styles.formLabel}>
+                    Role *
+                  </label>
+                  <select
+                    value={formData.role}
+                    onChange={(e) => setFormData({...formData, role: e.target.value})}
+                    style={styles.formInput}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = styles.formInputFocus.borderColor
+                      e.target.style.boxShadow = styles.formInputFocus.boxShadow
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = '#d1d5db'
+                      e.target.style.boxShadow = 'none'
+                    }}
+                  >
+                    <option value="">Select Role</option>
+                    <option value="Super Admin">Super Admin</option>
+                    <option value="Admin">Admin</option>
+                    <option value="Moderator">Moderator</option>
+                  </select>
+                </div>
+              )}
+              
               <div style={styles.modalFooter}>
                 <button
                   type="button"
@@ -1169,7 +1104,7 @@ const AdminManagementPage = () => {
                   onMouseEnter={(e) => e.target.style.backgroundColor = styles.saveButtonHover.backgroundColor}
                   onMouseLeave={(e) => e.target.style.backgroundColor = styles.saveButton.backgroundColor}
                 >
-                  {editingUser ? 'Update User' : 'Add User'}
+                  {editingUser ? `Update ${activeTab === 'users' ? 'User' : 'Admin'}` : `Add ${activeTab === 'users' ? 'User' : 'Admin'}`}
                 </button>
               </div>
             </form>

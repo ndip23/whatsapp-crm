@@ -31,8 +31,8 @@ export const sendMessageController = async (req, res) => {
       senderType: "agent",
       content: message,
     });
-    
-    const profile = await AgentProfile.findOne({ user: req.user.id });
+
+    const profile = await AgentProfile.findOne({ user: req.user._id });
     if (profile) {
       profile.totalConversationsHandled += 1;
       await profile.save();

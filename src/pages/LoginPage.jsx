@@ -13,10 +13,10 @@ const LoginPage = () => {
   // Handle form submission
   const handleLogin = async (e) => {
     e.preventDefault()
-    
+
     // Reset previous errors
     setErrors({})
-    
+
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!email) {
@@ -28,19 +28,22 @@ const LoginPage = () => {
       showToast('Please enter a valid email address', 'error')
       return
     }
-    
+
     // Validate password
     if (!password) {
       setErrors(prev => ({ ...prev, password: 'Password is required' }))
       showToast('Password is required', 'error')
       return
     }
-    
+
     try {
       const response = await login({ email, password })
-      if (response.data) {
+      if (response && response.data) {
         showToast('Login successful!', 'success')
-        navigate('/dashboard')
+        // Small delay to show toast before navigation
+        setTimeout(() => {
+          navigate('/dashboard')
+        }, 500)
       }
     } catch (error) {
       const errorMessage = error.response?.data?.message || error.message || 'Invalid email or password'
@@ -266,7 +269,7 @@ const LoginPage = () => {
               type="email"
               autoComplete="email"
               required
-              style={{ 
+              style={{
                 ...styles.input,
                 ...(errors.email ? styles.inputError : {})
               }}
@@ -278,7 +281,7 @@ const LoginPage = () => {
               <p style={styles.errorMessage}>{errors.email}</p>
             )}
           </div>
-          
+
           {/* Password input field with icon and visibility toggle */}
           <div style={styles.inputGroup}>
             <div style={styles.inputIconLeft}>
@@ -292,7 +295,7 @@ const LoginPage = () => {
               type={showPassword ? "text" : "password"}
               autoComplete="current-password"
               required
-              style={{ 
+              style={{
                 ...styles.input,
                 ...(errors.password ? styles.inputError : {})
               }}
@@ -353,7 +356,7 @@ const LoginPage = () => {
             </button>
           </div>
         </form>
-        
+
         <div style={styles.dividerContainer}>
           <div style={styles.dividerLine}>
             <div style={styles.dividerBorder}></div>

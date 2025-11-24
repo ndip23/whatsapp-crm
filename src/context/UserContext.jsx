@@ -1,4 +1,5 @@
-import { createContext, useContext, useState, useEffect } from 'react'
+import { createContext, useContext, useState, useEffect, useCallback } from 'react'
+import { getNotifications, markNotificationAsRead as markReadAPI } from '../services/notificationService'
 
 const UserContext = createContext()
 
@@ -16,36 +17,47 @@ export const UserProvider = ({ children }) => {
     return null
   })
 
-  const [notifications, setNotifications] = useState([
-    {
-      id: 1,
-      title: 'New chat assigned',
-      timestamp: '2 minutes ago',
-      unread: true,
-      type: 'chat'
-    },
-    {
-      id: 2,
-      title: 'Message received from John Doe',
-      timestamp: '15 minutes ago',
-      unread: true,
-      type: 'message'
-    },
-    {
-      id: 3,
-      title: 'Follow-up reminder due',
-      timestamp: '1 hour ago',
-      unread: false,
-      type: 'reminder'
-    }
-  ])
+  const [notifications, setNotifications] = useState([])
+  const [loadingNotifications, setLoadingNotifications] = useState(false)
 
-  const markNotificationAsRead = (id) => {
-    setNotifications(notifications.map(notification => 
-      notification.id === id 
-        ? { ...notification, unread: false } 
-        : notification
-    ))
+  // Fetch notifications from API
+  const fetchNotifications = useCallback(async () => {
+    if (!currentUser) return
+
+    try {
+      setLoadingNotifications(true)
+      const data = await getNotifications()
+      // Transform API response to match component expectations
+      const transformed = Array.isArray(data) ? data.map(notif => ({
+        id: notif._id || notif.id,
+        title: notif.message || notif.type,
+        timestamp: notif.createdAt ? new Date(notif.createdAt).toLocaleString() : 'Recently',
+        unread: !notif.isRead,
+        type: notif.type,
+        metadata: notif.metadata
+      })) : []
+      setNotifications(transformed)
+    } catch (error) {
+      console.error('Error fetching notifications:', error)
+      // Keep empty array on error
+      setNotifications([])
+    } finally {
+      setLoadingNotifications(false)
+    }
+  }, [currentUser])
+
+  const markNotificationAsRead = async (id) => {
+    try {
+      await markReadAPI(id)
+      // Update local state
+      setNotifications(notifications.map(notification =>
+        notification.id === id
+          ? { ...notification, unread: false }
+          : notification
+      ))
+    } catch (error) {
+      console.error('Error marking notification as read:', error)
+    }
   }
 
   const addNotification = (notification) => {
@@ -74,13 +86,25 @@ export const UserProvider = ({ children }) => {
     }
   }, [])
 
+  // Fetch notifications when user is available
+  useEffect(() => {
+    if (currentUser) {
+      fetchNotifications()
+      // Set up polling to refresh notifications every 30 seconds
+      const interval = setInterval(fetchNotifications, 30000)
+      return () => clearInterval(interval)
+    }
+  }, [currentUser, fetchNotifications])
+
   return (
     <UserContext.Provider value={{
       currentUser,
       setCurrentUser: updateUser,
       notifications,
+      loadingNotifications,
       markNotificationAsRead,
-      addNotification
+      addNotification,
+      refreshNotifications: fetchNotifications
     }}>
       {children}
     </UserContext.Provider>

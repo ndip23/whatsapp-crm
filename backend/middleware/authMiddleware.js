@@ -15,6 +15,11 @@ export const protect = async (req, res, next) => {
         const user = await User.findById(decoded.id).select("-password");
         if(!user) return res.status(404).json({message: "User not found"});
 
+        // Check if user is active
+        if(!user.isActive) {
+            return res.status(403).json({message: "Account is inactive"});
+        }
+
         //Attach user object to request
         req.user = user;
         next();
@@ -22,11 +27,3 @@ export const protect = async (req, res, next) => {
         res.status(401).json({message: "Invalid or expired token"});
     }
 };
-
-//Middleware for admin-only  route
-export const adminOnly = (req, res, next) => {
-    if(req.user.role !== "ADMIN") {
-        return res.status(403).json({message: "Access denied: admins only"});
-    }
-    next();
-}

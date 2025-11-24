@@ -5,7 +5,7 @@ import WhatsAcloudProvider from "../provider/whatsacloudProvider.js";
 let provider;
 console.log("WHATSAPP_PROVIDER:", process.env.WHATSAPP_PROVIDER);
 
-let providerType = process.env.WHATSAPP_PROVIDER?.toLocaleLowerCase();
+let providerType = process.env.WHATSAPP_PROVIDER?.toLowerCase();
 
 switch (providerType) {
   case "meta":
@@ -14,11 +14,14 @@ switch (providerType) {
   case "twilio":
     provider = new TwilioProvider();
     break;
-  case "whasacloud":
+  case "whatsacloud":
+  case "whasacloud": // Support both spellings
     provider = new WhatsAcloudProvider();
     break;
   default:
-    throw new Error("Invalid WHATSAPP_PROVIDER specified in .env");
+    // Default to Meta provider if not specified (for development)
+    console.warn("WHATSAPP_PROVIDER not specified, defaulting to Meta provider");
+    provider = new MetaProvider();
 }
 
 export default provider;

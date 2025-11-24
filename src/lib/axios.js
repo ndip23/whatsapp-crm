@@ -1,7 +1,8 @@
 import axios from 'axios';
 import { Agent } from 'http';
 
-const API_URL = process.env.VITE_API_URL;
+// Backend API URL - should be http://localhost:5000 (without /api)
+const API_URL = process.env.VITE_API_URL || 'http://localhost:5000';
 
 export const apiClient = axios.create({
   baseURL: API_URL,
@@ -34,7 +35,10 @@ apiClient.interceptors.response.use(
     console.log('API Error:', error?.response?.status, error?.response?.data);
     
     if (error?.response?.status === 401) {
-      window.location.href = '/signin';
+      // Clear token and user data
+      document.cookie = 'accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+      localStorage.removeItem('user');
+      window.location.href = '/';
     }
 
     return Promise.reject(error);

@@ -1,25 +1,39 @@
 import { apiClient } from "../lib/axios";
 
-
 export const createAdmin = async (credentials) => {
-  const response = await apiClient.post('/admin/create-agent', credentials);
-  return response;
+  try {
+    const response = await apiClient.post('/api/admin/create-agent', credentials);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error;
+  }
 };
 
 export const getAdmin = async () => {
-  const response = await apiClient.get('/admin/view-agents')
-  return response;
+  try {
+    const response = await apiClient.get('/api/admin/view-agents');
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error;
+  }
 };
 
 export const updateAdmin = async (credentials, adminId) => {
-  const response = await apiClient.put(`/admin/update-agent/${adminId}`, credentials);
-  return response;
+  try {
+    const response = await apiClient.put(`/api/admin/update-agent/${adminId}`, credentials);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error;
+  }
 };
 
-
 export const deleteAdmin = async (adminId) => {
-  const response = await apiClient.delete(`/admin/delete-agent/${adminId}`);
-  return response;
+  try {
+    const response = await apiClient.delete(`/api/admin/delete-agent/${adminId}`);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error;
+  }
 };
 
 

@@ -1,26 +1,46 @@
 import { apiClient } from "../lib/axios";
 
 export const createShift = async (credentials) => {
-  const response = await apiClient.post('/shift/create-shift', credentials);
-  return response;
+  try {
+    const response = await apiClient.post('/api/shift/create-shift', credentials);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error;
+  }
 };
 
 export const viewShifts = async () => {
-  const response = await apiClient.get('/shift/view-shifts');
-  return response;
+  try {
+    const response = await apiClient.get('/api/shift/view-shifts');
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error;
+  }
 };
 
 export const editShift = async (shiftId, updatedData) => {
-  const response = await apiClient.put(`/shift/update/${shiftId}`, updatedData);
-  return response;
+  try {
+    const response = await apiClient.put(`/api/shift/update/${shiftId}`, updatedData);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error;
+  }
 };
 
-export const assignShiftAgent = async (agentId) => {
-  const response = await apiClient.put(`/shift/assign/${agentId}`);
-  return response;
+export const assignShiftAgent = async (agentId, shiftData) => {
+  try {
+    const response = await apiClient.put(`/api/shift/assign/${agentId}`, shiftData);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error;
+  }
 };
 
 export const updateShiftStatus = async () => {
-  const response = await apiClient.put(`/shift/update-status`);
-  return response;
+  try {
+    const response = await apiClient.put('/api/shift/update-status');
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error;
+  }
 };

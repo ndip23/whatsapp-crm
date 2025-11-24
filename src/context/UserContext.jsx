@@ -1,13 +1,19 @@
-import { createContext, useContext, useState } from 'react'
+import { createContext, useContext, useState, useEffect } from 'react'
 
 const UserContext = createContext()
 
 export const UserProvider = ({ children }) => {
-  const [currentUser, setCurrentUser] = useState({
-    id: 1,
-    name: 'Admin User',
-    role: 'admin',
-    avatar: null
+  // Load user from localStorage on mount
+  const [currentUser, setCurrentUser] = useState(() => {
+    const savedUser = localStorage.getItem('user')
+    if (savedUser) {
+      try {
+        return JSON.parse(savedUser)
+      } catch (e) {
+        return null
+      }
+    }
+    return null
   })
 
   const [notifications, setNotifications] = useState([
@@ -46,9 +52,32 @@ export const UserProvider = ({ children }) => {
     setNotifications([notification, ...notifications])
   }
 
+  const updateUser = (userData) => {
+    setCurrentUser(userData)
+    if (userData) {
+      localStorage.setItem('user', JSON.stringify(userData))
+    } else {
+      localStorage.removeItem('user')
+    }
+  }
+
+  // Sync user from localStorage on mount
+  useEffect(() => {
+    const savedUser = localStorage.getItem('user')
+    if (savedUser) {
+      try {
+        const user = JSON.parse(savedUser)
+        setCurrentUser(user)
+      } catch (e) {
+        console.error('Error parsing user from localStorage:', e)
+      }
+    }
+  }, [])
+
   return (
     <UserContext.Provider value={{
       currentUser,
+      setCurrentUser: updateUser,
       notifications,
       markNotificationAsRead,
       addNotification

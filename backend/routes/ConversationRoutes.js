@@ -18,7 +18,7 @@ const router = express.Router();
 router.get("/list-all-convos", protect, getConversations);
 
 // get single conversation
-router.get("convo/:id", protect, getConversationById);
+router.get("/convo/:id", protect, getConversationById);
 
 // assign conversation -> adminOnly (admin or super admin)
 router.put("/assign", protect, adminOnly, assignConversation);

@@ -27,15 +27,19 @@ const server = http.createServer(app);
 //Socket.io instance
 export const io = new Server(server, {
     cors: {
-        origin: "*", 
-        methods: ["GET", "POST"],
+        origin: process.env.FRONTEND_URL || "http://localhost:5173", 
+        methods: ["GET", "POST", "PUT", "DELETE"],
+        credentials: true
     },
 });
 
 
 app.use(express.json());
 app.use(helmet());
-app.use(cors());
+app.use(cors({
+  origin: process.env.FRONTEND_URL || "http://localhost:5173",
+  credentials: true
+}));
 app.use(morgan("dev"));
 
 

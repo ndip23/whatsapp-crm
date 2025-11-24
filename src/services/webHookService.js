@@ -1,19 +1,30 @@
 import { apiClient } from "../lib/axios";
 
-
 export const verifyWebHook = async () => {
-  const response = await apiClient.get('/whatsapp/verify/webhook');
-  return response;
+  try {
+    const response = await apiClient.get('/api/whatsapp/verify/webhook');
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error;
+  }
 };
 
 export const incomingMessage = async (credentials) => {
-  const response = await apiClient.post(`/whatsapp/webhook/incoming-msg`, credentials);
-  return response;
+  try {
+    const response = await apiClient.post('/api/whatsapp/webhook/incoming-msg', credentials);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error;
+  }
 };
 
 export const sendMessage = async (credentials) => {
-  const response = await apiClient.post(`/whatsapp/send`, credentials);
-  return response;
+  try {
+    const response = await apiClient.post('/api/whatsapp/send', credentials);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error;
+  }
 };
 
 

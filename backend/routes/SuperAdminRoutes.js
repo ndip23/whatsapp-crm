@@ -12,7 +12,7 @@ const router = express.Router();
 
 router.post("/admin", protect, superAdminOnly, createAdmin);
 router.get("/view-admins", protect, superAdminOnly, getAllAdmins);
-router.put("/delete-admin/:id", protect, superAdminOnly, updateAdmin);
-router.delete("/update-admin/:id", protect, superAdminOnly, deleteAdmin);
+router.put("/update-admin/:id", protect, superAdminOnly, updateAdmin);
+router.delete("/delete-admin/:id", protect, superAdminOnly, deleteAdmin);
 
 export default router;

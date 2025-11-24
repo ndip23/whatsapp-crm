@@ -29,6 +29,7 @@ import {
 } from 'lucide-react'
 import NotificationsCenter from '../components/NotificationsCenter'
 import { useUser } from '../context/UserContext'
+import { logout } from '../services/authService'
 
 const DashboardLayout = () => {
   const [showNotifications, setShowNotifications] = useState(false)
@@ -45,7 +46,7 @@ const DashboardLayout = () => {
   const location = useLocation()
 
   const handleLogout = () => {
-    // In a real app, you would clear user session
+    logout()
     navigate('/')
   }
 

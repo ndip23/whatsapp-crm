@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { showToast } from '../utils/toast'
+import { login } from '../services/authService'
 
 const LoginPage = () => {
   const [email, setEmail] = useState('')
@@ -10,7 +11,7 @@ const LoginPage = () => {
   const navigate = useNavigate()
 
   // Handle form submission
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault()
     
     // Reset previous errors
@@ -35,12 +36,16 @@ const LoginPage = () => {
       return
     }
     
-    // Simple validation - in a real app, you would authenticate with a server
-    if (email === 'admin@example.com' && password === 'password123') {
-      navigate('/dashboard')
-      showToast('Login successful!', 'success')
-    } else {
-      showToast('Invalid email or password', 'error')
+    try {
+      const response = await login({ email, password })
+      if (response.data) {
+        showToast('Login successful!', 'success')
+        navigate('/dashboard')
+      }
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || error.message || 'Invalid email or password'
+      showToast(errorMessage, 'error')
+      setErrors(prev => ({ ...prev, general: errorMessage }))
     }
   }
 

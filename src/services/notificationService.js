@@ -9,4 +9,3 @@ export const readConversation = async (conversaionId) => {
   const response = await apiClient.put(`/conversations/${conversaionId}/read`);
   return response;
 };
-

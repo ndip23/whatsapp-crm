@@ -1,0 +1,40 @@
+{
+  "name": "whatsapp-backend",
+  "version": "1.0.0",
+  "description": "WhatsApp Centralized Dashboard System - Backend API",
+  "main": "app.js",
+  "type": "module",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "node -r dotenv/config app.js",
+    "dev:watch": "nodemon -r dotenv/config app.js"
+  },
+  "keywords": [
+    "whatsapp",
+    "api",
+    "backend",
+    "express"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^1.13.1",
+    "bcryptjs": "^3.0.2",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "helmet": "^8.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "moment-timezone": "^0.6.0",
+    "mongoose": "^8.19.2",
+    "morgan": "^1.10.1",
+    "node-cron": "^4.2.1",
+    "socket.io": "^4.8.1",
+    "twilio": "^5.10.4",
+    "validator": "^13.15.20"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10"
+  }
+}
+

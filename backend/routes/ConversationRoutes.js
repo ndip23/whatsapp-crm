@@ -8,7 +8,7 @@ import {
   closeConversation,
   startTyping,
   stopTyping,
-} from "../controllers/conversationController.js";
+} from "../controllers/ConversationController.js";
 import { protect } from "../middleware/authMiddleware.js";
 import { adminOnly } from "../middleware/roleMiddleware.js";
 

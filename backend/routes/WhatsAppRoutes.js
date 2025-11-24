@@ -1,6 +1,6 @@
 import express from "express";
 import { verifyWebhook, handleIncomingMessage } from "../controllers/WhatsAppController.js";
-import { sendMessageController } from "../controllers/sendMessageController.js";
+import { sendMessageController } from "../controllers/SendMessageController.js";
 
 const router = express.Router();
 

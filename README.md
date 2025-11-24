@@ -1,18 +1,18 @@
 # WhatsApp Centralized Dashboard System
 
+A full-stack application for managing WhatsApp conversations, team members, shifts, and clients.
+
 ## Table of Contents
-1. [Tech Stack](#tech-stack)
-2. [Implemented Features](#implemented-features)
-3. [Pending Features](#pending-features)
-4. [Project Structure](#project-structure)
+1. [Project Structure](#project-structure)
+2. [Tech Stack](#tech-stack)
+3. [Getting Started](#getting-started)
+4. [Implemented Features](#implemented-features)
 5. [Backend Integration Notes](#backend-integration-notes)
-6. [Getting Started](#getting-started)
 
 ## Tech Stack
 
-This application is built using modern web technologies:
-
-- **Frontend Framework**: React.js 19+
+### Frontend
+- **Framework**: React.js 19+
 - **Build Tool**: Vite
 - **Routing**: React Router DOM 7+
 - **State Management**: React Context API
@@ -20,7 +20,19 @@ This application is built using modern web technologies:
 - **Charts**: Recharts
 - **Notifications**: React Hot Toast
 - **Styling**: Tailwind CSS
+- **HTTP Client**: Axios
 - **Development Tools**: ESLint, PostCSS, Autoprefixer
+
+### Backend
+- **Runtime**: Node.js
+- **Framework**: Express.js 5+
+- **Database**: MongoDB (Mongoose)
+- **Authentication**: JWT (jsonwebtoken)
+- **Real-time**: Socket.IO
+- **Validation**: Validator.js
+- **Security**: Helmet, CORS
+- **Scheduling**: node-cron
+- **WhatsApp Integration**: Twilio, Meta, WhatsAcloud providers
 
 ## Implemented Features
 
@@ -66,96 +78,127 @@ This application is built using modern web technologies:
 ## Project Structure
 
 ```
-w_central_system/
-├── src/
-│   ├── components/          # Reusable UI components
-│   ├── context/             # React Context providers
-│   ├── layouts/             # Page layouts and structures
-│   ├── pages/               # Individual page components
-│   ├── utils/               # Utility functions and helpers
-│   ├── App.jsx             # Main application component
-│   ├── main.jsx            # Application entry point
-│   ├── index.css           # Global styles
-│   └── App.css             # Application-specific styles
+WhatsApp-and-Team-Mgmt/
+├── backend/                 # Backend API (Node.js/Express)
+│   ├── app.js              # Express server entry point
+│   ├── config/             # Configuration files (DB, etc.)
+│   ├── controllers/        # Request handlers
+│   ├── models/             # MongoDB models
+│   ├── routes/             # API routes
+│   ├── middleware/         # Auth & role middleware
+│   ├── services/           # Business logic services
+│   ├── provider/           # WhatsApp provider integrations
+│   ├── jobs/               # Scheduled jobs (cron)
+│   ├── socket/             # Socket.IO handlers
+│   ├── package.json        # Backend dependencies
+│   └── README.md           # Backend documentation
+├── src/                     # Frontend (React)
+│   ├── components/         # Reusable UI components
+│   ├── context/            # React Context providers
+│   ├── layouts/            # Page layouts
+│   ├── pages/              # Page components
+│   ├── services/           # Frontend API services
+│   ├── lib/                # Utilities (axios config)
+│   ├── utils/              # Helper functions
+│   ├── App.jsx             # Main app component
+│   └── main.jsx            # Entry point
 ├── public/                 # Static assets
-├── package.json            # Project dependencies and scripts
+├── package.json            # Frontend dependencies
 ├── vite.config.js          # Vite configuration
 ├── tailwind.config.js      # Tailwind CSS configuration
 └── README.md               # This file
 ```
 
-## Backend Integration Notes
+## Backend Integration
 
-All frontend components have been implemented with clear comments indicating where backend integration should occur. These comments follow the pattern:
+The backend API is fully integrated and provides the following endpoints:
 
-```javascript
-// In a real app, you would [specific action]
-```
+### API Endpoints
+- `/api/auth` - Authentication (login, register)
+- `/api/admin` - Admin management (CRUD operations)
+- `/api/whatsapp` - WhatsApp webhook and message sending
+- `/api/notifications` - Notification management
+- `/api/conversations` - Conversation CRUD and management
+- `/api/analytics` - Analytics and reporting
+- `/api/superadmin` - Super admin operations
+- `/api/client` - Client management
+- `/api/shift` - Shift management
 
-Examples of backend integration points include:
+### Real-time Features
+- Socket.IO integration for real-time notifications
+- Live message updates
+- User presence tracking
 
-1. **Authentication**: Login, password reset, session management
-2. **Data Operations**: CRUD operations for users, roles, permissions, clients
-3. **Chat System**: Real-time messaging, message history, online status
-4. **File Handling**: Avatar uploads, document attachments
-5. **Notifications**: Push notifications, email sending
-6. **Analytics**: Data collection, report generation
-
-Each component is designed to be easily connected to backend services through:
-- API calls for data fetching and updating
-- WebSocket connections for real-time features
-- Authentication tokens for secure access
-- Error handling for network issues
+### Authentication
+- JWT-based authentication
+- Role-based access control (Admin, Super Admin, Agent)
+- Protected routes with middleware
 
 ## Getting Started
 
 ### Prerequisites
 - Node.js 16+ installed
+- MongoDB database
 - npm or yarn package manager
 
 ### Installation
-1. Clone the repository
-2. Navigate to the project directory:
-   ```bash
-   cd w_central_system
-   ```
-3. Install dependencies:
-   ```bash
-   npm install
-   ```
-   or
-   ```bash
-   yarn install
-   ```
+
+1. Clone the repository:
+```bash
+git clone <repository-url>
+cd WhatsApp-and-Team-Mgmt
+```
+
+2. **Frontend Setup:**
+```bash
+# Install frontend dependencies
+npm install
+```
+
+3. **Backend Setup:**
+```bash
+# Navigate to backend directory
+cd backend
+
+# Install backend dependencies
+npm install
+
+# Create .env file
+cp .env.example .env  # (if exists) or create manually
+# Add your environment variables:
+# PORT=5000
+# MONGO_URI=your_mongodb_connection_string
+# JWT_SECRET=your_jwt_secret_key
+```
 
 ### Development
-Start the development server:
+
+**Start Backend Server:**
 ```bash
+cd backend
 npm run dev
 ```
-or
+
+**Start Frontend (in a new terminal):**
 ```bash
-yarn dev
+# From root directory
+npm run dev
 ```
 
+The frontend will run on `http://localhost:5173` (Vite default)
+The backend will run on `http://localhost:5000` (or your configured PORT)
+
 ### Building for Production
-Create a production build:
+
+**Frontend:**
 ```bash
 npm run build
 ```
-or
-```bash
-yarn build
-```
 
-### Preview Production Build
-Preview the production build locally:
+**Backend:**
 ```bash
-npm run preview
-```
-or
-```bash
-yarn preview
+cd backend
+npm start
 ```
 
 ## Development Guidelines

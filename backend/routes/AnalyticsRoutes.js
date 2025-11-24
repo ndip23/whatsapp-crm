@@ -4,7 +4,8 @@ import {
   getDashboardStats,
   getMessagesByDay,
 } from "../controllers/AnalyticsController.js";
-import { adminOnly, protect } from "../middleware/authMiddleware.js";
+import { protect } from "../middleware/authMiddleware.js";
+import { adminOnly } from "../middleware/roleMiddleware.js";
 
 const router = express.Router();
 

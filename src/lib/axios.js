@@ -1,16 +1,13 @@
 import axios from 'axios';
-import { Agent } from 'http';
+
 
 // Backend API URL - should be http://localhost:5000 (without /api)
-const API_URL = process.env.VITE_API_URL || 'http://localhost:5000';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 export const apiClient = axios.create({
   baseURL: API_URL,
   headers: { 'Content-Type': 'application/json' },
-  timeout: 60000,
-  httpAgent: new Agent({
-    keepAlive: true
-  }),
+  timeout: 60000
 });
 
 // Helper function to get cookie value

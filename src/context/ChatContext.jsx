@@ -7,7 +7,7 @@ import { showToast } from '../utils/toast'
 const ChatContext = createContext()
 
 // Determine the socket URL (Local vs Production)
-const SOCKET_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000'
+const SOCKET_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 export const ChatProvider = ({ children }) => {
   const [conversations, setConversations] = useState([])

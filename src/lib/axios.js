@@ -1,16 +1,14 @@
 import axios from 'axios';
 
-
-// Backend API URL - should be http://localhost:5000 (without /api)
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+// Ensure the URL does NOT have a trailing slash
+const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5000').replace(/\/$/, "");
 
 export const apiClient = axios.create({
   baseURL: API_URL,
   headers: { 'Content-Type': 'application/json' },
-  timeout: 60000
+  timeout: 60000 // 60 seconds to allow Render to wake up
 });
 
-// Helper function to get cookie value
 export const getCookie = (name) => {
   const value = `; ${document.cookie}`;
   const parts = value.split(`; ${name}=`);
@@ -19,44 +17,35 @@ export const getCookie = (name) => {
 };
 
 export const setCookie = (name, value) => {
-  document.cookie = `${name}=${encodeURIComponent(value)}; path=/`;
+  const isSecure = window.location.protocol === 'https:';
+  // Added SameSite=Lax and Secure for Vercel/Render compatibility
+  document.cookie = `${name}=${encodeURIComponent(value)}; path=/; ${isSecure ? 'Secure;' : ''} SameSite=Lax`;
 };
 
-// Response interceptor - handle 401 errors
+// Response interceptor
 apiClient.interceptors.response.use(
-  (response) => {
-    return response;
-  },
+  (response) => response,
   (error) => {
-    console.log({ error });
-    console.log('API Error:', error?.response?.status, error?.response?.data);
-    
+    // If the error is 401, we just clear the local data. 
+    // WE DO NOT REFRESH THE PAGE.
     if (error?.response?.status === 401) {
-      // Clear token and user data
       document.cookie = 'accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
       localStorage.removeItem('user');
-      window.location.href = '/';
+      // The React Router will naturally keep the user on the Login page
+      // based on the logic in App.jsx.
     }
-
     return Promise.reject(error);
   }
 );
 
-// Request interceptor - add token from cookies
+// Request interceptor
 apiClient.interceptors.request.use(
   (config) => {
-    try {
-      const accessToken = getCookie('accessToken');
-      
-      if (accessToken && config.headers) {
-        config.headers.Authorization = `Bearer ${accessToken}`;
-      }
-      
-      return config;
-    } catch (error) {
-      console.error('Request interceptor error:', error);
-      return config;
+    const accessToken = getCookie('accessToken');
+    if (accessToken && config.headers) {
+      config.headers.Authorization = `Bearer ${accessToken}`;
     }
+    return config;
   },
   (error) => Promise.reject(error)
 );

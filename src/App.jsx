@@ -55,8 +55,6 @@ function App() {
           <Route path="privacy" element={<PrivacyPage />} />
         </Route>
 
-        {/* FIX 2: Catch-all route. If they type a wrong URL, send them back to login */}
-        <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </div>
   )

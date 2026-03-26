@@ -23,10 +23,8 @@ function App() {
   return (
     <div className="app">
       <Routes>
-        {/* FIX 1: Handle the root path. If someone lands on "/", send them to login */}
-        <Route path="/" element={<Navigate to="/login" replace />} />
 
-        <Route path="/login" element={<LoginPage />} />
+        <Route path="/" element={<LoginPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         
         <Route path="/dashboard" element={<DashboardLayout />}>

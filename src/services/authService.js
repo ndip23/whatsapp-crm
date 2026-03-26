@@ -1,12 +1,20 @@
 import { apiClient, setCookie } from "../lib/axios";
 
+/**
+ * Handle User Login
+ */
 export const login = async (credentials) => {
   try {
     const response = await apiClient.post('/api/auth/login', credentials);
+    
     if (response.data && response.data.token) {
-      // Store token in cookie
+      // 1. Store token in localStorage (Primary for API calls)
+      localStorage.setItem('accessToken', response.data.token);
+      
+      // 2. Store token in cookie (Backup/Compatibility)
       setCookie('accessToken', response.data.token);
-      // Store user data in localStorage
+      
+      // 3. Store user data in localStorage
       if (response.data.user) {
         localStorage.setItem('user', JSON.stringify(response.data.user));
       }
@@ -17,6 +25,9 @@ export const login = async (credentials) => {
   }
 };
 
+/**
+ * Handle User Registration
+ */
 export const register = async (credentials) => {
   try {
     const response = await apiClient.post('/api/auth/register', credentials);
@@ -26,9 +37,17 @@ export const register = async (credentials) => {
   }
 };
 
+/**
+ * Handle User Logout
+ */
 export const logout = () => {
-  // Remove token from cookie
-  document.cookie = 'accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-  // Remove user from localStorage
+  // 1. Remove from localStorage
+  localStorage.removeItem('accessToken');
   localStorage.removeItem('user');
+  
+  // 2. Remove from cookies
+  document.cookie = 'accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+  
+  // 3. Redirect to login
+  window.location.href = '/login';
 };

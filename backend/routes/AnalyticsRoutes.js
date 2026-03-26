@@ -9,8 +9,8 @@ import { adminOnly } from "../middleware/roleMiddleware.js";
 
 const router = express.Router();
 
-router.get("/admin", protect, adminOnly, getDashboardStats);
+router.get("/admin", protect,  getDashboardStats);
 router.get("/agents", protect, adminOnly, getAgentPerformance);
-router.get("/messages", protect, adminOnly, getMessagesByDay);
+router.get("/messages", protect,  getMessagesByDay);
 
 export default router;

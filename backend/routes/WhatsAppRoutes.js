@@ -6,9 +6,8 @@ import { protect } from "../middleware/authMiddleware.js";
 const router = express.Router();
 
 // Webhook endpoints (no auth required - WhatsApp calls these)
-router.get("/verify/webhook", verifyWebhook);
-router.post("/webhook/incoming-msg", handleIncomingMessage);
-
+router.get("/webhook", verifyWebhook);
+router.post("/webhook", handleIncomingMessage);
 // Agent sending message (requires authentication)
 router.post("/send", protect, sendMessageController);
 

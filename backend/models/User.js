@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import isEmail from "validator/lib/isEmail.js";
+import bcrypt from "bcryptjs"; // Import bcryptjs
 
 const UserSchema = new mongoose.Schema({
     name: {
@@ -34,8 +35,28 @@ const UserSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: "User"
     }
-}, {timestamps: true}
-);
+}, { timestamps: true });
 
+// 1. Hash the password automatically before saving
+UserSchema.pre("save", async function (next) {
+    // If the password hasn't been modified (e.g., just updating the user's name), skip hashing
+    if (!this.isModified("password")) {
+        return next();
+    }
 
-export default mongoose.model('User', UserSchema)
+    try {
+        // Generate a salt and hash the password
+        const salt = await bcrypt.genSalt(10);
+        this.password = await bcrypt.hash(this.password, salt);
+        next();
+    } catch (error) {
+        next(error);
+    }
+});
+
+// 2. Add a method to easily compare passwords during Login
+UserSchema.methods.matchPassword = async function (enteredPassword) {
+    return await bcrypt.compare(enteredPassword, this.password);
+};
+
+export default mongoose.model('User', UserSchema);

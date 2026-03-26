@@ -1,31 +1,10 @@
 import { useState, useEffect } from 'react'
-import { Outlet, useNavigate, useLocation, Link } from 'react-router-dom'
+import { Outlet, useNavigate, useLocation, Link, NavLink } from 'react-router-dom'
 import { 
-  Bell, 
-  User, 
-  LogOut, 
-
-  Users, 
-
-  MessageCircle, 
-
-  ChevronDown, 
-  ChevronRight,
-  Home,
-  Shield,
-  Clock,
-  UserCircle,
-  FileText,
-  Settings,
-
-  Eye,
-  Key,
-  UserCheck,
-  CheckCircle,
-
-  Menu,
-  X,
-  AlertCircle
+  Bell, LogOut, Users, MessageCircle, ChevronDown, 
+  Home, Shield, Clock, MessageSquare, Settings, 
+  UserCheck, CheckCircle, Menu, X, AlertCircle, LayoutDashboard,
+  UserCircle, Heart, Activity, FileText, User, Phone, Info
 } from 'lucide-react'
 import NotificationsCenter from '../components/NotificationsCenter'
 import { useUser } from '../context/UserContext'
@@ -33,14 +12,9 @@ import { logout } from '../services/authService'
 
 const DashboardLayout = () => {
   const [showNotifications, setShowNotifications] = useState(false)
-  const [expandedMenus, setExpandedMenus] = useState({
-    admin: true,
-    clients: true,
-    shifts: true
-  })
-  const [showUserDropdown, setShowUserDropdown] = useState(false)
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
-  const [windowWidth, setWindowWidth] = useState(window.innerWidth)
+  const [expandedMenus, setExpandedMenus] = useState({ admin: true, shifts: true, clients: true })
+  
   const { currentUser, notifications } = useUser()
   const navigate = useNavigate()
   const location = useLocation()
@@ -50,994 +24,178 @@ const DashboardLayout = () => {
     navigate('/')
   }
 
-  // Toggle sidebar visibility on mobile
-  const toggleSidebar = () => {
-    setIsSidebarOpen(!isSidebarOpen)
-  }
-
-  // Track window width for responsive behavior
-  useEffect(() => {
-    const handleResize = () => {
-      setWindowWidth(window.innerWidth)
-      // Close sidebar when window is resized to larger than 1188px
-      if (window.innerWidth >= 1188 && isSidebarOpen) {
-        setIsSidebarOpen(false)
-      }
-    }
-
-    window.addEventListener('resize', handleResize)
-    return () => window.removeEventListener('resize', handleResize)
-  }, [isSidebarOpen])
-
-  // Close sidebar when clicking outside on mobile
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      const sidebar = document.querySelector('.mobile-sidebar')
-      const menuButton = document.querySelector('.mobile-menu-button')
-      
-      if (windowWidth < 1188 && isSidebarOpen && sidebar && !sidebar.contains(event.target) && 
-          menuButton && !menuButton.contains(event.target)) {
-        setIsSidebarOpen(false)
-      }
-    }
-
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
-    }
-  }, [isSidebarOpen, windowWidth])
-
-  // Toggle expanded menu
   const toggleMenu = (menu) => {
-    setExpandedMenus(prev => ({
-      ...prev,
-      [menu]: !prev[menu]
-    }))
+    setExpandedMenus(prev => ({ ...prev, [menu]: !prev[menu] }))
   }
 
-  // Determine active navigation item based on current route
-  const getActiveNav = () => {
-    if (location.pathname.includes('/dashboard/admin')) return 'admin'
-    if (location.pathname.includes('/dashboard/shifts')) return 'shifts'
-    if (location.pathname.includes('/dashboard/clients')) return 'clients'
-    if (location.pathname.includes('/dashboard/monitoring')) return 'monitoring'
-    return 'dashboard'
-  }
+  // --- UI COMPONENTS ---
 
-  const activeNav = getActiveNav()
+  const SidebarItem = ({ to, icon, label, badge = null }) => (
+    <NavLink 
+      to={to} 
+      end={to === '/dashboard'}
+      className={({ isActive }) => `
+        flex items-center justify-between px-4 py-3 rounded-2xl font-bold text-sm transition-all duration-200 group
+        ${isActive 
+          ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-200' 
+          : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'}
+      `}
+    >
+      <div className="flex items-center gap-3">
+        {icon}
+        <span>{label}</span>
+      </div>
+      {badge && <span className="bg-red-500 text-white text-[10px] px-1.5 rounded-full">{badge}</span>}
+    </NavLink>
+  )
 
-  const styles = {
-    container: {
-      display: 'flex',
-      height: '100vh',
-      backgroundColor: '#f3f4f6',
-      padding: '1rem',
-      // Custom scrollbar styling
-      scrollbarWidth: 'thin',
-      scrollbarColor: '#10b981 #e5e7eb'
-    },
-    sidebar: {
-      width: '16rem',
-      backgroundColor: '#ffffff',
-      borderRadius: '0.75rem',
-      boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
-      margin: '0 0 0 0.5rem', // Remove top margin, keep right margin
-      height: 'calc(100vh - 2rem)',
-      display: 'flex',
-      flexDirection: 'column'
-    },
-    sidebarHeader: {
-      padding: '1rem',
-      borderBottom: '1px solid #e5e7eb',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center'
-    },
-    logo: {
-      height: '2.5rem',
-      width: '2.5rem',
-      color: '#10b981'
-    },
-    logoContainer: {
-      height: '3rem',
-      width: '3rem',
-      borderRadius: '9999px',
-      backgroundColor: '#d1fae5',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center'
-    },
-    nav: {
-      marginTop: '1.25rem',
-      flex: '1',
-      overflowY: 'auto'
-    },
-    navItem: {
-      display: 'flex',
-      alignItems: 'center',
-      padding: '0.75rem 1rem',
-      fontSize: '0.875rem',
-      fontWeight: '500',
-      textDecoration: 'none',
-      cursor: 'pointer'
-    },
-    navItemActive: {
-      backgroundColor: '#ecfdf5',
-      color: '#10b981'
-    },
-    navItemInactive: {
-      color: '#374151'
-    },
-    navItemHover: {
-      backgroundColor: '#f0fdf4',
-      color: '#10b981'
-    },
-    navItemWithSubmenu: {
-      justifyContent: 'space-between'
-    },
-    submenu: {
-      paddingLeft: '2rem'
-    },
-    submenuItem: {
-      display: 'flex',
-      alignItems: 'center',
-      padding: '0.5rem 1rem',
-      fontSize: '0.875rem',
-      fontWeight: '400',
-      textDecoration: 'none',
-      color: '#6b7280'
-    },
-    submenuItemActive: {
-      color: '#10b981',
-      backgroundColor: '#f0fdf4'
-    },
-    submenuItemHover: {
-      backgroundColor: '#f9fafb',
-      color: '#10b981'
-    },
-    main: {
-      flex: '1',
-      display: 'flex',
-      flexDirection: 'column',
-      overflow: 'hidden',
-      marginLeft: '1rem',
-      borderRadius: '0.75rem',
-      backgroundColor: '#ffffff',
-      boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)'
-    },
-    header: {
-      backgroundColor: '#ffffff',
-      boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
-      borderRadius: '0.75rem 0.75rem 0 0'
-    },
-    headerContent: {
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      padding: '1rem 1.5rem'
-    },
-    headerTitle: {
-      fontSize: '1.25rem',
-      fontWeight: '600',
-      color: '#111827'
-    },
-    headerActions: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: '1rem'
-    },
-    notificationButton: {
-      position: 'relative',
-      padding: '0.25rem',
-      color: '#6b7280',
-      backgroundColor: 'transparent',
-      border: 'none',
-      cursor: 'pointer'
-    },
-    notificationButtonHover: {
-      color: '#111827'
-    },
-    notificationBadge: {
-      position: 'absolute',
-      top: '0',
-      right: '0',
-      display: 'block',
-      height: '0.5rem',
-      width: '0.5rem',
-      borderRadius: '9999px',
-      backgroundColor: '#f87171'
-    },
-    userContainer: {
-      position: 'relative',
-      display: 'flex',
-      alignItems: 'center'
-    },
-    userAvatar: {
-      height: '2rem',
-      width: '2rem',
-      borderRadius: '9999px',
-      backgroundColor: '#d1fae5',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      cursor: 'pointer'
-    },
-    userAvatarIcon: {
-      height: '1.25rem',
-      width: '1.25rem',
-      color: '#10b981'
-    },
-    userName: {
-      marginLeft: '0.5rem',
-      fontSize: '0.875rem',
-      fontWeight: '500',
-      color: '#374151',
-      cursor: 'pointer'
-    },
-    userDropdown: {
-      position: 'absolute',
-      top: '2.5rem',
-      right: '0',
-      backgroundColor: '#ffffff',
-      borderRadius: '0.5rem',
-      boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
-      minWidth: '12rem',
-      zIndex: '50',
-      border: '1px solid #e5e7eb'
-    },
-    dropdownItem: {
-      display: 'flex',
-      alignItems: 'center',
-      padding: '0.75rem 1rem',
-      fontSize: '0.875rem',
-      fontWeight: '500',
-      color: '#374151',
-      textDecoration: 'none',
-      cursor: 'pointer'
-    },
-    dropdownItemHover: {
-      backgroundColor: '#f9fafb'
-    },
-    dropdownIcon: {
-      height: '1rem',
-      width: '1rem',
-      marginRight: '0.75rem'
-    },
-    divider: {
-      height: '1px',
-      backgroundColor: '#e5e7eb',
-      margin: '0.25rem 0'
-    },
-    logoutButton: {
-      display: 'flex',
-      alignItems: 'center',
-      fontSize: '0.875rem',
-      fontWeight: '500',
-      color: '#374151',
-      backgroundColor: 'transparent',
-      border: 'none',
-      cursor: 'pointer'
-    },
-    logoutButtonHover: {
-      color: '#111827'
-    },
-    logoutIcon: {
-      height: '1rem',
-      width: '1rem',
-      marginRight: '0.25rem'
-    },
-    notificationCenter: {
-      position: 'absolute',
-      top: '4rem',
-      right: '1rem', // Add margin from the right
-      zIndex: '10'
-    },
-    content: {
-      flex: '1',
-      overflowY: 'auto',
-      padding: '1.5rem',
-      backgroundColor: '#f9fafb'
-    },
-    icon: {
-      marginRight: '0.75rem',
-      height: '1.25rem',
-      width: '1.25rem'
-    },
-    expandIcon: {
-      height: '1.25rem',
-      width: '1.25rem'
-    },
-    conversationsList: {
-      flex: '1',
-      overflowY: 'auto',
-      // Custom scrollbar styling
-      scrollbarWidth: 'thin',
-      scrollbarColor: '#10b981 #e5e7eb'
-    },
-    clientInfoPanel: {
-      width: '25%',
-      borderLeft: '1px solid #e5e7eb',
-      padding: '1rem',
-      backgroundColor: '#ffffff',
-      overflowY: 'auto',
-      // Custom scrollbar styling
-      scrollbarWidth: 'thin',
-      scrollbarColor: '#10b981 #e5e7eb'
-    },
-    messagesContainer: {
-      flex: '1',
-      overflowY: 'auto',
-      padding: '1rem',
-      backgroundColor: '#f0f9ff',
-      // Custom scrollbar styling
-      scrollbarWidth: 'thin',
-      scrollbarColor: '#10b981 #e5e7eb'
-    },
-    messageItem: {
-      marginBottom: '1rem',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'flex-start',
-      maxWidth: '80%'
-    },
-    messageContent: {
-      padding: '0.5rem 1rem',
-      borderRadius: '0.5rem',
-      backgroundColor: '#e2f4f9',
-      color: '#111827',
-      fontSize: '0.875rem',
-      lineHeight: '1.25rem'
-    },
-    messageUserInfo: {
-      fontSize: '0.75rem',
-      fontWeight: '500',
-      color: '#6b7280',
-      marginBottom: '0.25rem'
-    },
-    messageTime: {
-      fontSize: '0.625rem',
-      fontWeight: '400',
-      color: '#6b7280'
-    },
-    messageInput: {
-      padding: '0.75rem 1rem',
-      borderRadius: '0.5rem',
-      border: '1px solid #e5e7eb',
-      width: '100%',
-      fontSize: '0.875rem',
-      lineHeight: '1.25rem',
-      backgroundColor: '#ffffff',
-      color: '#111827'
-    },
-    sendButton: {
-      padding: '0.75rem 1rem',
-      borderRadius: '0.5rem',
-      backgroundColor: '#10b981',
-      border: 'none',
-      color: '#ffffff',
-      fontSize: '0.875rem',
-      fontWeight: '500',
-      cursor: 'pointer',
-      marginLeft: '0.5rem'
-    },
-    sendButtonHover: {
-      backgroundColor: '#059669'
-    }
-  }
-
-  // Theme styles
-  const themeStyles = {
-    light: {
-      backgroundColor: '#ffffff',
-      color: '#374151'
-    },
-    dark: {
-      backgroundColor: '#1f2937',
-      color: '#f9fafb'
-    }
-  }
-
-  // Add custom scrollbar styles
-  const scrollbarStyles = `
-    /* Webkit browsers (Chrome, Safari) */
-    ::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
-    }
-    
-    ::-webkit-scrollbar-track {
-      background: #f3f4f6;
-      border-radius: 3px;
-    }
-    
-    ::-webkit-scrollbar-thumb {
-      background: #a7f3d0;
-      border-radius: 3px;
-    }
-    
-    ::-webkit-scrollbar-thumb:hover {
-      background: #6ee7b7;
-    }
-    
-    /* Firefox */
-    * {
-      scrollbar-width: thin;
-      scrollbar-color: #a7f3d0 #f3f4f6;
-    }
-    
-    /* Smooth glide transition for mobile sidebar */
-    .mobile-sidebar {
-      transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-    }
-    
-    .mobile-sidebar.open {
-      transform: translateX(0);
-    }
-    
-    @media (max-width: 1187px) {
-      .mobile-sidebar {
-        transform: translateX(-100%);
-      }
-      
-      .mobile-sidebar.open {
-        transform: translateX(0);
-      }
-    }
-  `
+  const CollapsibleHeader = ({ label, icon, isOpen, onClick }) => (
+    <button 
+      onClick={onClick}
+      className="w-full flex items-center justify-between px-4 py-3 text-slate-400 hover:text-slate-600 transition-colors"
+    >
+      <div className="flex items-center gap-3">
+        <div className="opacity-50">{icon}</div>
+        <span className="text-[10px] font-black uppercase tracking-[0.2em]">{label}</span>
+      </div>
+      <ChevronDown size={14} className={`transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
+    </button>
+  )
 
   return (
-    <div style={styles.container}>
-      <style>{scrollbarStyles}</style>
+    <div className="flex h-screen bg-slate-50 p-4 gap-4 overflow-hidden font-sans selection:bg-emerald-100 selection:text-emerald-900">
       
-      {/* Sidebar overlay for mobile */}
-      <div 
-        className={`sidebar-overlay ${isSidebarOpen ? 'open' : ''}`}
-        onClick={toggleSidebar}
-        style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.5)',
-          zIndex: 999,
-          display: isSidebarOpen ? 'block' : 'none',
-          opacity: isSidebarOpen ? 1 : 0,
-          transition: 'opacity 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)'
-        }}
-      ></div>
-      
-      {/* Sidebar - hide completely on large screens unless toggled */}
-      <div 
-        className={`mobile-sidebar ${isSidebarOpen ? 'open' : ''}`}
-        style={{
-          ...styles.sidebar,
-          position: windowWidth >= 1188 ? 'relative' : 'fixed',
-          top: windowWidth >= 1188 ? '0' : '1rem',
-          left: windowWidth >= 1188 ? '0' : '1rem',
-          height: windowWidth >= 1188 ? 'calc(100vh - 2rem)' : 'calc(100vh - 2rem)',
-          width: '16rem',
-          zIndex: 1000,
-          transform: windowWidth >= 1188 ? 'translateX(0)' : (isSidebarOpen ? 'translateX(0)' : 'translateX(-100%)'),
-          transition: 'transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
-          margin: windowWidth >= 1188 ? '0 0 0 0.5rem' : '0',
-          borderRadius: '0.75rem',
-          display: windowWidth >= 1188 ? 'flex' : (isSidebarOpen ? 'flex' : 'none')
-        }}
-      >
-        {/* Close button for mobile sidebar - only show on small screens */}
-        {windowWidth < 1188 && (
-          <div style={{ 
-            position: 'absolute', 
-            top: '1rem', 
-            right: '1rem', 
-            zIndex: 1001,
-            backgroundColor: '#ffffff',
-            border: '1px solid #e5e7eb',
-            borderRadius: '0.5rem',
-            padding: '0.25rem',
-            cursor: 'pointer',
-            transition: 'all 0.2s ease-in-out'
-          }} onClick={toggleSidebar}>
-            <X style={{ height: '1.25rem', width: '1.25rem', color: '#374151' }} />
-          </div>
-        )}
-        
-        <div style={styles.sidebarHeader}>
-          <div style={styles.logoContainer}>
-            <MessageCircle style={styles.logo} />
-          </div>
-        </div>
-        <nav style={styles.nav}>
-          <Link
-            to="/dashboard"
-            style={{
-              ...styles.navItem,
-              ...(activeNav === 'dashboard' ? styles.navItemActive : styles.navItemInactive)
-            }}
-            onMouseEnter={(e) => {
-              if (activeNav !== 'dashboard') {
-                e.target.style.backgroundColor = styles.navItemHover.backgroundColor;
-                e.target.style.color = styles.navItemHover.color;
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (activeNav !== 'dashboard') {
-                e.target.style.backgroundColor = '';
-                e.target.style.color = styles.navItemInactive.color;
-              }
-            }}
-          >
-            <Home style={styles.icon} />
-            <span>Dashboard</span>
-          </Link>
-          
-          <div
-            style={{
-              ...styles.navItem,
-              ...styles.navItemWithSubmenu,
-              ...(activeNav === 'admin' ? styles.navItemActive : styles.navItemInactive)
-            }}
-            onClick={() => toggleMenu('admin')}
-            onMouseEnter={(e) => {
-              if (activeNav !== 'admin') {
-                e.target.style.backgroundColor = styles.navItemHover.backgroundColor;
-                e.target.style.color = styles.navItemHover.color;
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (activeNav !== 'admin') {
-                e.target.style.backgroundColor = '';
-                e.target.style.color = styles.navItemInactive.color;
-              }
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center' }}>
-              <Shield style={styles.icon} />
-              <span>Admin Management</span>
-            </div>
-            {expandedMenus.admin ? 
-              <ChevronDown style={styles.expandIcon} /> : 
-              <ChevronRight style={styles.expandIcon} />
-            }
-          </div>
-          
-          {expandedMenus.admin && (
-            <div style={styles.submenu}>
-              <Link
-                to="/dashboard/admin"
-                style={{
-                  ...styles.submenuItem,
-                  ...(location.pathname === '/dashboard/admin' || location.pathname === '/dashboard/admin/users' ? styles.submenuItemActive : {})
-                }}
-                onMouseEnter={(e) => {
-                  if (location.pathname !== '/dashboard/admin' && location.pathname !== '/dashboard/admin/users') {
-                    e.target.style.backgroundColor = styles.submenuItemHover.backgroundColor;
-                    e.target.style.color = styles.submenuItemHover.color;
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (location.pathname !== '/dashboard/admin' && location.pathname !== '/dashboard/admin/users') {
-                    e.target.style.backgroundColor = '';
-                    e.target.style.color = styles.submenuItem.color;
-                  }
-                }}
-              >
-                <User style={{ ...styles.icon, marginRight: '0.5rem' }} />
-                <span>Users</span>
-              </Link>
-              <Link
-                to="/dashboard/admin/roles"
-                style={{
-                  ...styles.submenuItem,
-                  ...(location.pathname === '/dashboard/admin/roles' ? styles.submenuItemActive : {})
-                }}
-                onMouseEnter={(e) => {
-                  if (location.pathname !== '/dashboard/admin/roles') {
-                    e.target.style.backgroundColor = styles.submenuItemHover.backgroundColor;
-                    e.target.style.color = styles.submenuItemHover.color;
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (location.pathname !== '/dashboard/admin/roles') {
-                    e.target.style.backgroundColor = '';
-                    e.target.style.color = styles.submenuItem.color;
-                  }
-                }}
-              >
-                <Shield style={{ ...styles.icon, marginRight: '0.5rem' }} />
-                <span>Roles</span>
-              </Link>
-              <Link
-                to="/dashboard/admin/permissions"
-                style={{
-                  ...styles.submenuItem,
-                  ...(location.pathname === '/dashboard/admin/permissions' ? styles.submenuItemActive : {})
-                }}
-                onMouseEnter={(e) => {
-                  if (location.pathname !== '/dashboard/admin/permissions') {
-                    e.target.style.backgroundColor = styles.submenuItemHover.backgroundColor;
-                    e.target.style.color = styles.submenuItemHover.color;
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (location.pathname !== '/dashboard/admin/permissions') {
-                    e.target.style.backgroundColor = '';
-                    e.target.style.color = styles.submenuItem.color;
-                  }
-                }}
-              >
-                <Settings style={{ ...styles.icon, marginRight: '0.5rem' }} />
-                <span>Permissions</span>
-              </Link>
-            </div>
-          )}
-          
-          <div
-            style={{
-              ...styles.navItem,
-              ...styles.navItemWithSubmenu,
-              ...(activeNav === 'shifts' ? styles.navItemActive : styles.navItemInactive)
-            }}
-            onClick={() => toggleMenu('shifts')}
-            onMouseEnter={(e) => {
-              if (activeNav !== 'shifts') {
-                e.target.style.backgroundColor = styles.navItemHover.backgroundColor;
-                e.target.style.color = styles.navItemHover.color;
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (activeNav !== 'shifts') {
-                e.target.style.backgroundColor = '';
-                e.target.style.color = styles.navItemInactive.color;
-              }
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center' }}>
-              <Clock style={styles.icon} />
-              <span>Shift Management</span>
-            </div>
-            {expandedMenus.shifts ? 
-              <ChevronDown style={styles.expandIcon} /> : 
-              <ChevronRight style={styles.expandIcon} />
-            }
-          </div>
-          
-          {expandedMenus.shifts && (
-            <div style={styles.submenu}>
-              <Link
-                to="/dashboard/shifts/manage"
-                style={{
-                  ...styles.submenuItem,
-                  ...(location.pathname === '/dashboard/shifts/manage' ? styles.submenuItemActive : {})
-                }}
-                onMouseEnter={(e) => {
-                  if (location.pathname !== '/dashboard/shifts/manage') {
-                    e.target.style.backgroundColor = styles.submenuItemHover.backgroundColor;
-                    e.target.style.color = styles.submenuItemHover.color;
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (location.pathname !== '/dashboard/shifts/manage') {
-                    e.target.style.backgroundColor = '';
-                    e.target.style.color = styles.submenuItem.color;
-                  }
-                }}
-              >
-                <Clock style={{ ...styles.icon, marginRight: '0.5rem' }} />
-                <span>Manage Shifts</span>
-              </Link>
-              <Link
-                to="/dashboard/shifts/assign"
-                style={{
-                  ...styles.submenuItem,
-                  ...(location.pathname === '/dashboard/shifts/assign' ? styles.submenuItemActive : {})
-                }}
-                onMouseEnter={(e) => {
-                  if (location.pathname !== '/dashboard/shifts/assign') {
-                    e.target.style.backgroundColor = styles.submenuItemHover.backgroundColor;
-                    e.target.style.color = styles.submenuItemHover.color;
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (location.pathname !== '/dashboard/shifts/assign') {
-                    e.target.style.backgroundColor = '';
-                    e.target.style.color = styles.submenuItem.color;
-                  }
-                }}
-              >
-                <User style={{ ...styles.icon, marginRight: '0.5rem' }} />
-                <span>Assign Shifts</span>
-              </Link>
-              <Link
-                to="/dashboard/shifts/log"
-                style={{
-                  ...styles.submenuItem,
-                  ...(location.pathname === '/dashboard/shifts/log' ? styles.submenuItemActive : {})
-                }}
-                onMouseEnter={(e) => {
-                  if (location.pathname !== '/dashboard/shifts/log') {
-                    e.target.style.backgroundColor = styles.submenuItemHover.backgroundColor;
-                    e.target.style.color = styles.submenuItemHover.color;
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (location.pathname !== '/dashboard/shifts/log') {
-                    e.target.style.backgroundColor = '';
-                    e.target.style.color = styles.submenuItem.color;
-                  }
-                }}
-              >
-                <FileText style={{ ...styles.icon, marginRight: '0.5rem' }} />
-                <span>Shift Log</span>
-              </Link>
-            </div>
-          )}
-        
-        <div
-          style={{
-            ...styles.navItem,
-            ...styles.navItemWithSubmenu,
-            ...(activeNav === 'clients' ? styles.navItemActive : styles.navItemInactive)
-          }}
-            onClick={() => toggleMenu('clients')}
-            onMouseEnter={(e) => {
-              if (activeNav !== 'clients') {
-                e.target.style.backgroundColor = styles.navItemHover.backgroundColor;
-                e.target.style.color = styles.navItemHover.color;
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (activeNav !== 'clients') {
-                e.target.style.backgroundColor = '';
-                e.target.style.color = styles.navItemInactive.color;
-              }
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center' }}>
-              <UserCircle style={styles.icon} />
-              <span>Client Management</span>
-            </div>
-            {expandedMenus.clients ? 
-              <ChevronDown style={styles.expandIcon} /> : 
-              <ChevronRight style={styles.expandIcon} />
-            }
-          </div>
-          
-          {expandedMenus.clients && (
-            <div style={styles.submenu}>
-              <Link
-                to="/dashboard/clients/list"
-                style={{
-                  ...styles.submenuItem,
-                  ...(location.pathname === '/dashboard/clients/list' ? styles.submenuItemActive : {})
-                }}
-                onMouseEnter={(e) => {
-                  if (location.pathname !== '/dashboard/clients/list') {
-                    e.target.style.backgroundColor = styles.submenuItemHover.backgroundColor;
-                    e.target.style.color = styles.submenuItemHover.color;
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (location.pathname !== '/dashboard/clients/list') {
-                    e.target.style.backgroundColor = '';
-                    e.target.style.color = styles.submenuItem.color;
-                  }
-                }}
-              >
-                <Users style={{ ...styles.icon, marginRight: '0.5rem' }} />
-                <span>Client List</span>
-              </Link>
-              <Link
-                to="/dashboard/clients/solved"
-                style={{
-                  ...styles.submenuItem,
-                  ...(location.pathname === '/dashboard/clients/solved' ? styles.submenuItemActive : {})
-                }}
-                onMouseEnter={(e) => {
-                  if (location.pathname !== '/dashboard/clients/solved') {
-                    e.target.style.backgroundColor = styles.submenuItemHover.backgroundColor;
-                    e.target.style.color = styles.submenuItemHover.color;
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (location.pathname !== '/dashboard/clients/solved') {
-                    e.target.style.backgroundColor = '';
-                    e.target.style.color = styles.submenuItem.color;
-                  }
-                }}
-              >
-                <CheckCircle style={{ ...styles.icon, marginRight: '0.5rem' }} />
-                <span>Solved Conversations</span>
-              </Link>
-              <Link
-                to="/dashboard/clients/pending"
-                style={{
-                  ...styles.submenuItem,
-                  ...(location.pathname === '/dashboard/clients/pending' ? styles.submenuItemActive : {})
-                }}
-                onMouseEnter={(e) => {
-                  if (location.pathname !== '/dashboard/clients/pending') {
-                    e.target.style.backgroundColor = styles.submenuItemHover.backgroundColor;
-                    e.target.style.color = styles.submenuItemHover.color;
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (location.pathname !== '/dashboard/clients/pending') {
-                    e.target.style.backgroundColor = '';
-                    e.target.style.color = styles.submenuItem.color;
-                  }
-                }}
-              >
-                <Clock style={{ ...styles.icon, marginRight: '0.5rem' }} />
-                <span>Pending Conversations</span>
-              </Link>
-              <Link
-                to="/dashboard/clients/escalated"
-                style={{
-                  ...styles.submenuItem,
-                  ...(location.pathname === '/dashboard/clients/escalated' ? styles.submenuItemActive : {})
-                }}
-                onMouseEnter={(e) => {
-                  if (location.pathname !== '/dashboard/clients/escalated') {
-                    e.target.style.backgroundColor = styles.submenuItemHover.backgroundColor;
-                    e.target.style.color = styles.submenuItemHover.color;
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (location.pathname !== '/dashboard/clients/escalated') {
-                    e.target.style.backgroundColor = '';
-                    e.target.style.color = styles.submenuItem.color;
-                  }
-                }}
-              >
-                <AlertCircle style={{ ...styles.icon, marginRight: '0.5rem' }} />
-                <span>Escalated Conversations</span>
-              </Link>
-            </div>
-          )}
-          
-        </nav>
-      </div>
+      {/* 1. MOBILE OVERLAY */}
+      {isSidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-40 lg:hidden animate-in fade-in duration-300"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
 
-      {/* Main content */}
-      <div style={{...styles.main, marginLeft: windowWidth >= 1188 ? '1rem' : '0'}}>
-        {/* Top navigation */}
-        <header style={styles.header}>
-          <div style={styles.headerContent}>
-            <div style={{ display: 'flex', alignItems: 'center' }}>
-              {/* Menu button only shown on small screens */}
-              {windowWidth < 1188 && (
-                <button 
-                  className="mobile-menu-button"
-                  style={{
-                    marginRight: '1rem',
-                    backgroundColor: 'transparent',
-                    border: 'none',
-                    cursor: 'pointer',
-                    transition: 'all 5.2s ease-in-out'
-                  }}
-                  onClick={toggleSidebar}
-                >
-                  <Menu style={{ height: '1.5rem', width: '1.5rem', color: '#374151' }} />
-                </button>
+      {/* 2. SIDEBAR (Floating Card) */}
+      <aside className={`
+        fixed inset-y-4 left-4 w-72 bg-white rounded-[2.5rem] shadow-sm border border-slate-100 z-50 
+        lg:relative lg:inset-0 transform transition-transform duration-500 ease-in-out flex flex-col
+        ${isSidebarOpen ? 'translate-x-0' : '-translate-x-[120%] lg:translate-x-0'}
+      `}>
+        {/* Sidebar Header */}
+        <div className="p-8 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 bg-emerald-500 rounded-2xl flex items-center justify-center text-white shadow-xl shadow-emerald-200">
+              <MessageCircle size={24} fill="currentColor" />
+            </div>
+            <span className="text-xl font-black text-slate-800 tracking-tighter">W-CS</span>
+          </div>
+          <button className="lg:hidden p-2 text-slate-300" onClick={() => setIsSidebarOpen(false)}><X/></button>
+        </div>
+
+        {/* Sidebar Nav */}
+        <nav className="flex-1 overflow-y-auto px-4 space-y-1 custom-scrollbar">
+          <SidebarItem to="/dashboard" icon={<LayoutDashboard size={20}/>} label="Overview" />
+          {(currentUser?.role === 'ADMIN' || currentUser?.role === 'SUPER_ADMIN') && (
+          <div className="pt-4">
+            <CollapsibleHeader 
+              label="Staff Control" 
+              icon={<Shield size={16}/>} 
+              isOpen={expandedMenus.admin} 
+              onClick={() => toggleMenu('admin')} 
+            />
+            <div className={`space-y-1 overflow-hidden transition-all duration-300 ${expandedMenus.admin ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
+              <SidebarItem to="/dashboard/admin" icon={<Users size={18}/>} label="Users" />
+              <SidebarItem to="/dashboard/admin/roles" icon={<UserCheck size={18}/>} label="Access Roles" />
+              <SidebarItem to="/dashboard/admin/permissions" icon={<Shield size={18}/>} label="Permissions" />
+            </div>
+          </div> )}
+            {(currentUser?.role === 'ADMIN' || currentUser?.role === 'SUPER_ADMIN') && (
+          <div className="pt-4">
+            <CollapsibleHeader 
+              label="Operations" 
+              icon={<Activity size={16}/>} 
+              isOpen={expandedMenus.shifts} 
+              onClick={() => toggleMenu('shifts')} 
+            />
+            <div className={`space-y-1 overflow-hidden transition-all duration-300 ${expandedMenus.shifts ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
+              <SidebarItem to="/dashboard/shifts/manage" icon={<Clock size={18}/>} label="Shift Templates" />
+              <SidebarItem to="/dashboard/shifts/assign" icon={<UserCircle size={18}/>} label="Assign Duties" />
+              <SidebarItem to="/dashboard/shifts/log" icon={<FileText size={18}/>} label="Audit Logs" />
+            </div>
+          </div> )}
+
+          <div className="pt-4">
+            <CollapsibleHeader 
+              label="CRM" 
+              icon={<Heart size={16}/>} 
+              isOpen={expandedMenus.clients} 
+              onClick={() => toggleMenu('clients')} 
+            />
+            <div className={`space-y-1 overflow-hidden transition-all duration-300 ${expandedMenus.clients ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
+              {(currentUser?.role === 'ADMIN' || currentUser?.role === 'SUPER_ADMIN') && (<SidebarItem to="/dashboard/clients/list" icon={<Users size={18}/>} label="Client Directory" /> )}
+              <SidebarItem to="/dashboard/clients/pending" icon={<Clock size={18}/>} label="Pending queue" />
+              <SidebarItem to="/dashboard/clients/solved" icon={<CheckCircle size={18}/>} label="Archive" />
+              <SidebarItem to="/dashboard/clients/escalated" icon={<AlertCircle size={18}/>} label="Escalations" />
+            </div>
+          </div>
+        </nav>
+
+        {/* Sidebar Footer */}
+        <div className="p-6 border-t border-slate-50 space-y-4">
+           <Link to="/dashboard/settings" className="flex items-center gap-3 px-4 py-2 text-slate-400 font-bold hover:text-slate-600 transition-colors">
+              <Settings size={20}/> <span>Settings</span>
+           </Link>
+           <button onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-3 bg-red-50 text-red-500 rounded-2xl font-black text-sm hover:bg-red-100 transition-all shadow-sm">
+              <LogOut size={20}/> <span>Sign Out</span>
+           </button>
+        </div>
+      </aside>
+
+      {/* 3. MAIN CONTENT AREA (Floating Card) */}
+      <main className="flex-1 bg-white rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden flex flex-col relative">
+        
+        {/* Header (Glassmorphism) */}
+        <header className="px-8 py-6 border-b border-slate-50 flex justify-between items-center bg-white/80 backdrop-blur-md sticky top-0 z-30">
+          <div className="flex items-center gap-4">
+            <button className="lg:hidden p-2 bg-slate-50 rounded-xl text-slate-600" onClick={() => setIsSidebarOpen(true)}>
+              <Menu size={20}/>
+            </button>
+            <h1 className="text-sm font-black uppercase tracking-[0.25em] text-slate-400">
+              {location.pathname.split('/').pop()?.replace(/-/g, ' ') || 'Dashboard'}
+            </h1>
+          </div>
+
+          <div className="flex items-center gap-6">
+            <button 
+              onClick={() => setShowNotifications(!showNotifications)}
+              className="relative p-2.5 bg-slate-50 text-slate-400 hover:text-emerald-500 hover:bg-emerald-50 rounded-xl transition-all"
+            >
+              <Bell size={20} />
+              {notifications.some(n => n.unread) && (
+                <span className="absolute top-2 right-2 h-2 w-2 bg-red-500 rounded-full border-2 border-white animate-pulse" />
               )}
-              <h1 style={styles.headerTitle}>W-CS</h1>
-            </div>
-            <div style={styles.headerActions}>
-              <button
-                onClick={() => setShowNotifications(!showNotifications)}
-                style={styles.notificationButton}
-                onMouseEnter={(e) => e.target.style.color = styles.notificationButtonHover.color}
-                onMouseLeave={(e) => e.target.style.color = styles.notificationButton.color}
-              >
-                <Bell style={{ height: '1.5rem', width: '1.5rem' }} />
-                {notifications.some(n => n.unread) && (
-                  <span style={styles.notificationBadge}></span>
-                )}
-              </button>
-              <div 
-                style={styles.userContainer}
-                onMouseEnter={() => setShowUserDropdown(true)}
-              >
-                <div 
-                  style={styles.userAvatar}
-                  onClick={() => setShowUserDropdown(!showUserDropdown)}
-                >
-                  <User style={styles.userAvatarIcon} />
-                </div>
-                <span 
-                  className="user-name-mobile"
-                  style={styles.userName}
-                  onClick={() => setShowUserDropdown(!showUserDropdown)}
-                >
-                  {currentUser.name}
-                </span>
-                  
-                {showUserDropdown && (
-                  <div 
-                    style={styles.userDropdown}
-                    onMouseLeave={() => setShowUserDropdown(false)}
-                  >
-                    <div
-                      style={styles.dropdownItem}
-                      onMouseEnter={(e) => e.target.style.backgroundColor = styles.dropdownItemHover.backgroundColor}
-                      onMouseLeave={(e) => e.target.style.backgroundColor = ''}
-                      onClick={() => {
-                        navigate('/dashboard/profile')
-                        setShowUserDropdown(false)
-                      }}
-                    >
-                      <UserCheck style={styles.dropdownIcon} />
-                      View Profile
-                    </div>
-                    <div
-                      style={styles.dropdownItem}
-                      onMouseEnter={(e) => e.target.style.backgroundColor = styles.dropdownItemHover.backgroundColor}
-                      onMouseLeave={(e) => e.target.style.backgroundColor = ''}
-                      onClick={() => {
-                        navigate('/dashboard/change-password')
-                        setShowUserDropdown(false)
-                      }}
-                    >
-                      <Key style={styles.dropdownIcon} />
-                      Change Password
-                    </div>
-                    <div style={styles.divider}></div>
-                    <div
-                      style={styles.dropdownItem}
-                      onMouseEnter={(e) => e.target.style.backgroundColor = styles.dropdownItemHover.backgroundColor}
-                      onMouseLeave={(e) => e.target.style.backgroundColor = ''}
-                      onClick={() => {
-                        navigate('/dashboard/settings')
-                        setShowUserDropdown(false)
-                      }}
-                    >
-                      <Settings style={styles.dropdownIcon} />
-                      Settings
-                    </div>
-                    <div
-                      style={styles.dropdownItem}
-                      onMouseEnter={(e) => e.target.style.backgroundColor = styles.dropdownItemHover.backgroundColor}
-                      onMouseLeave={(e) => e.target.style.backgroundColor = ''}
-                      onClick={() => {
-                        navigate('/dashboard/privacy')
-                        setShowUserDropdown(false)
-                      }}
-                    >
-                      <Eye style={styles.dropdownIcon} />
-                      Privacy
-                    </div>
-                  </div>
-                )}
+            </button>
+
+            <Link to="/dashboard/profile" className="flex items-center gap-3 group">
+              <div className="text-right hidden md:block">
+                <p className="text-xs font-black text-slate-800 leading-none group-hover:text-emerald-600 transition-colors">{currentUser?.name || "Member"}</p>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">{currentUser?.role || "Staff"}</p>
               </div>
-              <button
-                onClick={handleLogout}
-                style={styles.logoutButton}
-                onMouseEnter={(e) => e.target.style.color = styles.logoutButtonHover.color}
-                onMouseLeave={(e) => e.target.style.color = styles.logoutButton.color}
-              >
-                <LogOut style={{...styles.logoutIcon, ...{ marginLeft: 0 }}} />
-                <span className="logout-label-mobile" style={{ marginLeft: '0.25rem' }}>
-                  Logout
-                </span>
-              </button>
-            </div>
+              <div className="h-11 w-11 bg-slate-100 rounded-2xl flex items-center justify-center font-black text-slate-500 border-2 border-white shadow-sm group-hover:shadow-emerald-100 group-hover:border-emerald-100 transition-all overflow-hidden">
+                {currentUser?.avatar ? <img src={currentUser.avatar} alt="me" /> : currentUser?.name?.charAt(0)}
+              </div>
+            </Link>
           </div>
         </header>
 
-        {/* Notification Center */}
-        {showNotifications && (
-          <div style={styles.notificationCenter}>
-            <NotificationsCenter onClose={() => setShowNotifications(false)} />
-          </div>
-        )}
-
-        {/* Page content */}
-        <main style={styles.content}>
+        {/* Content Body */}
+        <div className="flex-1 overflow-y-auto bg-slate-50/40 p-6 md:p-10 custom-scrollbar relative">
+          {showNotifications && (
+            <div className="absolute top-4 right-4 z-50 w-80 animate-in slide-in-from-top-4 duration-300">
+              <NotificationsCenter onClose={() => setShowNotifications(false)} />
+            </div>
+          )}
           <Outlet />
-        </main>
-      </div>
+        </div>
+      </main>
     </div>
   )
 }

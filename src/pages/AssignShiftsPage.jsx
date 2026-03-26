@@ -1,961 +1,317 @@
-import { useState, useMemo } from 'react'
-import { Edit, User, Clock, Trash2, Plus, Users, Check, Search, ChevronLeft, ChevronRight } from 'lucide-react'
+import { useState, useMemo, useEffect } from 'react'
+import { Edit, Trash2, Plus, Users, Search, Clock, Calendar, X, Check, Loader2, User } from 'lucide-react'
 import { showToast } from '../utils/toast'
-import ResponsiveTable from '../components/ResponsiveTable'
-import ResponsivePagination from '../components/ResponsivePagination'
+import { viewShifts, assignShiftAgent } from '../services/shiftService'
+import { getAllUsers } from '../services/adminService'
 
 const AssignShiftsPage = () => {
-  // Sample data for shifts
-  const [shifts] = useState([
-    { id: 1, name: 'Morning Shift', startTime: '08:00', endTime: '16:00' },
-    { id: 2, name: 'Evening Shift', startTime: '16:00', endTime: '00:00' },
-    { id: 3, name: 'Night Shift', startTime: '00:00', endTime: '08:00' },
-  ])
+  // Data States
+  const [shifts, setShifts] = useState([])
+  const [agents, setAgents] = useState([])
+  const [assignments, setAssignments] = useState([]) // Typically fetched from a "view-assignments" endpoint
+  const [loading, setLoading] = useState(true)
 
-  // Sample data for users
-  const [users] = useState([
-    { id: 1, name: 'John Doe', role: 'Agent' },
-    { id: 2, name: 'Jane Smith', role: 'Agent' },
-    { id: 3, name: 'Bob Johnson', role: 'Agent' },
-    { id: 4, name: 'Alice Williams', role: 'Agent' },
-    { id: 5, name: 'Michael Brown', role: 'Supervisor' },
-  ])
-
-  // Sample data for shift assignments
-  const [assignments, setAssignments] = useState([
-    { id: 1, shiftId: 1, userIds: [1, 2, 3], date: '2023-06-01' },
-    { id: 2, shiftId: 2, userIds: [2, 4], date: '2023-06-01' },
-    { id: 3, shiftId: 3, userIds: [3, 5], date: '2023-06-01' },
-    { id: 4, shiftId: 1, userIds: [1, 4], date: '2023-06-02' },
-    { id: 5, shiftId: 2, userIds: [2, 5], date: '2023-06-02' },
-    { id: 6, shiftId: 3, userIds: [3, 1], date: '2023-06-02' },
-    { id: 7, shiftId: 1, userIds: [2, 3], date: '2023-06-03' },
-    { id: 8, shiftId: 2, userIds: [4, 5], date: '2023-06-03' },
-  ])
-
+  // UI States
   const [showModal, setShowModal] = useState(false)
-  const [editingAssignment, setEditingAssignment] = useState(null)
-  const [selectedShift, setSelectedShift] = useState('')
-  const [selectedUsers, setSelectedUsers] = useState([])
-  const [assignmentDate, setAssignmentDate] = useState('')
   const [showUserModal, setShowUserModal] = useState(false)
   const [selectedUserDetails, setSelectedUserDetails] = useState([])
-  
-  // Pagination and search states
   const [searchTerm, setSearchTerm] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
-  const itemsPerPage = 5
+  const itemsPerPage = 6
 
-  const handleAssignShift = () => {
-    setEditingAssignment(null)
-    setSelectedShift('')
-    setSelectedUsers([])
-    setAssignmentDate('')
+  // Form State
+  const [formData, setFormData] = useState({
+    shiftId: '',
+    userIds: [],
+    date: new Date().toISOString().split('T')[0]
+  })
+
+  // --- 1. DATA FETCHING ---
+  const fetchData = async () => {
+    try {
+      setLoading(true)
+      const [shiftsData, agentsData] = await Promise.all([
+        viewShifts(),
+        getAllUsers() // Reusing your admin service to get AGENTS
+      ])
+      setShifts(shiftsData || [])
+      setAgents(Array.isArray(agentsData) ? agentsData.filter(u => u.role === 'AGENT') : [])
+      
+      // Mocking assignments for now as there wasn't a "view-assignments" service provided
+      // In a real scenario, you'd fetch this from the backend
+      setAssignments([
+        { _id: '1', shiftId: shiftsData[0]?._id, userIds: [agentsData[0]?._id], date: '2023-12-01' }
+      ])
+    } catch (error) {
+      showToast('Failed to load shift data', 'error')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => { fetchData() }, [])
+
+  // --- 2. FILTERING & SEARCH ---
+  const filteredAssignments = useMemo(() => {
+    const term = searchTerm.toLowerCase()
+    return assignments.filter(asn => {
+      const shift = shifts.find(s => s._id === asn.shiftId)
+      return shift?.name?.toLowerCase().includes(term) || asn.date.includes(term)
+    })
+  }, [assignments, searchTerm, shifts])
+
+  const totalPages = Math.ceil(filteredAssignments.length / itemsPerPage)
+  const currentItems = filteredAssignments.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+
+  // --- 3. ACTIONS ---
+  const toggleUserSelection = (userId) => {
+    setFormData(prev => ({
+      ...prev,
+      userIds: prev.userIds.includes(userId)
+        ? prev.userIds.filter(id => id !== userId)
+        : [...prev.userIds, userId]
+    }))
+  }
+
+  const handleOpenModal = (assignment = null) => {
+    if (assignment) {
+      setFormData({ shiftId: assignment.shiftId, userIds: assignment.userIds, date: assignment.date })
+    } else {
+      setFormData({ shiftId: '', userIds: [], date: new Date().toISOString().split('T')[0] })
+    }
     setShowModal(true)
   }
 
-  const handleEditAssignment = (assignment) => {
-    setEditingAssignment(assignment)
-    setSelectedShift(assignment.shiftId)
-    setSelectedUsers([...assignment.userIds])
-    setAssignmentDate(assignment.date)
-    setShowModal(true)
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    if (!formData.shiftId || formData.userIds.length === 0) {
+      return showToast('Please select a shift and at least one agent', 'error')
+    }
+
+    try {
+      // Loop through selected users and assign them (matching your shiftService.js logic)
+      await Promise.all(formData.userIds.map(userId => 
+        assignShiftAgent(userId, { shiftId: formData.shiftId, date: formData.date })
+      ))
+      
+      showToast('Shifts assigned successfully', 'success')
+      setShowModal(false)
+      fetchData()
+    } catch (error) {
+      showToast('Assignment failed', 'error')
+    }
   }
 
-  const handleDeleteAssignment = (id) => {
-    setAssignments(assignments.filter(assignment => assignment.id !== id))
-    showToast('Assignment deleted successfully', 'success')
-  }
-  
-  const handleUserListClick = (userIds) => {
-    const userDetails = getUserDetails(userIds)
-    setSelectedUserDetails(userDetails)
+  const viewAssignedUsers = (userIds) => {
+    const details = userIds.map(id => agents.find(a => a._id === id)).filter(Boolean)
+    setSelectedUserDetails(details)
     setShowUserModal(true)
   }
 
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    
-    // Validation
-    if (!selectedShift) {
-      showToast('Please select a shift', 'error')
-      return
-    }
-    
-    if (selectedUsers.length === 0) {
-      showToast('Please select at least one user', 'error')
-      return
-    }
-    
-    if (!assignmentDate) {
-      showToast('Please select a date', 'error')
-      return
-    }
-    
-    if (editingAssignment) {
-      // Update existing assignment
-      setAssignments(assignments.map(assignment => 
-        assignment.id === editingAssignment.id 
-          ? { ...assignment, shiftId: parseInt(selectedShift), userIds: selectedUsers, date: assignmentDate }
-          : assignment
-      ))
-      showToast('Assignment updated successfully', 'success')
-    } else {
-      // Add new assignment
-      const newAssignment = {
-        id: assignments.length + 1,
-        shiftId: parseInt(selectedShift),
-        userIds: selectedUsers,
-        date: assignmentDate
-      }
-      setAssignments([...assignments, newAssignment])
-      showToast('Shift assigned successfully', 'success')
-    }
-    setShowModal(false)
-  }
-
-  const toggleUserSelection = (userId) => {
-    if (selectedUsers.includes(userId)) {
-      setSelectedUsers(selectedUsers.filter(id => id !== userId))
-    } else {
-      setSelectedUsers([...selectedUsers, userId])
-    }
-  }
-
-  const selectAllUsers = () => {
-    const allUserIds = users.map(user => user.id)
-    setSelectedUsers(allUserIds)
-  }
-
-  const deselectAllUsers = () => {
-    setSelectedUsers([])
-  }
-
-  const getShiftDetails = (shiftId) => {
-    return shifts.find(s => s.id === shiftId) || {}
-  }
-
-  const getUserNames = (userIds) => {
-    return userIds.map(id => {
-      const user = users.find(u => u.id === id)
-      return user ? user.name : ''
-    }).join(', ')
-  }
-
-  const getUserDetails = (userIds) => {
-    return userIds.map(id => {
-      const user = users.find(u => u.id === id)
-      return user || {}
-    })
-  }
-
-  const styles = {
-    page: {
-      padding: '1rem',
-      backgroundColor: '#ffffff',
-      borderRadius: '0.75rem',
-      boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)'
-    },
-    header: {
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginBottom: '1.5rem',
-      padding: '1rem 0'
-    },
-    pageTitle: {
-      fontSize: '1.25rem',
-      fontWeight: '600',
-      color: '#111827',
-      margin: 0
-    },
-    addButton: {
-      backgroundColor: '#10b981',
-      color: '#ffffff',
-      fontWeight: '500',
-      paddingTop: '0.5rem',
-      paddingBottom: '0.5rem',
-      paddingLeft: '1rem',
-      paddingRight: '1rem',
-      borderRadius: '0.375rem',
-      border: 'none',
-      cursor: 'pointer',
-      display: 'flex',
-      alignItems: 'center',
-      gap: '0.5rem',
-      fontSize: '0.875rem'
-    },
-    addButtonHover: {
-      backgroundColor: '#059669'
-    },
-    searchContainer: {
-      position: 'relative',
-      marginBottom: '1rem',
-      maxWidth: '300px'
-    },
-    searchInput: {
-      width: '100%',
-      paddingLeft: '2.5rem',
-      paddingRight: '1rem',
-      paddingTop: '0.5rem',
-      paddingBottom: '0.5rem',
-      border: '1px solid #d1d5db',
-      borderRadius: '0.375rem',
-      outline: 'none',
-      fontSize: '0.875rem'
-    },
-    searchInputFocus: {
-      borderColor: '#10b981',
-      boxShadow: '0 0 0 3px rgba(16, 185, 129, 0.1)'
-    },
-    searchIcon: {
-      position: 'absolute',
-      left: '0.75rem',
-      top: '50%',
-      transform: 'translateY(-50%)',
-      color: '#6b7280',
-      height: '1rem',
-      width: '1rem'
-    },
-    tableContainer: {
-      backgroundColor: '#ffffff',
-      borderRadius: '0.5rem',
-      boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
-      overflow: 'hidden',
-      border: '1px solid #e5e7eb'
-    },
-    userListCell: {
-      position: 'relative'
-    },
-    userListButton: {
-      backgroundColor: 'transparent',
-      border: 'none',
-      color: '#10b981',
-      cursor: 'pointer',
-      display: 'flex',
-      alignItems: 'center',
-      gap: '0.25rem',
-      fontSize: '0.8125rem',
-      padding: '0.25rem 0.5rem',
-      borderRadius: '0.25rem'
-    },
-    userListButtonHover: {
-      backgroundColor: '#f0fdf4'
-    },
-    userListPopup: {
-      position: 'absolute',
-      top: '100%',
-      left: 0,
-      backgroundColor: '#ffffff',
-      border: '1px solid #e5e7eb',
-      borderRadius: '0.375rem',
-      boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
-      zIndex: 10,
-      minWidth: '200px',
-      padding: '0.5rem',
-      marginTop: '0.25rem'
-    },
-    userListTitle: {
-      fontSize: '0.75rem',
-      fontWeight: '600',
-      color: '#111827',
-      marginBottom: '0.25rem'
-    },
-    userList: {
-      listStyle: 'none',
-      margin: 0,
-      padding: 0
-    },
-    userListLi: {
-      padding: '0.25rem 0',
-      fontSize: '0.8125rem',
-      color: '#6b7280'
-    },
-    actionButton: {
-      backgroundColor: 'transparent',
-      border: 'none',
-      cursor: 'pointer',
-      color: '#6b7280',
-      padding: '0.25rem',
-      borderRadius: '0.25rem',
-      marginLeft: '0.125rem',
-      width: '1.75rem',
-      height: '1.75rem',
-      display: 'inline-flex',
-      alignItems: 'center',
-      justifyContent: 'center'
-    },
-    actionButtonHover: {
-      color: '#111827',
-      backgroundColor: '#f3f4f6'
-    },
-    actionButtonDanger: {
-      color: '#ef4444'
-    },
-    actionButtonDangerHover: {
-      color: '#b91c1c',
-      backgroundColor: '#fef2f2'
-    },
-    modalOverlay: {
-      position: 'fixed',
-      inset: '0',
-      backgroundColor: 'rgba(0, 0, 0, 0.5)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '1rem',
-      zIndex: '50'
-    },
-    modalContainer: {
-      backgroundColor: '#ffffff',
-      borderRadius: '0.5rem',
-      boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-      width: '100%',
-      maxWidth: '32rem',
-      maxHeight: '90vh',
-      display: 'flex',
-      flexDirection: 'column'
-    },
-    modalHeader: {
-      paddingLeft: '1.5rem',
-      paddingRight: '1.5rem',
-      paddingTop: '1rem',
-      paddingBottom: '1rem',
-      borderBottom: '1px solid #e5e7eb',
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center'
-    },
-    modalTitle: {
-      fontSize: '1.125rem',
-      fontWeight: '500',
-      color: '#111827'
-    },
-    modalCloseButton: {
-      color: '#9ca3af',
-      backgroundColor: 'transparent',
-      border: 'none',
-      cursor: 'pointer'
-    },
-    modalCloseButtonHover: {
-      color: '#6b7280'
-    },
-    modalForm: {
-      padding: '1.5rem',
-      overflowY: 'auto',
-      flex: 1
-    },
-    formGroup: {
-      marginBottom: '1rem'
-    },
-    formLabel: {
-      display: 'block',
-      fontSize: '0.875rem',
-      fontWeight: '500',
-      color: '#111827',
-      marginBottom: '0.25rem'
-    },
-    formSelect: {
-      display: 'block',
-      width: '100%',
-      paddingLeft: '0.75rem',
-      paddingRight: '0.75rem',
-      paddingTop: '0.5rem',
-      paddingBottom: '0.5rem',
-      border: '1px solid #d1d5db',
-      borderRadius: '0.375rem',
-      outline: 'none'
-    },
-    formInput: {
-      display: 'block',
-      width: '100%',
-      paddingLeft: '0.75rem',
-      paddingRight: '0.75rem',
-      paddingTop: '0.5rem',
-      paddingBottom: '0.5rem',
-      border: '1px solid #d1d5db',
-      borderRadius: '0.375rem',
-      outline: 'none'
-    },
-    formInputFocus: {
-      borderColor: '#10b981',
-      boxShadow: '0 0 0 3px rgba(16, 185, 129, 0.1)'
-    },
-    userSelectionHeader: {
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginBottom: '0.5rem'
-    },
-    userSelectionActions: {
-      display: 'flex',
-      gap: '0.5rem'
-    },
-    userActionButton: {
-      fontSize: '0.75rem',
-      color: '#10b981',
-      backgroundColor: 'transparent',
-      border: 'none',
-      cursor: 'pointer',
-      padding: '0.25rem 0.5rem',
-      borderRadius: '0.25rem'
-    },
-    userGrid: {
-      display: 'grid',
-      gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-      gap: '0.5rem',
-      marginTop: '0.5rem',
-      maxHeight: '300px',
-      overflowY: 'auto'
-    },
-    userCard: {
-      display: 'flex',
-      alignItems: 'center',
-      padding: '0.5rem',
-      border: '1px solid #d1d5db',
-      borderRadius: '0.375rem',
-      cursor: 'pointer',
-      position: 'relative'
-    },
-    userCardSelected: {
-      backgroundColor: '#ecfdf5',
-      borderColor: '#10b981'
-    },
-    userAvatar: {
-      height: '2rem',
-      width: '2rem',
-      borderRadius: '9999px',
-      backgroundColor: '#d1fae5',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      marginRight: '0.5rem'
-    },
-    userAvatarText: {
-      color: '#065f46',
-      fontWeight: '600'
-    },
-    userName: {
-      fontSize: '0.875rem',
-      fontWeight: '500',
-      color: '#111827'
-    },
-    selectedIndicator: {
-      position: 'absolute',
-      top: '-0.25rem',
-      right: '-0.25rem',
-      backgroundColor: '#10b981',
-      borderRadius: '50%',
-      width: '1rem',
-      height: '1rem',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center'
-    },
-    modalFooter: {
-      paddingLeft: '1.5rem',
-      paddingRight: '1.5rem',
-      paddingTop: '1rem',
-      paddingBottom: '1rem',
-      backgroundColor: '#f9fafb',
-      display: 'flex',
-      justifyContent: 'flex-end',
-      gap: '0.75rem'
-    },
-    cancelButton: {
-      paddingLeft: '1rem',
-      paddingRight: '1rem',
-      paddingTop: '0.5rem',
-      paddingBottom: '0.5rem',
-      border: '1px solid #d1d5db',
-      borderRadius: '0.375rem',
-      fontSize: '0.875rem',
-      fontWeight: '500',
-      color: '#374151',
-      backgroundColor: '#ffffff',
-      cursor: 'pointer'
-    },
-    cancelButtonHover: {
-      backgroundColor: '#f9fafb'
-    },
-    saveButton: {
-      paddingLeft: '1rem',
-      paddingRight: '1rem',
-      paddingTop: '0.5rem',
-      paddingBottom: '0.5rem',
-      borderRadius: '0.375rem',
-      fontSize: '0.875rem',
-      fontWeight: '500',
-      color: '#ffffff',
-      backgroundColor: '#10b981',
-      border: 'none',
-      cursor: 'pointer'
-    },
-    saveButtonHover: {
-      backgroundColor: '#059669'
-    },
-    userModalOverlay: {
-      position: 'fixed',
-      inset: '0',
-      backgroundColor: 'rgba(0, 0, 0, 0.5)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '1rem',
-      zIndex: '50'
-    },
-    userModalContainer: {
-      backgroundColor: '#ffffff',
-      borderRadius: '0.5rem',
-      boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-      width: '100%',
-      maxWidth: '28rem'
-    },
-    userModalHeader: {
-      paddingLeft: '1.5rem',
-      paddingRight: '1.5rem',
-      paddingTop: '1rem',
-      paddingBottom: '1rem',
-      borderBottom: '1px solid #e5e7eb',
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center'
-    },
-    userModalTitle: {
-      fontSize: '1.125rem',
-      fontWeight: '500',
-      color: '#111827'
-    },
-    userModalCloseButton: {
-      color: '#9ca3af',
-      backgroundColor: 'transparent',
-      border: 'none',
-      cursor: 'pointer'
-    },
-    userModalCloseButtonHover: {
-      color: '#6b7280'
-    },
-    userModalContent: {
-      padding: '1.5rem'
-    },
-    userListItem: {
-      display: 'flex',
-      alignItems: 'center',
-      padding: '0.5rem',
-      borderBottom: '1px solid #e5e7eb'
-    },
-    userListItemLast: {
-      borderBottom: 'none'
-    },
-    userListItemIcon: {
-      height: '2rem',
-      width: '2rem',
-      borderRadius: '9999px',
-      backgroundColor: '#d1fae5',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      marginRight: '0.75rem'
-    },
-    userListItemText: {
-      color: '#065f46',
-      fontWeight: '600'
-    },
-    userListItemName: {
-      fontSize: '0.875rem',
-      fontWeight: '500',
-      color: '#111827'
-    },
-    userListItemRole: {
-      fontSize: '0.75rem',
-      color: '#6b7280'
-    }
-  }
-
-  // Responsive styles
-  const mediaStyles = `
-    @media (max-width: 768px) {
-      .page {
-        padding: 0.75rem;
-      }
-      
-      .pageTitle {
-        font-size: 1.125rem;
-      }
-      
-      .searchContainer {
-        max-width: 100%;
-        margin-bottom: 0.75rem;
-      }
-      
-      .userGrid {
-        gridTemplateColumns: repeat(1, minmax(0, 1fr));
-      }
-    }
-    
-    @media (max-width: 480px) {
-      .page {
-        padding: 0.5rem;
-      }
-      
-      .header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 1rem;
-        padding: 0.75rem 0;
-      }
-      
-      .addButton {
-        padding: 0.25rem 0.5rem;
-        font-size: 0.75rem;
-      }
-      
-      .userModalContainer {
-        margin: 1rem;
-        max-width: calc(100% - 2rem);
-      }
-    }
-  `
-
-  // Filter assignments based on search term
-  const filteredAssignments = useMemo(() => {
-    if (!searchTerm) return assignments
-    
-    const term = searchTerm.toLowerCase()
-    return assignments.filter(assignment => {
-      const shift = getShiftDetails(assignment.shiftId)
-      const userNames = getUserNames(assignment.userIds).toLowerCase()
-      return (
-        shift.name?.toLowerCase().includes(term) ||
-        assignment.date.includes(term) ||
-        userNames.includes(term)
-      )
-    })
-  }, [assignments, searchTerm, shifts, users])
-
-  // Pagination logic
-  const totalPages = Math.ceil(filteredAssignments.length / itemsPerPage)
-  const startIndex = (currentPage - 1) * itemsPerPage
-  const endIndex = startIndex + itemsPerPage
-  const currentAssignments = filteredAssignments.slice(startIndex, endIndex)
-
-  // Reset to first page when search term changes
-  useMemo(() => {
-    setCurrentPage(1)
-  }, [searchTerm])
+  if (loading) return (
+    <div className="flex h-96 items-center justify-center">
+      <Loader2 className="h-10 w-10 animate-spin text-emerald-500" />
+    </div>
+  )
 
   return (
-    <div style={styles.page}>
-      <style>{mediaStyles}</style>
-      <div style={styles.header}>
-        <h1 style={styles.pageTitle}>Assign Shifts</h1>
-        <button
-          onClick={handleAssignShift}
-          style={styles.addButton}
-          onMouseEnter={(e) => e.target.style.backgroundColor = styles.addButtonHover.backgroundColor}
-          onMouseLeave={(e) => e.target.style.backgroundColor = styles.addButton.backgroundColor}
+    <div className="space-y-6 max-w-7xl mx-auto p-4 md:p-6">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-black text-slate-800 tracking-tight">Assign Shifts</h1>
+          <p className="text-slate-500 text-sm font-medium">Schedule agents to available time slots</p>
+        </div>
+        <button 
+          onClick={() => handleOpenModal()}
+          className="flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-emerald-100 transition-all active:scale-95"
         >
-          <Plus style={{ height: '1rem', width: '1rem' }} />
-          <span>Assign Shift</span>
+          <Plus size={20} />
+          <span>New Assignment</span>
         </button>
       </div>
 
-      {/* Search Filter */}
-      <div style={styles.searchContainer}>
-        <Search style={styles.searchIcon} />
-        <input
-          type="text"
-          placeholder="Search assignments..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          style={styles.searchInput}
-          onFocus={(e) => {
-            e.target.style.borderColor = styles.searchInputFocus.borderColor;
-            e.target.style.boxShadow = styles.searchInputFocus.boxShadow;
-          }}
-          onBlur={(e) => {
-            e.target.style.borderColor = '';
-            e.target.style.boxShadow = '';
-          }}
-        />
+      {/* Filter Bar */}
+      <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex flex-col md:flex-row gap-4 items-center">
+        <div className="relative flex-1 w-full">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+          <input 
+            type="text" 
+            placeholder="Search by shift name or date (YYYY-MM-DD)..." 
+            className="w-full bg-slate-50 border-none rounded-xl py-3 pl-10 pr-4 text-sm focus:ring-2 focus:ring-emerald-500/20"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
       </div>
 
-      <div style={styles.tableContainer}>
-        <ResponsiveTable
-          columns={[
-            { key: 'shiftName', header: 'Shift Name', isPrimary: true },
-            { key: 'timeRange', header: 'Time Range' },
-            { key: 'assignedUsers', header: 'Assigned Users' },
-            { key: 'date', header: 'Date' },
-            { key: 'actions', header: 'Actions', sortable: false }
-          ]}
-          data={currentAssignments.map(assignment => {
-            const shift = getShiftDetails(assignment.shiftId)
-            return {
-              id: assignment.id,
-              shiftName: shift.name,
-              timeRange: `${shift.startTime} - ${shift.endTime}`,
-              assignedUsers: assignment.userIds.length,
-              date: assignment.date,
-              assignment: assignment,
-              userIds: assignment.userIds
-            }
+      {/* Desktop Table / Mobile Cards */}
+      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+        <div className="hidden md:block">
+          <table className="w-full text-left">
+            <thead className="bg-slate-50 text-slate-400 text-[11px] font-black uppercase tracking-widest">
+              <tr>
+                <th className="px-6 py-4">Shift Details</th>
+                <th className="px-6 py-4">Date</th>
+                <th className="px-6 py-4 text-center">Staff Count</th>
+                <th className="px-6 py-4 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-50">
+              {currentItems.map((asn) => {
+                const shift = shifts.find(s => s._id === asn.shiftId)
+                return (
+                  <tr key={asn._id} className="hover:bg-slate-50/50 transition-colors">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg">
+                          <Clock size={18} />
+                        </div>
+                        <div>
+                          <div className="font-bold text-slate-800">{shift?.name || 'Deleted Shift'}</div>
+                          <div className="text-xs text-slate-400 font-medium">{shift?.startTime} - {shift?.endTime}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-sm font-semibold text-slate-600">
+                      <div className="flex items-center gap-2">
+                        <Calendar size={14} className="text-slate-300" />
+                        {asn.date}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <button 
+                        onClick={() => viewAssignedUsers(asn.userIds)}
+                        className="inline-flex items-center gap-2 px-3 py-1.5 bg-slate-50 hover:bg-emerald-50 text-slate-600 hover:text-emerald-600 rounded-lg text-xs font-bold transition-all"
+                      >
+                        <Users size={14} />
+                        {asn.userIds?.length || 0} Agents
+                      </button>
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex justify-end gap-2">
+                        <button onClick={() => handleOpenModal(asn)} className="p-2 text-slate-300 hover:text-emerald-500 transition-colors"><Edit size={18}/></button>
+                        <button className="p-2 text-slate-300 hover:text-red-500 transition-colors"><Trash2 size={18}/></button>
+                      </div>
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Mobile View */}
+        <div className="md:hidden divide-y divide-slate-50">
+          {currentItems.map(asn => {
+             const shift = shifts.find(s => s._id === asn.shiftId)
+             return (
+               <div key={asn._id} className="p-4 space-y-3">
+                 <div className="flex justify-between items-start">
+                    <div className="font-bold text-slate-800">{shift?.name}</div>
+                    <div className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded">{asn.date}</div>
+                 </div>
+                 <div className="flex items-center justify-between">
+                    <button onClick={() => viewAssignedUsers(asn.userIds)} className="text-xs font-bold text-slate-500 flex items-center gap-1">
+                      <Users size={14}/> {asn.userIds?.length} Agents assigned
+                    </button>
+                    <div className="flex gap-2">
+                      <Edit size={18} className="text-slate-400" onClick={() => handleOpenModal(asn)}/>
+                      <Trash2 size={18} className="text-red-400"/>
+                    </div>
+                 </div>
+               </div>
+             )
           })}
-          renderCell={(row, column) => {
-            switch (column.key) {
-              case 'shiftName':
-                return (
-                  <div style={{ display: 'flex', alignItems: 'center' }}>
-                    <Clock style={{ height: '1rem', width: '1rem', marginRight: '0.5rem', color: '#6b7280' }} />
-                    {row.shiftName}
-                  </div>
-                );
-              case 'assignedUsers':
-                return (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleUserListClick(row.userIds);
-                    }}
-                    style={styles.userListButton}
-                    onMouseEnter={(e) => e.target.style.backgroundColor = styles.userListButtonHover.backgroundColor}
-                    onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
-                  >
-                    <Users style={{ height: '1rem', width: '1rem' }} />
-                    {row.assignedUsers} users
-                  </button>
-                );
-              case 'actions':
-                return (
-                  <div>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleEditAssignment(row.assignment);
-                      }}
-                      style={styles.actionButton}
-                      title="Edit Assignment"
-                      onMouseEnter={(e) => e.target.style.backgroundColor = styles.actionButtonHover.backgroundColor}
-                      onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
-                    >
-                      <Edit style={{ height: '1rem', width: '1rem' }} />
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDeleteAssignment(row.assignment.id);
-                      }}
-                      style={{ ...styles.actionButton, ...styles.actionButtonDanger }}
-                      title="Delete Assignment"
-                      onMouseEnter={(e) => e.target.style.backgroundColor = styles.actionButtonDangerHover.backgroundColor}
-                      onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
-                    >
-                      <Trash2 style={{ height: '1rem', width: '1rem' }} />
-                    </button>
-                  </div>
-                );
-              default:
-                return row[column.key];
-            }
-          }}
-        />
-
-        <ResponsivePagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={setCurrentPage}
-          itemsPerPage={itemsPerPage}
-          totalItems={filteredAssignments.length}
-          showInfo={true}
-          showNavigation={true}
-        />
+        </div>
       </div>
 
-      {/* Modal */}
+      {/* ASSIGNMENT MODAL */}
       {showModal && (
-        <div style={styles.modalOverlay}>
-          <div style={styles.modalContainer}>
-            <div style={styles.modalHeader}>
-              <h3 style={styles.modalTitle}>
-                {editingAssignment ? 'Edit Shift Assignment' : 'Assign Shift'}
-              </h3>
-              <button 
-                onClick={() => setShowModal(false)}
-                style={styles.modalCloseButton}
-                onMouseEnter={(e) => e.target.style.color = styles.modalCloseButtonHover.color}
-                onMouseLeave={(e) => e.target.style.color = styles.modalCloseButton.color}
-              >
-                <svg style={{ height: '1.5rem', width: '1.5rem' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+          <div className="w-full max-w-2xl bg-white rounded-3xl shadow-2xl flex flex-col max-h-[90vh]">
+            <div className="p-6 border-b border-slate-100 flex justify-between items-center">
+              <h3 className="text-xl font-black text-slate-800">Assign Work Shift</h3>
+              <button onClick={() => setShowModal(false)} className="p-2 hover:bg-slate-100 rounded-full text-slate-400"><X size={20}/></button>
             </div>
-            <form onSubmit={handleSubmit} style={styles.modalForm}>
-              <div style={styles.formGroup}>
-                <label style={styles.formLabel}>
-                  Select Shift
-                </label>
-                <select
-                  value={selectedShift}
-                  onChange={(e) => setSelectedShift(e.target.value)}
-                  style={styles.formSelect}
-                  required
-                >
-                  <option value="">Select a shift</option>
-                  {shifts.map(shift => (
-                    <option key={shift.id} value={shift.id}>
-                      {shift.name} ({shift.startTime} - {shift.endTime})
-                    </option>
-                  ))}
-                </select>
-              </div>
-              
-              <div style={styles.formGroup}>
-                <label style={styles.formLabel}>
-                  Assignment Date
-                </label>
-                <input
-                  type="date"
-                  value={assignmentDate}
-                  onChange={(e) => setAssignmentDate(e.target.value)}
-                  style={styles.formInput}
-                  onFocus={(e) => {
-                    e.target.style.borderColor = styles.formInputFocus.borderColor;
-                    e.target.style.boxShadow = styles.formInputFocus.boxShadow;
-                  }}
-                  onBlur={(e) => {
-                    e.target.style.borderColor = '';
-                    e.target.style.boxShadow = '';
-                  }}
-                  required
-                />
-              </div>
-              
-              <div style={styles.formGroup}>
-                <div style={styles.userSelectionHeader}>
-                  <label style={styles.formLabel}>
-                    Select Users ({selectedUsers.length} selected)
-                  </label>
-                  <div style={styles.userSelectionActions}>
-                    <button
-                      type="button"
-                      onClick={selectAllUsers}
-                      style={styles.userActionButton}
-                    >
-                      Select All
-                    </button>
-                    <button
-                      type="button"
-                      onClick={deselectAllUsers}
-                      style={styles.userActionButton}
-                    >
-                      Deselect All
-                    </button>
-                  </div>
+            
+            <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-2 block">Shift Template</label>
+                  <select 
+                    className="w-full bg-slate-50 border-none rounded-xl p-3 text-sm focus:ring-2 focus:ring-emerald-500/20"
+                    value={formData.shiftId}
+                    onChange={e => setFormData({...formData, shiftId: e.target.value})}
+                  >
+                    <option value="">Select a shift...</option>
+                    {shifts.map(s => <option key={s._id} value={s._id}>{s.name} ({s.startTime}-{s.endTime})</option>)}
+                  </select>
                 </div>
-                <div style={styles.userGrid}>
-                  {users.map(user => (
-                    <div
-                      key={user.id}
-                      onClick={() => toggleUserSelection(user.id)}
-                      style={{
-                        ...styles.userCard,
-                        ...(selectedUsers.includes(user.id) ? styles.userCardSelected : {})
-                      }}
-                      onMouseEnter={(e) => {
-                        if (!selectedUsers.includes(user.id)) {
-                          e.target.style.borderColor = '#9ca3af';
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (!selectedUsers.includes(user.id)) {
-                          e.target.style.borderColor = '#d1d5db';
-                        }
-                      }}
+                <div>
+                  <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-2 block">Shift Date</label>
+                  <input 
+                    type="date" 
+                    className="w-full bg-slate-50 border-none rounded-xl p-3 text-sm focus:ring-2 focus:ring-emerald-500/20"
+                    value={formData.date}
+                    onChange={e => setFormData({...formData, date: e.target.value})}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-2 block">Select Agents ({formData.userIds.length})</label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-60 overflow-y-auto pr-2">
+                  {agents.map(agent => (
+                    <div 
+                      key={agent._id}
+                      onClick={() => toggleUserSelection(agent._id)}
+                      className={`flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all ${formData.userIds.includes(agent._id) ? 'border-emerald-500 bg-emerald-50' : 'border-slate-50 bg-slate-50 hover:border-slate-200'}`}
                     >
-                      <div style={styles.userAvatar}>
-                        <span style={styles.userAvatarText}>
-                          {user.name.charAt(0)}
-                        </span>
+                      <div className={`p-2 rounded-lg ${formData.userIds.includes(agent._id) ? 'bg-emerald-500 text-white' : 'bg-slate-200 text-slate-500'}`}>
+                        <User size={16} />
                       </div>
-                      <div>
-                        <div style={styles.userName}>{user.name}</div>
-                        <div style={{ ...styles.userName, fontSize: '0.75rem', color: '#6b7280' }}>
-                          {user.role}
-                        </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-bold text-slate-800 truncate">{agent.name}</div>
+                        <div className="text-[10px] text-slate-400 font-bold uppercase">{agent.role}</div>
                       </div>
-                      {selectedUsers.includes(user.id) && (
-                        <div style={styles.selectedIndicator}>
-                          <Check style={{ height: '0.625rem', width: '0.625rem', color: 'white' }} />
-                        </div>
-                      )}
+                      {formData.userIds.includes(agent._id) && <Check size={16} className="text-emerald-600" />}
                     </div>
                   ))}
                 </div>
               </div>
-              
-              <div style={styles.modalFooter}>
-                <button
-                  type="button"
-                  onClick={() => setShowModal(false)}
-                  style={styles.cancelButton}
-                  onMouseEnter={(e) => e.target.style.backgroundColor = styles.cancelButtonHover.backgroundColor}
-                  onMouseLeave={(e) => e.target.style.backgroundColor = styles.cancelButton.backgroundColor}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  style={styles.saveButton}
-                  onMouseEnter={(e) => e.target.style.backgroundColor = styles.saveButtonHover.backgroundColor}
-                  onMouseLeave={(e) => e.target.style.backgroundColor = styles.saveButton.backgroundColor}
-                >
-                  Save Assignment
-                </button>
-              </div>
             </form>
+
+            <div className="p-6 bg-slate-50 rounded-b-3xl flex gap-3">
+              <button type="button" onClick={() => setShowModal(false)} className="flex-1 py-3 text-sm font-bold text-slate-400">Cancel</button>
+              <button onClick={handleSubmit} className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white py-3 rounded-xl text-sm font-bold shadow-lg shadow-emerald-100 transition-all">Confirm Assignment</button>
+            </div>
           </div>
         </div>
       )}
 
-      {/* User Modal */}
+      {/* VIEW USERS MODAL */}
       {showUserModal && (
-        <div style={styles.userModalOverlay}>
-          <div style={styles.userModalContainer}>
-            <div style={styles.userModalHeader}>
-              <h3 style={styles.userModalTitle}>Assigned Users</h3>
-              <button 
-                onClick={() => setShowUserModal(false)}
-                style={styles.userModalCloseButton}
-                onMouseEnter={(e) => e.target.style.color = styles.userModalCloseButtonHover.color}
-                onMouseLeave={(e) => e.target.style.color = styles.userModalCloseButton.color}
-              >
-                <svg style={{ height: '1.5rem', width: '1.5rem' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+          <div className="w-full max-w-sm bg-white rounded-3xl shadow-2xl p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-black text-slate-800">Assigned Agents</h3>
+              <button onClick={() => setShowUserModal(false)} className="text-slate-400 hover:text-slate-600"><X size={20}/></button>
             </div>
-            <div style={styles.userModalContent}>
-              {selectedUserDetails.map((user, index) => (
-                <div 
-                  key={user.id} 
-                  style={{
-                    ...styles.userListItem,
-                    ...(index === selectedUserDetails.length - 1 ? styles.userListItemLast : {})
-                  }}
-                >
-                  <div style={styles.userListItemIcon}>
-                    <span style={styles.userListItemText}>
-                      {user.name?.charAt(0) || 'U'}
-                    </span>
+            <div className="space-y-3">
+              {selectedUserDetails.map(user => (
+                <div key={user._id} className="flex items-center gap-3 p-3 bg-slate-50 rounded-2xl">
+                  <div className="h-10 w-10 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center font-bold">
+                    {user.name?.charAt(0)}
                   </div>
                   <div>
-                    <div style={styles.userListItemName}>{user.name}</div>
-                    <div style={styles.userListItemRole}>{user.role}</div>
+                    <div className="text-sm font-bold text-slate-800">{user.name}</div>
+                    <div className="text-[10px] text-slate-400 font-bold uppercase">{user.email}</div>
                   </div>
                 </div>
               ))}
             </div>
+            <button onClick={() => setShowUserModal(false)} className="w-full mt-6 bg-slate-100 hover:bg-slate-200 text-slate-600 py-3 rounded-xl text-sm font-bold transition-all">Close</button>
           </div>
         </div>
       )}

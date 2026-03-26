@@ -1,1358 +1,278 @@
-import { useState, useMemo } from 'react'
-import { Plus, Edit, Trash2, Save, X, Search, ChevronLeft, ChevronRight, User, Shield } from 'lucide-react'
+import { useState, useMemo, useEffect } from 'react'
+import { Plus, Edit, Trash2, Save, X, Search, Shield, User, Loader2, AlertTriangle, ChevronRight, CheckCircle2 } from 'lucide-react'
 import { showToast } from '../utils/toast'
-import ResponsiveTable from '../components/ResponsiveTable'
-import ResponsivePagination from '../components/ResponsivePagination'
+import { getAllRoles, createRole, updateRole, deleteRole } from '../services/roleService'
+import { getAllPermissions } from '../services/permissionService'
+import { getAllUsers } from '../services/adminService'
 
 const RoleManagementPage = () => {
-  // Sample roles data
-  const [roles, setRoles] = useState([
-    { 
-      id: 1, 
-      name: 'Administrator', 
-      description: 'Full access to all system features',
-      permissions: [
-        { id: 1, name: 'User Management', description: 'Create, edit, and delete users' },
-        { id: 2, name: 'Role Management', description: 'Manage user roles and permissions' },
-        { id: 3, name: 'Client Management', description: 'Manage client information and groups' },
-        { id: 4, name: 'Chat Access', description: 'Access to chat functionality' }
-      ],
-      users: [
-        { id: 1, name: 'John Doe', email: 'john@example.com' },
-        { id: 2, name: 'Jane Smith', email: 'jane@example.com' }
-      ]
-    },
-    { 
-      id: 2, 
-      name: 'Manager', 
-      description: 'Manage clients and view reports',
-      permissions: [
-        { id: 3, name: 'Client Management', description: 'Manage client information and groups' },
-        { id: 5, name: 'Report Generation', description: 'Generate and view reports' },
-        { id: 9, name: 'Notification Management', description: 'Manage notification settings' }
-      ],
-      users: [
-        { id: 3, name: 'Robert Johnson', email: 'robert@example.com' }
-      ]
-    },
-    { 
-      id: 3, 
-      name: 'Support Agent', 
-      description: 'Access to chat functionality and client information',
-      permissions: [
-        { id: 4, name: 'Chat Access', description: 'Access to chat functionality' },
-        { id: 3, name: 'Client Management', description: 'Manage client information and groups' }
-      ],
-      users: [
-        { id: 4, name: 'Emily Davis', email: 'emily@example.com' },
-        { id: 5, name: 'Michael Wilson', email: 'michael@example.com' },
-        { id: 6, name: 'Sarah Brown', email: 'sarah@example.com' }
-      ]
-    },
-    { 
-      id: 4, 
-      name: 'Analyst', 
-      description: 'View reports and analytics',
-      permissions: [
-        { id: 5, name: 'Report Generation', description: 'Generate and view reports' },
-        { id: 12, name: 'User Analytics', description: 'View user analytics and metrics' }
-      ],
-      users: []
-    }
-  ])
-
-  // Sample users data
-  const [users] = useState([
-    { id: 1, name: 'John Doe', email: 'john@example.com', role: 'Administrator' },
-    { id: 2, name: 'Jane Smith', email: 'jane@example.com', role: 'Administrator' },
-    { id: 3, name: 'Robert Johnson', email: 'robert@example.com', role: 'Manager' },
-    { id: 4, name: 'Emily Davis', email: 'emily@example.com', role: 'Support Agent' },
-    { id: 5, name: 'Michael Wilson', email: 'michael@example.com', role: 'Support Agent' },
-    { id: 6, name: 'Sarah Brown', email: 'sarah@example.com', role: 'Support Agent' },
-    { id: 7, name: 'David Miller', email: 'david@example.com', role: 'Analyst' },
-    { id: 8, name: 'Lisa Taylor', email: 'lisa@example.com', role: null }
-  ])
-
-  // Sample permissions data
-  const [permissions] = useState([
-    { id: 1, name: 'User Management', description: 'Create, edit, and delete users' },
-    { id: 2, name: 'Role Management', description: 'Manage user roles and permissions' },
-    { id: 3, name: 'Client Management', description: 'Manage client information and groups' },
-    { id: 4, name: 'Chat Access', description: 'Access to chat functionality' },
-    { id: 5, name: 'Report Generation', description: 'Generate and view reports' },
-    { id: 6, name: 'System Settings', description: 'Modify system configuration' },
-    { id: 7, name: 'Audit Logs', description: 'View system audit logs' },
-    { id: 8, name: 'Data Export', description: 'Export system data' },
-    { id: 9, name: 'Notification Management', description: 'Manage notification settings' },
-    { id: 10, name: 'API Access', description: 'Access to system APIs' },
-    { id: 11, name: 'Backup Management', description: 'Manage system backups' },
-    { id: 12, name: 'User Analytics', description: 'View user analytics and metrics' }
-  ])
-
+  const [roles, setRoles] = useState([])
+  const [availablePermissions, setAvailablePermissions] = useState([])
+  const [availableUsers, setAvailableUsers] = useState([])
+  const [loading, setLoading] = useState(true)
+  
+  // UI States
   const [showModal, setShowModal] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
-  const [showPermissionsModal, setShowPermissionsModal] = useState(false)
-  const [showUsersModal, setShowUsersModal] = useState(false)
   const [roleToDelete, setRoleToDelete] = useState(null)
   const [editingRole, setEditingRole] = useState(null)
-  const [selectedRole, setSelectedRole] = useState(null)
-  const [viewingRole, setViewingRole] = useState(null)
-  const [formData, setFormData] = useState({
-    name: '',
-    description: ''
-  })
-  const [assignedPermissions, setAssignedPermissions] = useState([])
-  const [assignedUsers, setAssignedUsers] = useState([])
   const [searchTerm, setSearchTerm] = useState('')
-  const [currentPage, setCurrentPage] = useState(1)
-  const itemsPerPage = 5
 
-  // Filter roles based on search term
+  // Form State
+  const [formData, setFormData] = useState({ name: '', description: '', permissions: [], users: [] })
+
+  // --- 1. DATA FETCHING ---
+  const fetchData = async () => {
+    try {
+      setLoading(true)
+      const [rData, pData, uData] = await Promise.all([
+        getAllRoles(),
+        getAllPermissions(),
+        getAllUsers()
+      ])
+      setRoles(rData)
+      setAvailablePermissions(pData)
+      setAvailableUsers(uData)
+    } catch (error) {
+      showToast('Failed to sync management data', 'error')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => { fetchData() }, [])
+
+  // --- 2. FILTERING ---
   const filteredRoles = useMemo(() => {
-    if (!searchTerm) return roles
-    
     const term = searchTerm.toLowerCase()
-    return roles.filter(role => 
-      role.name.toLowerCase().includes(term) ||
-      (role.description && role.description.toLowerCase().includes(term))
+    return roles.filter(r => 
+      r.name.toLowerCase().includes(term) || r.description?.toLowerCase().includes(term)
     )
   }, [roles, searchTerm])
 
-  // Pagination logic
-  const totalPages = Math.ceil(filteredRoles.length / itemsPerPage)
-  const startIndex = (currentPage - 1) * itemsPerPage
-  const endIndex = startIndex + itemsPerPage
-  const currentRoles = filteredRoles.slice(startIndex, endIndex)
-
-  // Reset to first page when search term changes
-  useMemo(() => {
-    setCurrentPage(1)
-  }, [searchTerm])
-
-  const handleAddRole = () => {
-    setEditingRole(null)
-    setFormData({ name: '', description: '' })
-    setAssignedPermissions([])
-    setAssignedUsers([])
-    setShowModal(true)
-  }
-
-  const handleEditRole = (role) => {
-    setEditingRole(role)
-    setFormData({
-      name: role.name,
-      description: role.description
-    })
-    setAssignedPermissions([...role.permissions])
-    setAssignedUsers([...role.users])
-    setShowModal(true)
-  }
-
-  const handleDeleteRole = (role) => {
-    setRoleToDelete(role)
-    setShowDeleteConfirm(true)
-  }
-
-  const confirmDeleteRole = () => {
-    if (roleToDelete) {
-      setRoles(roles.filter(role => role.id !== roleToDelete.id))
-      showToast('Role deleted successfully', 'success')
-      setShowDeleteConfirm(false)
-      setRoleToDelete(null)
-    }
-  }
-
-  const cancelDeleteRole = () => {
-    setShowDeleteConfirm(false)
-    setRoleToDelete(null)
-  }
-
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    
-    if (!formData.name) {
-      showToast('Role name is required', 'error')
-      return
-    }
-    
-    if (editingRole) {
-      // Update existing role
-      setRoles(roles.map(role => 
-        role.id === editingRole.id 
-          ? { 
-              ...role, 
-              ...formData,
-              permissions: assignedPermissions,
-              users: assignedUsers
-            }
-          : role
-      ))
-      showToast('Role updated successfully', 'success')
+  // --- 3. ACTIONS ---
+  const handleOpenModal = (role = null) => {
+    if (role) {
+      setEditingRole(role)
+      setFormData({ 
+        name: role.name, 
+        description: role.description, 
+        permissions: role.permissions.map(p => p._id), 
+        users: role.users.map(u => u._id) 
+      })
     } else {
-      // Add new role
-      const newRole = {
-        id: roles.length + 1,
-        ...formData,
-        permissions: assignedPermissions,
-        users: assignedUsers
+      setEditingRole(null)
+      setFormData({ name: '', description: '', permissions: [], users: [] })
+    }
+    setShowModal(true)
+  }
+
+  const toggleItem = (listName, id) => {
+    setFormData(prev => ({
+      ...prev,
+      [listName]: prev[listName].includes(id) 
+        ? prev[listName].filter(item => item !== id) 
+        : [...prev[listName], id]
+    }))
+  }
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    try {
+      if (editingRole) {
+        await updateRole(editingRole._id, formData)
+        showToast('Role updated', 'success')
+      } else {
+        await createRole(formData)
+        showToast('New role defined', 'success')
       }
-      setRoles([...roles, newRole])
-      showToast('Role added successfully', 'success')
-    }
-    setShowModal(false)
-  }
-
-  const handleAddPermission = () => {
-    if (selectedRole && !assignedPermissions.some(p => p.id === selectedRole.id)) {
-      const permissionToAdd = permissions.find(p => p.id == selectedRole.id)
-      setAssignedPermissions([...assignedPermissions, permissionToAdd])
-      setSelectedRole(null)
+      setShowModal(false)
+      fetchData()
+    } catch (error) {
+      showToast('Operation failed', 'error')
     }
   }
 
-  const handleRemovePermission = (id) => {
-    setAssignedPermissions(assignedPermissions.filter(permission => permission.id !== id))
-  }
-
-  const handleAddUser = (user) => {
-    if (!assignedUsers.some(u => u.id === user.id)) {
-      setAssignedUsers([...assignedUsers, user])
-    }
-  }
-
-  const handleRemoveUser = (id) => {
-    setAssignedUsers(assignedUsers.filter(user => user.id !== id))
-  }
-
-  const handleViewPermissions = (role) => {
-    setViewingRole(role)
-    setShowPermissionsModal(true)
-  }
-
-  const handleViewUsers = (role) => {
-    setViewingRole(role)
-    setShowUsersModal(true)
-  }
-
-  const styles = {
-    page: {
-      padding: '1rem',
-      backgroundColor: '#ffffff',
-      borderRadius: '0.75rem',
-      boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)'
-    },
-    header: {
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginBottom: '1.5rem',
-      padding: '1rem 0'
-    },
-    pageTitle: {
-      fontSize: '1.25rem',
-      fontWeight: '600',
-      color: '#111827',
-      margin: 0
-    },
-    addButton: {
-      backgroundColor: '#10b981',
-      color: '#ffffff',
-      fontWeight: '500',
-      paddingTop: '0.375rem',
-      paddingBottom: '0.375rem',
-      paddingLeft: '0.75rem',
-      paddingRight: '0.75rem',
-      borderRadius: '0.375rem',
-      border: 'none',
-      cursor: 'pointer',
-      display: 'flex',
-      alignItems: 'center',
-      gap: '0.5rem',
-      fontSize: '0.875rem'
-    },
-    searchContainer: {
-      position: 'relative',
-      marginBottom: '1rem',
-      maxWidth: '300px'
-    },
-    searchInput: {
-      width: '100%',
-      paddingLeft: '2.5rem',
-      paddingRight: '1rem',
-      paddingTop: '0.5rem',
-      paddingBottom: '0.5rem',
-      border: '1px solid #d1d5db',
-      borderRadius: '0.375rem',
-      outline: 'none',
-      fontSize: '0.875rem'
-    },
-    searchIcon: {
-      position: 'absolute',
-      left: '0.75rem',
-      top: '50%',
-      transform: 'translateY(-50%)',
-      color: '#6b7280',
-      height: '1rem',
-      width: '1rem'
-    },
-    tableContainer: {
-      backgroundColor: '#ffffff',
-      borderRadius: '0.5rem',
-      boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
-      overflow: 'hidden',
-      border: '1px solid #e5e7eb'
-    },
-    badge: {
-      paddingLeft: '0.5rem',
-      paddingRight: '0.5rem',
-      paddingTop: '0.25rem',
-      paddingBottom: '0.25rem',
-      borderRadius: '9999px',
-      fontSize: '0.75rem',
-      fontWeight: '500'
-    },
-    badgePrimary: {
-      backgroundColor: '#dbeafe',
-      color: '#1e40af'
-    },
-    badgeSecondary: {
-      backgroundColor: '#ede9fe',
-      color: '#5b21b6'
-    },
-    actionButton: {
-      backgroundColor: 'transparent',
-      border: 'none',
-      cursor: 'pointer',
-      color: '#6b7280',
-      padding: '0.25rem',
-      borderRadius: '0.25rem',
-      marginLeft: '0.125rem',
-      width: '1.75rem',
-      height: '1.75rem',
-      display: 'inline-flex',
-      alignItems: 'center',
-      justifyContent: 'center'
-    },
-    actionButtonDanger: {
-      color: '#ef4444'
-    },
-    modalOverlay: {
-      position: 'fixed',
-      inset: 0,
-      backgroundColor: 'rgba(0, 0, 0, 0.5)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '1rem',
-      zIndex: '50',
-      opacity: 0,
-      transition: 'opacity 0.3s ease'
-    },
-    modalOverlayVisible: {
-      opacity: 1
-    },
-    modalContainer: {
-      backgroundColor: '#ffffff',
-      borderRadius: '0.5rem',
-      boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.05)',
-      width: '100%',
-      maxWidth: '40rem',
-      border: '1px solid #e5e7eb',
-      transform: 'scale(0.95)',
-      transition: 'transform 0.3s ease, opacity 0.3s ease',
-      opacity: 0,
-      maxHeight: '90vh',
-      overflow: 'hidden',
-      display: 'flex',
-      flexDirection: 'column'
-    },
-    modalContainerVisible: {
-      transform: 'scale(1)',
-      opacity: 1
-    },
-    viewModalOverlay: {
-      position: 'fixed',
-      inset: 0,
-      backgroundColor: 'rgba(0, 0, 0, 0.5)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '1rem',
-      zIndex: '50',
-      opacity: 0,
-      transition: 'opacity 0.3s ease'
-    },
-    viewModalOverlayVisible: {
-      opacity: 1
-    },
-    viewModalContainer: {
-      backgroundColor: '#ffffff',
-      borderRadius: '0.5rem',
-      boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.05)',
-      width: '100%',
-      maxWidth: '30rem',
-      border: '1px solid #e5e7eb',
-      transform: 'scale(0.95)',
-      transition: 'transform 0.3s ease, opacity 0.3s ease',
-      opacity: 0
-    },
-    viewModalContainerVisible: {
-      transform: 'scale(1)',
-      opacity: 1
-    },
-    modalHeader: {
-      paddingLeft: '1.25rem',
-      paddingRight: '1.25rem',
-      paddingTop: '1rem',
-      paddingBottom: '1rem',
-      borderBottom: '1px solid #e5e7eb',
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      flexShrink: 0
-    },
-    viewModalHeader: {
-      paddingLeft: '1.25rem',
-      paddingRight: '1.25rem',
-      paddingTop: '1rem',
-      paddingBottom: '1rem',
-      borderBottom: '1px solid #e5e7eb',
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center'
-    },
-    modalTitle: {
-      fontSize: '1.125rem',
-      fontWeight: '600',
-      color: '#111827'
-    },
-    viewModalTitle: {
-      fontSize: '1.125rem',
-      fontWeight: '600',
-      color: '#111827'
-    },
-    modalCloseButton: {
-      color: '#9ca3af',
-      backgroundColor: 'transparent',
-      border: 'none',
-      cursor: 'pointer',
-      borderRadius: '0.25rem',
-      width: '2rem',
-      height: '2rem',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center'
-    },
-    modalCloseButtonHover: {
-      backgroundColor: '#f3f4f6',
-      color: '#111827'
-    },
-    modalForm: {
-      padding: '1.25rem',
-      overflowY: 'auto',
-      flexGrow: 1
-    },
-    viewModalBody: {
-      padding: '1.25rem'
-    },
-    formGroup: {
-      marginBottom: '1rem'
-    },
-    formLabel: {
-      display: 'block',
-      fontSize: '0.8125rem',
-      fontWeight: '500',
-      color: '#374151',
-      marginBottom: '0.375rem'
-    },
-    formInput: {
-      display: 'block',
-      width: '100%',
-      paddingLeft: '0.75rem',
-      paddingRight: '0.75rem',
-      paddingTop: '0.5rem',
-      paddingBottom: '0.5rem',
-      border: '1px solid #d1d5db',
-      borderRadius: '0.375rem',
-      outline: 'none',
-      fontSize: '0.875rem',
-      backgroundColor: '#ffffff'
-    },
-    formTextarea: {
-      display: 'block',
-      width: '100%',
-      paddingLeft: '0.75rem',
-      paddingRight: '0.75rem',
-      paddingTop: '0.5rem',
-      paddingBottom: '0.5rem',
-      border: '1px solid #d1d5db',
-      borderRadius: '0.375rem',
-      outline: 'none',
-      fontSize: '0.875rem',
-      backgroundColor: '#ffffff',
-      minHeight: '6rem',
-      resize: 'vertical'
-    },
-    selectContainer: {
-      display: 'flex',
-      gap: '0.5rem',
-      marginBottom: '1rem',
-      alignItems: 'center'
-    },
-    formSelect: {
-      flex: '1',
-      paddingLeft: '0.75rem',
-      paddingRight: '0.75rem',
-      paddingTop: '0.5rem',
-      paddingBottom: '0.5rem',
-      border: '1px solid #d1d5db',
-      borderRadius: '0.375rem',
-      outline: 'none',
-      fontSize: '0.875rem',
-      backgroundColor: '#ffffff'
-    },
-    addButtonSmall: {
-      backgroundColor: '#10b981',
-      color: '#ffffff',
-      fontWeight: '500',
-      paddingTop: '0.5rem',
-      paddingBottom: '0.5rem',
-      paddingLeft: '0.75rem',
-      paddingRight: '0.75rem',
-      borderRadius: '0.375rem',
-      border: 'none',
-      cursor: 'pointer',
-      display: 'flex',
-      alignItems: 'center',
-      gap: '0.25rem',
-      fontSize: '0.8125rem'
-    },
-    assignedContainer: {
-      border: '1px solid #d1d5db',
-      borderRadius: '0.375rem',
-      padding: '0.75rem',
-      marginBottom: '1rem',
-      maxHeight: '12rem',
-      overflowY: 'auto'
-    },
-    viewList: {
-      maxHeight: '200px',
-      overflowY: 'auto',
-      border: '1px solid #e5e7eb',
-      borderRadius: '0.375rem'
-    },
-    assignedItem: {
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      padding: '0.5rem',
-      borderBottom: '1px solid #e5e7eb'
-    },
-    viewItem: {
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      padding: '0.75rem',
-      borderBottom: '1px solid #f3f4f6'
-    },
-    assignedItemLast: {
-      borderBottom: 'none'
-    },
-    viewItemLast: {
-      borderBottom: 'none'
-    },
-    assignedInfo: {
-      flex: '1'
-    },
-    assignedName: {
-      fontWeight: '500',
-      fontSize: '0.875rem',
-      color: '#111827'
-    },
-    viewItemName: {
-      fontWeight: '500',
-      fontSize: '0.875rem',
-      color: '#111827'
-    },
-    assignedDescription: {
-      fontSize: '0.75rem',
-      color: '#6b7280',
-      marginTop: '0.125rem'
-    },
-    viewItemDescription: {
-      fontSize: '0.75rem',
-      color: '#6b7280',
-      marginTop: '0.125rem'
-    },
-    viewItemEmail: {
-      fontSize: '0.75rem',
-      color: '#6b7280'
-    },
-    removeButton: {
-      backgroundColor: 'transparent',
-      border: 'none',
-      cursor: 'pointer',
-      color: '#ef4444',
-      padding: '0.25rem',
-      borderRadius: '0.25rem',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center'
-    },
-    userList: {
-      maxHeight: '150px',
-      overflowY: 'auto',
-      border: '1px solid #e5e7eb',
-      borderRadius: '0.375rem',
-      marginTop: '0.5rem'
-    },
-    userItem: {
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      padding: '0.5rem',
-      borderBottom: '1px solid #f3f4f6',
-      cursor: 'pointer'
-    },
-    userItemLast: {
-      borderBottom: 'none'
-    },
-    userName: {
-      fontWeight: '500',
-      fontSize: '0.875rem'
-    },
-    userEmail: {
-      fontSize: '0.75rem',
-      color: '#6b7280'
-    },
-    addUserButton: {
-      backgroundColor: 'transparent',
-      border: '1px dashed #d1d5db',
-      color: '#6b7280',
-      padding: '0.5rem',
-      borderRadius: '0.375rem',
-      cursor: 'pointer',
-      width: '100%',
-      textAlign: 'center',
-      fontSize: '0.875rem',
-      marginTop: '0.5rem'
-    },
-    modalFooter: {
-      paddingLeft: '1.25rem',
-      paddingRight: '1.25rem',
-      paddingTop: '1rem',
-      paddingBottom: '1rem',
-      backgroundColor: '#f9fafb',
-      display: 'flex',
-      justifyContent: 'flex-end',
-      gap: '0.5rem',
-      borderBottomLeftRadius: '0.5rem',
-      borderBottomRightRadius: '0.5rem',
-      flexShrink: 0
-    },
-    cancelButton: {
-      paddingLeft: '1rem',
-      paddingRight: '1rem',
-      paddingTop: '0.5rem',
-      paddingBottom: '0.5rem',
-      border: '1px solid #d1d5db',
-      borderRadius: '0.375rem',
-      fontSize: '0.875rem',
-      fontWeight: '500',
-      color: '#374151',
-      backgroundColor: '#ffffff',
-      cursor: 'pointer'
-    },
-    saveButton: {
-      paddingLeft: '1rem',
-      paddingRight: '1rem',
-      paddingTop: '0.5rem',
-      paddingBottom: '0.5rem',
-      borderRadius: '0.375rem',
-      fontSize: '0.875rem',
-      fontWeight: '500',
-      color: '#ffffff',
-      backgroundColor: '#10b981',
-      border: 'none',
-      cursor: 'pointer',
-      display: 'flex',
-      alignItems: 'center',
-      gap: '0.5rem'
-    },
-    confirmOverlay: {
-      position: 'fixed',
-      inset: 0,
-      backgroundColor: 'rgba(0, 0, 0, 0.5)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '1rem',
-      zIndex: '50',
-      opacity: 0,
-      transition: 'opacity 0.2s ease'
-    },
-    confirmOverlayVisible: {
-      opacity: 1
-    },
-    confirmContainer: {
-      backgroundColor: '#ffffff',
-      borderRadius: '0.5rem',
-      boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.05)',
-      width: '100%',
-      maxWidth: '22rem',
-      border: '1px solid #e5e7eb',
-      transform: 'scale(0.98)',
-      transition: 'transform 0.2s ease, opacity 0.2s ease',
-      opacity: 0
-    },
-    confirmContainerVisible: {
-      transform: 'scale(1)',
-      opacity: 1
-    },
-    confirmHeader: {
-      paddingLeft: '1.25rem',
-      paddingRight: '1.25rem',
-      paddingTop: '1rem',
-      paddingBottom: '1rem',
-      borderBottom: '1px solid #e5e7eb',
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      backgroundColor: '#fef2f2'
-    },
-    confirmTitle: {
-      fontSize: '1.125rem',
-      fontWeight: '600',
-      color: '#b91c1c'
-    },
-    confirmBody: {
-      padding: '1.25rem'
-    },
-    confirmMessage: {
-      fontSize: '0.875rem',
-      color: '#374151',
-      marginBottom: '1.25rem',
-      lineHeight: '1.5'
-    },
-    confirmRoleName: {
-      fontWeight: '600',
-      color: '#111827'
-    },
-    confirmFooter: {
-      paddingLeft: '1.25rem',
-      paddingRight: '1.25rem',
-      paddingTop: '1rem',
-      paddingBottom: '1rem',
-      backgroundColor: '#f9fafb',
-      display: 'flex',
-      justifyContent: 'flex-end',
-      gap: '0.5rem',
-      borderBottomLeftRadius: '0.5rem',
-      borderBottomRightRadius: '0.5rem'
-    },
-    confirmCancelButton: {
-      paddingLeft: '1rem',
-      paddingRight: '1rem',
-      paddingTop: '0.5rem',
-      paddingBottom: '0.5rem',
-      border: '1px solid #d1d5db',
-      borderRadius: '0.375rem',
-      fontSize: '0.875rem',
-      fontWeight: '500',
-      color: '#374151',
-      backgroundColor: '#ffffff',
-      cursor: 'pointer',
-      transition: 'background-color 0.2s ease'
-    },
-    confirmCancelButtonHover: {
-      backgroundColor: '#f9fafb'
-    },
-    confirmDeleteButton: {
-      paddingLeft: '1rem',
-      paddingRight: '1rem',
-      paddingTop: '0.5rem',
-      paddingBottom: '0.5rem',
-      borderRadius: '0.375rem',
-      fontSize: '0.875rem',
-      fontWeight: '500',
-      color: '#ffffff',
-      backgroundColor: '#ef4444',
-      border: 'none',
-      cursor: 'pointer',
-      transition: 'background-color 0.2s ease'
-    },
-    confirmDeleteButtonHover: {
-      backgroundColor: '#dc2626'
-    }
-  }
-
-  // Responsive styles
-  const mediaStyles = `
-    @media (max-width: 768px) {
-      .page {
-        padding: 0.75rem;
-      }
-      
-      .pageTitle {
-        font-size: 1.125rem;
-      }
-      
-      .searchContainer {
-        maxWidth: 100%;
-        margin-bottom: 0.75rem;
-      }
-    }
-    
-    @media (max-width: 480px) {
-      .page {
-        padding: 0.5rem;
-      }
-      
-      .header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 1rem;
-        padding: 0.75rem 0;
-      }
-      
-      .addButton {
-        padding: 0.25rem 0.5rem;
-        font-size: 0.75rem;
-      }
-    }
-    
-    /* Custom scrollbar */
-    .assignedContainer::-webkit-scrollbar {
-      width: 6px;
-    }
-    
-    .assignedContainer::-webkit-scrollbar-track {
-      background: #f3f4f6;
-      border-radius: 3px;
-    }
-    
-    .assignedContainer::-webkit-scrollbar-thumb {
-      background: #a7f3d0;
-      border-radius: 3px;
-    }
-    
-    .assignedContainer::-webkit-scrollbar-thumb:hover {
-      background: #6ee7b7;
-    }
-    
-    .userList::-webkit-scrollbar {
-      width: 6px;
-    }
-    
-    .userList::-webkit-scrollbar-track {
-      background: #f3f4f6;
-      border-radius: 3px;
-    }
-    
-    .userList::-webkit-scrollbar-thumb {
-      background: #a7f3d0;
-      border-radius: 3px;
-    }
-    
-    .userList::-webkit-scrollbar-thumb:hover {
-      background: #6ee7b7;
-    }
-    
-    .viewList::-webkit-scrollbar {
-      width: 6px;
-    }
-    
-    .viewList::-webkit-scrollbar-track {
-      background: #f3f4f6;
-      border-radius: 3px;
-    }
-    
-    .viewList::-webkit-scrollbar-thumb {
-      background: #a7f3d0;
-      border-radius: 3px;
-    }
-    
-    .viewList::-webkit-scrollbar-thumb:hover {
-      background: #6ee7b7;
-    }
-    
-    .modalForm::-webkit-scrollbar {
-      width: 6px;
-    }
-    
-    .modalForm::-webkit-scrollbar-track {
-      background: #f3f4f6;
-      border-radius: 3px;
-    }
-    
-    .modalForm::-webkit-scrollbar-thumb {
-      background: #a7f3d0;
-      border-radius: 3px;
-    }
-    
-    .modalForm::-webkit-scrollbar-thumb:hover {
-      background: #6ee7b7;
-    }
-  `
+  if (loading) return (
+    <div className="flex h-96 items-center justify-center">
+      <Loader2 className="h-10 w-10 animate-spin text-emerald-500" />
+    </div>
+  )
 
   return (
-    <div style={styles.page}>
-      <style>{mediaStyles}</style>
-      <div style={styles.header}>
-        <h1 style={styles.pageTitle}>Role Management</h1>
-        <button
-          onClick={handleAddRole}
-          style={styles.addButton}
+    <div className="max-w-7xl mx-auto space-y-6 p-4 md:p-6">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-black text-slate-800 tracking-tight flex items-center gap-2">
+            <Shield size={28} className="text-emerald-500" />
+            Access Roles
+          </h1>
+          <p className="text-slate-500 text-sm font-medium">Group permissions into usable staff roles</p>
+        </div>
+        <button 
+          onClick={() => handleOpenModal()}
+          className="flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-3 rounded-2xl font-bold shadow-lg shadow-emerald-100 transition-all active:scale-95"
         >
-          <Plus style={{ height: '1rem', width: '1rem' }} />
-          <span>Add Role</span>
+          <Plus size={18} />
+          <span>Create New Role</span>
         </button>
       </div>
 
-      {/* Search Filter */}
-      <div style={styles.searchContainer}>
-        <Search style={styles.searchIcon} />
-        <input
-          type="text"
-          placeholder="Search roles..."
+      {/* Search */}
+      <div className="relative max-w-md">
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
+        <input 
+          type="text" 
+          placeholder="Search by role name..." 
+          className="w-full bg-white border border-slate-100 rounded-2xl py-3.5 pl-12 pr-4 text-sm font-bold text-slate-600 outline-none focus:ring-4 focus:ring-emerald-500/10 shadow-sm transition-all"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          style={styles.searchInput}
         />
       </div>
 
-      <div style={styles.tableContainer}>
-        <ResponsiveTable
-          columns={[
-            { key: 'name', header: 'Role Name', isPrimary: true },
-            { key: 'description', header: 'Description' },
-            { key: 'permissions', header: 'Permissions' },
-            { key: 'users', header: 'Users' },
-            { key: 'actions', header: 'Actions', sortable: false }
-          ]}
-          data={currentRoles.map(role => ({
-            id: role.id,
-            name: role.name,
-            description: role.description,
-            permissions: role.permissions.length,
-            users: role.users.length,
-            role: role
-          }))}
-          renderCell={(row, column) => {
-            switch (column.key) {
-              case 'permissions':
-                return (
-                  <span 
-                    style={{ ...styles.badge, ...styles.badgePrimary, cursor: 'pointer' }}
-                    onClick={() => handleViewPermissions(row.role)}
-                  >
-                    {row.permissions} permissions
-                  </span>
-                );
-              case 'users':
-                return (
-                  <span 
-                    style={{ ...styles.badge, ...styles.badgeSecondary, cursor: 'pointer' }}
-                    onClick={() => handleViewUsers(row.role)}
-                  >
-                    {row.users} users
-                  </span>
-                );
-              case 'actions':
-                return (
-                  <div>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleEditRole(row.role);
-                      }}
-                      style={styles.actionButton}
-                      title="Edit Role"
-                    >
-                      <Edit style={{ height: '1rem', width: '1rem' }} />
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDeleteRole(row.role);
-                      }}
-                      style={{ ...styles.actionButton, ...styles.actionButtonDanger }}
-                      title="Delete Role"
-                    >
-                      <Trash2 style={{ height: '1rem', width: '1rem' }} />
-                    </button>
-                  </div>
-                );
-              default:
-                return row[column.key];
-            }
-          }}
-        />
+      {/* Grid List */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {filteredRoles.map((role) => (
+          <div key={role._id} className="bg-white rounded-[2.5rem] border border-slate-100 p-8 shadow-sm hover:shadow-xl hover:shadow-emerald-500/5 transition-all group relative overflow-hidden">
+            <div className="flex justify-between items-start mb-4">
+              <div className="h-12 w-12 bg-slate-50 text-emerald-500 rounded-2xl flex items-center justify-center shadow-inner">
+                <Shield size={24} />
+              </div>
+              <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button onClick={() => handleOpenModal(role)} className="p-2 text-slate-400 hover:text-emerald-500 hover:bg-emerald-50 rounded-xl transition-all"><Edit size={16}/></button>
+                <button onClick={() => { setRoleToDelete(role); setShowDeleteConfirm(true); }} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"><Trash2 size={16}/></button>
+              </div>
+            </div>
 
-        <ResponsivePagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={setCurrentPage}
-          itemsPerPage={itemsPerPage}
-          totalItems={filteredRoles.length}
-          showInfo={true}
-          showNavigation={true}
-        />
+            <h3 className="text-xl font-black text-slate-800 mb-2">{role.name}</h3>
+            <p className="text-slate-400 text-xs font-medium leading-relaxed mb-6 line-clamp-2 italic">
+              "{role.description || 'No description provided for this role.'}"
+            </p>
+
+            <div className="space-y-3 pt-4 border-t border-slate-50">
+               <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-slate-400">
+                  <span>Permissions</span>
+                  <span className="text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">{role.permissions?.length || 0}</span>
+               </div>
+               <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-slate-400">
+                  <span>Assigned Staff</span>
+                  <span className="text-blue-600 bg-blue-50 px-2 py-0.5 rounded">{role.users?.length || 0}</span>
+               </div>
+            </div>
+          </div>
+        ))}
       </div>
 
-      {/* Permissions View Modal */}
-      {showPermissionsModal && (
-        <div 
-          style={{ 
-            ...styles.viewModalOverlay, 
-            ...styles.viewModalOverlayVisible 
-          }}
-        >
-          <div 
-            style={{ 
-              ...styles.viewModalContainer, 
-              ...styles.viewModalContainerVisible 
-            }}
-          >
-            <div style={styles.viewModalHeader}>
-              <h3 style={styles.viewModalTitle}>
-                {viewingRole?.name} - Permissions
-              </h3>
-              <button 
-                onClick={() => setShowPermissionsModal(false)}
-                style={styles.modalCloseButton}
-                onMouseEnter={(e) => e.target.style.backgroundColor = styles.modalCloseButtonHover.backgroundColor}
-                onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
-              >
-                <X style={{ height: '1.25rem', width: '1.25rem' }} />
-              </button>
-            </div>
-            <div style={styles.viewModalBody}>
-              <div style={styles.viewList}>
-                {viewingRole?.permissions.length > 0 ? (
-                  viewingRole.permissions.map((permission, index) => (
-                    <div 
-                      key={permission.id} 
-                      style={{
-                        ...styles.viewItem,
-                        ...(index === viewingRole.permissions.length - 1 ? styles.viewItemLast : {})
-                      }}
-                    >
-                      <div>
-                        <div style={styles.viewItemName}>{permission.name}</div>
-                        <div style={styles.viewItemDescription}>{permission.description}</div>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div style={{ ...styles.viewItem, ...styles.viewItemLast, textAlign: 'center', color: '#6b7280', fontStyle: 'italic' }}>
-                    No permissions assigned
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Users View Modal */}
-      {showUsersModal && (
-        <div 
-          style={{ 
-            ...styles.viewModalOverlay, 
-            ...styles.viewModalOverlayVisible 
-          }}
-        >
-          <div 
-            style={{ 
-              ...styles.viewModalContainer, 
-              ...styles.viewModalContainerVisible 
-            }}
-          >
-            <div style={styles.viewModalHeader}>
-              <h3 style={styles.viewModalTitle}>
-                {viewingRole?.name} - Users
-              </h3>
-              <button 
-                onClick={() => setShowUsersModal(false)}
-                style={styles.modalCloseButton}
-                onMouseEnter={(e) => e.target.style.backgroundColor = styles.modalCloseButtonHover.backgroundColor}
-                onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
-              >
-                <X style={{ height: '1.25rem', width: '1.25rem' }} />
-              </button>
-            </div>
-            <div style={styles.viewModalBody}>
-              <div style={styles.viewList}>
-                {viewingRole?.users.length > 0 ? (
-                  viewingRole.users.map((user, index) => (
-                    <div 
-                      key={user.id} 
-                      style={{
-                        ...styles.viewItem,
-                        ...(index === viewingRole.users.length - 1 ? styles.viewItemLast : {})
-                      }}
-                    >
-                      <div>
-                        <div style={styles.viewItemName}>{user.name}</div>
-                        <div style={styles.viewItemEmail}>{user.email}</div>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div style={{ ...styles.viewItem, ...styles.viewItemLast, textAlign: 'center', color: '#6b7280', fontStyle: 'italic' }}>
-                    No users assigned
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Delete Confirmation Dialog */}
-      {showDeleteConfirm && (
-        <div 
-          style={{ 
-            ...styles.confirmOverlay, 
-            ...styles.confirmOverlayVisible 
-          }}
-        >
-          <div 
-            style={{ 
-              ...styles.confirmContainer, 
-              ...styles.confirmContainerVisible 
-            }}
-          >
-            <div style={styles.confirmHeader}>
-              <h3 style={styles.confirmTitle}>Confirm Deletion</h3>
-              <button 
-                onClick={cancelDeleteRole}
-                style={styles.modalCloseButton}
-                onMouseEnter={(e) => e.target.style.backgroundColor = styles.modalCloseButtonHover.backgroundColor}
-                onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
-              >
-                <X style={{ height: '1.25rem', width: '1.25rem' }} />
-              </button>
-            </div>
-            <div style={styles.confirmBody}>
-              <p style={styles.confirmMessage}>
-                Are you sure you want to delete the role "<span style={styles.confirmRoleName}>{roleToDelete?.name}</span>"? This action cannot be undone.
-              </p>
-            </div>
-            <div style={styles.confirmFooter}>
-              <button
-                onClick={cancelDeleteRole}
-                style={styles.confirmCancelButton}
-                onMouseEnter={(e) => e.target.style.backgroundColor = styles.confirmCancelButtonHover.backgroundColor}
-                onMouseLeave={(e) => e.target.style.backgroundColor = styles.confirmCancelButton.backgroundColor}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={confirmDeleteRole}
-                style={styles.confirmDeleteButton}
-                onMouseEnter={(e) => e.target.style.backgroundColor = styles.confirmDeleteButtonHover.backgroundColor}
-                onMouseLeave={(e) => e.target.style.backgroundColor = styles.confirmDeleteButton.backgroundColor}
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Add/Edit Role Modal */}
+      {/* CREATE/EDIT MODAL */}
       {showModal && (
-        <div 
-          style={{ 
-            ...styles.modalOverlay, 
-            ...styles.modalOverlayVisible 
-          }}
-        >
-          <div 
-            style={{ 
-              ...styles.modalContainer, 
-              ...styles.modalContainerVisible 
-            }}
-          >
-            <div style={styles.modalHeader}>
-              <h3 style={styles.modalTitle}>
-                {editingRole ? 'Edit Role' : 'Add New Role'}
-              </h3>
-              <button 
-                onClick={() => setShowModal(false)}
-                style={styles.modalCloseButton}
-                onMouseEnter={(e) => e.target.style.backgroundColor = styles.modalCloseButtonHover.backgroundColor}
-                onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
-              >
-                <X style={{ height: '1.25rem', width: '1.25rem' }} />
-              </button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
+          <div className="w-full max-w-4xl bg-white rounded-[2.5rem] shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
+            <div className="p-8 border-b border-slate-50 flex justify-between items-center">
+              <div>
+                <h3 className="text-2xl font-black text-slate-800">{editingRole ? 'Update Role' : 'Define New Role'}</h3>
+                <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">Configuration Panel</p>
+              </div>
+              <button onClick={() => setShowModal(false)} className="p-2 hover:bg-slate-100 rounded-full text-slate-400"><X size={24}/></button>
             </div>
-            <form onSubmit={handleSubmit} style={styles.modalForm}>
-              <div style={styles.formGroup}>
-                <label style={styles.formLabel}>
-                  Role Name *
-                </label>
-                <input
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData({...formData, name: e.target.value})}
-                  style={styles.formInput}
-                  placeholder="Enter role name"
-                  required
-                />
-              </div>
-              
-              <div style={styles.formGroup}>
-                <label style={styles.formLabel}>
-                  Description
-                </label>
-                <textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData({...formData, description: e.target.value})}
-                  style={styles.formTextarea}
-                  placeholder="Enter role description"
-                />
-              </div>
-              
-              <div style={styles.formGroup}>
-                <label style={styles.formLabel}>
-                  Assign Permissions
-                </label>
-                <div style={styles.selectContainer}>
-                  <select
-                    value={selectedRole ? selectedRole.id : ''}
-                    onChange={(e) => {
-                      const permission = permissions.find(p => p.id == e.target.value)
-                      setSelectedRole(permission || null)
-                    }}
-                    style={styles.formSelect}
-                  >
-                    <option value="">Select a permission</option>
-                    {permissions
-                      .filter(permission => !assignedPermissions.some(ap => ap.id === permission.id))
-                      .map(permission => (
-                        <option key={permission.id} value={permission.id}>
-                          {permission.name}
-                        </option>
-                      ))}
-                  </select>
-                  <button
-                    type="button"
-                    onClick={handleAddPermission}
-                    disabled={!selectedRole}
-                    style={{
-                      ...styles.addButtonSmall,
-                      ...(selectedRole ? {} : { opacity: 0.5, cursor: 'not-allowed' })
-                    }}
-                  >
-                    <Plus style={{ height: '1rem', width: '1rem' }} />
-                    <span>Add</span>
-                  </button>
-                </div>
-                
-                <div style={styles.assignedContainer}>
-                  {assignedPermissions.length === 0 ? (
-                    <p style={{ ...styles.tableCellSecondary, fontStyle: 'italic', textAlign: 'center', margin: '1rem 0' }}>
-                      No permissions assigned yet
-                    </p>
-                  ) : (
-                    assignedPermissions.map((permission, index) => (
-                      <div 
-                        key={permission.id} 
-                        style={{
-                          ...styles.assignedItem,
-                          ...(index === assignedPermissions.length - 1 ? styles.assignedItemLast : {})
-                        }}
-                      >
-                        <div style={styles.assignedInfo}>
-                          <div style={styles.assignedName}>{permission.name}</div>
-                          <div style={styles.assignedDescription}>{permission.description}</div>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => handleRemovePermission(permission.id)}
-                          style={styles.removeButton}
-                        >
-                          <X style={{ height: '1rem', width: '1rem' }} />
-                        </button>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-              
-              <div style={styles.formGroup}>
-                <label style={styles.formLabel}>
-                  Assign Users
-                </label>
-                <div style={styles.userList}>
-                  {users
-                    .filter(user => !assignedUsers.some(au => au.id === user.id))
-                    .map((user, index, array) => (
-                      <div
-                        key={user.id}
-                        style={{
-                          ...styles.userItem,
-                          ...(index === array.length - 1 ? styles.userItemLast : {})
-                        }}
-                        onClick={() => handleAddUser(user)}
-                      >
-                        <div>
-                          <div style={styles.userName}>{user.name}</div>
-                          <div style={styles.userEmail}>{user.email}</div>
-                        </div>
-                        <User style={{ height: '1rem', width: '1rem', color: '#9ca3af' }} />
-                      </div>
-                    ))}
-                </div>
-                {assignedUsers.length > 0 && (
-                  <div style={{ marginTop: '0.75rem' }}>
-                    <div style={{ ...styles.formLabel, marginBottom: '0.25rem' }}>
-                      Assigned Users
+
+            <div className="flex-1 overflow-y-auto p-8">
+               <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+                  
+                  {/* Left: General Info */}
+                  <div className="space-y-6">
+                    <div className="space-y-2">
+                       <label className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em] ml-1">Role Identifier</label>
+                       <input 
+                         className="w-full bg-slate-50 border-none rounded-2xl p-4 text-sm font-bold text-slate-700 focus:ring-4 focus:ring-emerald-500/10 outline-none"
+                         placeholder="e.g. Senior Support"
+                         value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})}
+                       />
                     </div>
-                    {assignedUsers.map((user, index) => (
-                      <div 
-                        key={user.id} 
-                        style={{
-                          ...styles.assignedItem,
-                          ...(index === assignedUsers.length - 1 ? styles.assignedItemLast : {})
-                        }}
-                      >
-                        <div style={styles.assignedInfo}>
-                          <div style={styles.assignedName}>{user.name}</div>
-                          <div style={styles.assignedDescription}>{user.email}</div>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveUser(user.id)}
-                          style={styles.removeButton}
-                        >
-                          <X style={{ height: '1rem', width: '1rem' }} />
-                        </button>
-                      </div>
-                    ))}
+                    <div className="space-y-2">
+                       <label className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em] ml-1">Role Mission Statement</label>
+                       <textarea 
+                         className="w-full bg-slate-50 border-none rounded-2xl p-4 text-sm font-bold text-slate-700 focus:ring-4 focus:ring-emerald-500/10 outline-none h-32 resize-none"
+                         placeholder="What does this role achieve?"
+                         value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})}
+                       />
+                    </div>
+
+                    <div className="p-6 bg-slate-900 rounded-[2rem] text-white">
+                       <h4 className="text-[10px] font-black uppercase text-emerald-400 tracking-[0.2em] mb-4 flex items-center gap-2"><CheckCircle2 size={14}/> Selected Metrics</h4>
+                       <div className="flex gap-6">
+                          <div>
+                            <div className="text-2xl font-black">{formData.permissions.length}</div>
+                            <div className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Rights</div>
+                          </div>
+                          <div className="w-px bg-white/10" />
+                          <div>
+                            <div className="text-2xl font-black">{formData.users.length}</div>
+                            <div className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Members</div>
+                          </div>
+                       </div>
+                    </div>
                   </div>
-                )}
-              </div>
-            </form>
-            <div style={styles.modalFooter}>
-              <button
-                type="button"
-                onClick={() => setShowModal(false)}
-                style={styles.cancelButton}
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                onClick={handleSubmit}
-                style={styles.saveButton}
-              >
-                <Save style={{ height: '1rem', width: '1rem' }} />
-                <span>Save Role</span>
-              </button>
+
+                  {/* Right: Multi-Select Lists */}
+                  <div className="space-y-8">
+                     <div className="space-y-3">
+                        <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em]">Select Permissions</h4>
+                        <div className="grid grid-cols-1 gap-2 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
+                           {availablePermissions.map(p => (
+                             <button 
+                               key={p._id} type="button"
+                               onClick={() => toggleItem('permissions', p._id)}
+                               className={`text-left p-3 rounded-xl text-xs font-bold transition-all border-2 ${formData.permissions.includes(p._id) ? 'border-emerald-500 bg-emerald-50 text-emerald-700' : 'border-slate-50 bg-slate-50 text-slate-500 hover:border-slate-200'}`}
+                             >
+                               {p.name}
+                             </button>
+                           ))}
+                        </div>
+                     </div>
+
+                     <div className="space-y-3">
+                        <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em]">Assign Active Staff</h4>
+                        <div className="grid grid-cols-1 gap-2 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
+                           {availableUsers.map(u => (
+                             <button 
+                               key={u._id} type="button"
+                               onClick={() => toggleItem('users', u._id)}
+                               className={`flex items-center gap-3 p-3 rounded-xl transition-all border-2 ${formData.users.includes(u._id) ? 'border-blue-500 bg-blue-50' : 'border-slate-50 bg-slate-50 hover:border-slate-200'}`}
+                             >
+                               <div className="h-6 w-6 rounded-lg bg-white flex items-center justify-center text-[10px] font-black shadow-sm">{u.name.charAt(0)}</div>
+                               <span className={`text-xs font-bold ${formData.users.includes(u._id) ? 'text-blue-700' : 'text-slate-500'}`}>{u.name}</span>
+                             </button>
+                           ))}
+                        </div>
+                     </div>
+                  </div>
+
+               </div>
+            </div>
+
+            <div className="p-8 bg-slate-50 flex gap-4">
+               <button type="button" onClick={() => setShowModal(false)} className="px-8 py-4 text-sm font-black text-slate-400">Discard</button>
+               <button onClick={handleSubmit} className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white py-4 rounded-2xl text-sm font-black shadow-lg shadow-emerald-100 transition-all active:scale-95">
+                 Save Role Configuration
+               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* DELETE MODAL */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+          <div className="w-full max-w-sm bg-white rounded-[2.5rem] p-10 text-center shadow-2xl">
+            <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-3xl bg-red-50 text-red-500">
+              <AlertTriangle size={40} />
+            </div>
+            <h3 className="text-xl font-black text-slate-800 mb-2">Delete this Role?</h3>
+            <p className="text-slate-500 text-sm mb-8 leading-relaxed italic">"Removing this will unassign {roleToDelete?.users.length} staff members instantly."</p>
+            <div className="flex flex-col gap-3">
+              <button onClick={async () => { await deleteRole(roleToDelete._id); setShowDeleteConfirm(false); fetchData(); }} className="w-full bg-red-500 hover:bg-red-600 text-white rounded-2xl py-4 text-sm font-black transition-all">Destroy Role</button>
+              <button onClick={() => setShowDeleteConfirm(false)} className="w-full py-2 text-xs font-black text-slate-400 uppercase tracking-widest">Cancel</button>
             </div>
           </div>
         </div>

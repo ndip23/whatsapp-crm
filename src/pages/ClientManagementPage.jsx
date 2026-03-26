@@ -1,440 +1,195 @@
-import { useState } from 'react'
-import { Search, Filter } from 'lucide-react'
-import ResponsiveTable from '../components/ResponsiveTable'
+import { useState, useMemo } from 'react'
+import { Search, Filter, User, Phone, Globe, Tag, Plus, MessageSquare, Bell, Calendar, Loader2 } from 'lucide-react'
+import { showToast } from '../utils/toast'
 
 const ClientManagementPage = () => {
-  const [clients] = useState([
-    { id: 1, name: 'John Doe', phone: '+1 234 567 8900', country: 'USA', agent: 'Jane Smith', tags: ['New Lead', 'VIP'] },
-    { id: 2, name: 'Jane Smith', phone: '+44 123 456 7890', country: 'UK', agent: 'John Doe', tags: ['Closed Sale'] },
-    { id: 3, name: 'Bob Johnson', phone: '+61 234 567 890', country: 'Australia', agent: 'Alice Brown', tags: ['New Lead'] },
-    { id: 4, name: 'Alice Brown', phone: '+1 987 654 3210', country: 'Canada', agent: 'Bob Johnson', tags: ['VIP', 'Follow Up'] },
+  const [clients, setClients] = useState([
+    { id: 1, name: 'John Doe', phone: '+1 234 567 8900', email: 'john@example.com', country: 'USA', agent: 'Jane Smith', tags: ['New Lead', 'VIP'], notes: ['Initial inquiry about product features'] },
+    { id: 2, name: 'Jane Smith', phone: '+44 123 456 7890', email: 'jane@uk.co', country: 'UK', agent: 'John Doe', tags: ['Closed Sale'], notes: ['Contract signed'] },
+    { id: 3, name: 'Bob Johnson', phone: '+61 234 567 890', email: 'bob@oz.au', country: 'Australia', agent: 'Alice Brown', tags: ['New Lead'], notes: [] },
+    { id: 4, name: 'Alice Brown', phone: '+1 987 654 3210', email: 'alice@ca.gov', country: 'Canada', agent: 'Bob Johnson', tags: ['VIP', 'Follow Up'], notes: ['Needs demo next week'] },
   ])
 
   const [searchTerm, setSearchTerm] = useState('')
   const [filterTag, setFilterTag] = useState('')
+  const [selectedClient, setSelectedClient] = useState(clients[0]) // Default to first client
 
   // Get all unique tags for filter dropdown
-  const allTags = [...new Set(clients.flatMap(client => client.tags))]
+  const allTags = useMemo(() => [...new Set(clients.flatMap(c => c.tags))], [clients])
 
-  const filteredClients = clients.filter(client => {
-    const matchesSearch = client.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          client.phone.includes(searchTerm)
-    const matchesFilter = filterTag === '' || client.tags.includes(filterTag)
-    return matchesSearch && matchesFilter
-  })
+  const filteredClients = useMemo(() => {
+    return clients.filter(client => {
+      const matchesSearch = client.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                            client.phone.includes(searchTerm)
+      const matchesFilter = filterTag === '' || client.tags.includes(filterTag)
+      return matchesSearch && matchesFilter
+    })
+  }, [clients, searchTerm, filterTag])
 
-  const styles = {
-    page: {
-      padding: '1rem'
-    },
-    pageTitle: {
-      fontSize: '1.5rem',
-      fontWeight: '700',
-      color: '#111827',
-      marginBottom: '1.5rem'
-    },
-    searchFilterContainer: {
-      marginBottom: '1.5rem',
-      display: 'flex',
-      flexDirection: 'column',
-      gap: '1rem'
-    },
-    searchContainer: {
-      position: 'relative',
-      flex: '1'
-    },
-    searchIcon: {
-      position: 'absolute',
-      insetY: '0',
-      left: '0',
-      paddingLeft: '0.75rem',
-      display: 'flex',
-      alignItems: 'center',
-      pointerEvents: 'none'
-    },
-    searchInput: {
-      display: 'block',
-      width: '100%',
-      paddingLeft: '2.5rem',
-      paddingRight: '0.75rem',
-      paddingTop: '0.5rem',
-      paddingBottom: '0.5rem',
-      border: '1px solid #d1d5db',
-      borderRadius: '0.375rem',
-      backgroundColor: '#ffffff',
-      placeholderColor: '#9ca3af',
-      outline: 'none'
-    },
-    searchInputFocus: {
-      borderColor: '#10b981',
-      ring: '1px solid #10b981'
-    },
-    filterContainer: {
-      position: 'relative'
-    },
-    filterIcon: {
-      position: 'absolute',
-      insetY: '0',
-      left: '0',
-      paddingLeft: '0.75rem',
-      display: 'flex',
-      alignItems: 'center',
-      pointerEvents: 'none'
-    },
-    filterSelect: {
-      display: 'block',
-      width: '100%',
-      paddingLeft: '2.5rem',
-      paddingRight: '0.75rem',
-      paddingTop: '0.5rem',
-      paddingBottom: '0.5rem',
-      border: '1px solid #d1d5db',
-      borderRadius: '0.375rem',
-      backgroundColor: '#ffffff',
-      outline: 'none'
-    },
-    filterSelectFocus: {
-      borderColor: '#10b981',
-      ring: '1px solid #10b981'
-    },
-    tableContainer: {
-      backgroundColor: '#ffffff',
-      borderRadius: '0.5rem',
-      boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
-      overflow: 'hidden'
-    },
-    tagContainer: {
-      display: 'flex',
-      flexWrap: 'wrap',
-      gap: '0.25rem'
-    },
-    tag: {
-      display: 'inline-flex',
-      alignItems: 'center',
-      paddingLeft: '0.625rem',
-      paddingRight: '0.625rem',
-      paddingTop: '0.125rem',
-      paddingBottom: '0.125rem',
-      borderRadius: '9999px',
-      fontSize: '0.75rem',
-      fontWeight: '500'
-    },
-    tagNew: {
-      backgroundColor: '#dbeafe',
-      color: '#1e40af'
-    },
-    tagVip: {
-      backgroundColor: '#ede9fe',
-      color: '#5b21b6'
-    },
-    tagFollowUp: {
-      backgroundColor: '#fef3c7',
-      color: '#92400e'
-    },
-    tagClosed: {
-      backgroundColor: '#d1fae5',
-      color: '#065f46'
-    },
-    clientDetailPanel: {
-      marginTop: '2rem',
-      backgroundColor: '#ffffff',
-      borderRadius: '0.5rem',
-      boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
-      padding: '1.5rem'
-    },
-    clientDetailTitle: {
-      fontSize: '1.125rem',
-      fontWeight: '500',
-      color: '#111827',
-      marginBottom: '1rem'
-    },
-    clientDetailGrid: {
-      display: 'grid',
-      gridTemplateColumns: 'repeat(1, minmax(0, 1fr))',
-      gap: '1.5rem'
-    },
-    clientDetailSection: {
-      marginBottom: '1rem'
-    },
-    sectionTitle: {
-      fontSize: '1rem',
-      fontWeight: '500',
-      color: '#111827',
-      marginBottom: '0.5rem'
-    },
-    detailsList: {
-      display: 'flex',
-      flexDirection: 'column',
-      gap: '0.5rem'
-    },
-    detailItem: {
-      display: 'flex',
-      flexDirection: 'column'
-    },
-    detailLabel: {
-      fontSize: '0.875rem',
-      color: '#6b7280'
-    },
-    detailValue: {
-      fontSize: '0.875rem',
-      fontWeight: '500',
-      color: '#111827'
-    },
-    tagsContainer: {
-      display: 'flex',
-      flexWrap: 'wrap',
-      gap: '0.5rem'
-    },
-    addTagButton: {
-      marginTop: '0.5rem',
-      fontSize: '0.875rem',
-      color: '#10b981',
-      backgroundColor: 'transparent',
-      border: 'none',
-      cursor: 'pointer'
-    },
-    addTagButtonHover: {
-      color: '#065f46'
-    },
-    notesList: {
-      display: 'flex',
-      flexDirection: 'column',
-      gap: '0.5rem'
-    },
-    noteItem: {
-      fontSize: '0.875rem'
-    },
-    noteText: {
-      color: '#111827'
-    },
-    noteTime: {
-      color: '#6b7280',
-      fontSize: '0.75rem'
-    },
-    reminderContainer: {
-      display: 'flex',
-      gap: '0.5rem',
-      marginTop: '0.5rem'
-    },
-    reminderInput: {
-      border: '1px solid #d1d5db',
-      borderRadius: '0.375rem',
-      paddingLeft: '0.5rem',
-      paddingRight: '0.5rem',
-      paddingTop: '0.25rem',
-      paddingBottom: '0.25rem',
-      fontSize: '0.875rem'
-    },
-    reminderButton: {
-      backgroundColor: '#10b981',
-      color: '#ffffff',
-      fontWeight: '500',
-      paddingTop: '0.25rem',
-      paddingBottom: '0.25rem',
-      paddingLeft: '0.75rem',
-      paddingRight: '0.75rem',
-      borderRadius: '0.375rem',
-      border: 'none',
-      fontSize: '0.875rem',
-      cursor: 'pointer'
-    },
-    reminderButtonHover: {
-      backgroundColor: '#059669'
+  const getTagStyle = (tag) => {
+    switch (tag) {
+      case 'New Lead': return 'bg-blue-50 text-blue-600 border-blue-100'
+      case 'VIP': return 'bg-purple-50 text-purple-600 border-purple-100'
+      case 'Follow Up': return 'bg-amber-50 text-amber-600 border-amber-100'
+      case 'Closed Sale': return 'bg-emerald-50 text-emerald-600 border-emerald-100'
+      default: return 'bg-slate-50 text-slate-500 border-slate-100'
     }
   }
 
-  // Responsive styles
-  const mediaStyles = `
-    @media (min-width: 768px) {
-      .searchFilterContainer {
-        flex-direction: row;
-        gap: 1rem;
-      }
-      
-      .searchContainer {
-        flex: 1;
-      }
-      
-      .clientDetailGrid {
-        gridTemplateColumns: repeat(3, minmax(0, 1fr));
-      }
-    }
-  `
-
   return (
-    <div style={styles.page}>
-      <style>{mediaStyles}</style>
-      <h1 style={styles.pageTitle}>Client Management</h1>
+    <div className="max-w-7xl mx-auto space-y-6 p-4 md:p-6 text-slate-800">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <h1 className="text-2xl font-black tracking-tight text-slate-800">Client Management</h1>
+      </div>
 
-      {/* Search and Filter */}
-      <div className="searchFilterContainer" style={styles.searchFilterContainer}>
-        <div style={styles.searchContainer}>
-          <div style={styles.searchIcon}>
-            <Search style={{ height: '1.25rem', width: '1.25rem', color: '#9ca3af' }} />
-          </div>
+      {/* Search & Filter Bar */}
+      <div className="flex flex-col md:flex-row gap-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
           <input
             type="text"
-            placeholder="Search clients..."
+            placeholder="Search by name or phone..."
+            className="w-full bg-white border border-slate-100 rounded-2xl py-3 pl-12 pr-4 text-sm focus:ring-4 focus:ring-emerald-500/10 outline-none transition-all shadow-sm"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            style={styles.searchInput}
-            onFocus={(e) => {
-              e.target.style.borderColor = styles.searchInputFocus.borderColor;
-              e.target.style.boxShadow = `0 0 0 1px ${styles.searchInputFocus.ring}`;
-            }}
-            onBlur={(e) => {
-              e.target.style.borderColor = '';
-              e.target.style.boxShadow = '';
-            }}
           />
         </div>
-        <div style={styles.filterContainer}>
-          <div style={styles.filterIcon}>
-            <Filter style={{ height: '1.25rem', width: '1.25rem', color: '#9ca3af' }} />
-          </div>
+        <div className="relative min-w-[200px]">
+          <Filter className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
           <select
+            className="w-full appearance-none bg-white border border-slate-100 rounded-2xl py-3 pl-12 pr-10 text-sm font-bold text-slate-600 focus:ring-4 focus:ring-emerald-500/10 outline-none transition-all shadow-sm"
             value={filterTag}
             onChange={(e) => setFilterTag(e.target.value)}
-            style={styles.filterSelect}
-            onFocus={(e) => {
-              e.target.style.borderColor = styles.filterSelectFocus.borderColor;
-              e.target.style.boxShadow = `0 0 0 1px ${styles.filterSelectFocus.ring}`;
-            }}
-            onBlur={(e) => {
-              e.target.style.borderColor = '';
-              e.target.style.boxShadow = '';
-            }}
           >
             <option value="">All Tags</option>
-            {allTags.map(tag => (
-              <option key={tag} value={tag}>{tag}</option>
-            ))}
+            {allTags.map(tag => <option key={tag} value={tag}>{tag}</option>)}
           </select>
         </div>
       </div>
 
-      {/* Clients Table */}
-      <div style={styles.tableContainer}>
-        <ResponsiveTable
-          columns={[
-            { key: 'name', header: 'Client Name', isPrimary: true },
-            { key: 'phone', header: 'Phone' },
-            { key: 'country', header: 'Country' },
-            { key: 'agent', header: 'Assigned Agent' },
-            { key: 'tags', header: 'Tags' }
-          ]}
-          data={filteredClients.map(client => ({
-            id: client.id,
-            name: client.name,
-            phone: client.phone,
-            country: client.country,
-            agent: client.agent,
-            tags: client.tags
-          }))}
-          renderCell={(row, column) => {
-            switch (column.key) {
-              case 'tags':
-                return (
-                  <div style={styles.tagContainer}>
-                    {row.tags.map(tag => (
-                      <span 
-                        key={tag} 
-                        style={{ 
-                          ...styles.tag, 
-                          ...(tag === 'New Lead' ? styles.tagNew : 
-                              tag === 'VIP' ? styles.tagVip : 
-                              tag === 'Follow Up' ? styles.tagFollowUp : 
-                              styles.tagClosed)
-                        }}
-                      >
+      {/* Clients Table Card */}
+      <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+        <table className="w-full text-left">
+          <thead className="bg-slate-50 text-[10px] font-black uppercase tracking-widest text-slate-400">
+            <tr>
+              <th className="px-6 py-4">Client Name</th>
+              <th className="px-6 py-4">Contact</th>
+              <th className="px-6 py-4">Assigned Agent</th>
+              <th className="px-6 py-4">Tags</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-50">
+            {filteredClients.map(client => (
+              <tr 
+                key={client.id} 
+                onClick={() => setSelectedClient(client)}
+                className={`cursor-pointer transition-colors ${selectedClient?.id === client.id ? 'bg-emerald-50/50' : 'hover:bg-slate-50/50'}`}
+              >
+                <td className="px-6 py-4">
+                  <div className="font-bold text-slate-800">{client.name}</div>
+                  <div className="text-[10px] text-slate-400 font-bold uppercase">{client.country}</div>
+                </td>
+                <td className="px-6 py-4 text-sm text-slate-500">{client.phone}</td>
+                <td className="px-6 py-4 text-sm font-bold text-emerald-600">@{client.agent}</td>
+                <td className="px-6 py-4">
+                  <div className="flex flex-wrap gap-1.5">
+                    {client.tags.map(tag => (
+                      <span key={tag} className={`px-2 py-0.5 rounded-full border text-[9px] font-black uppercase tracking-tighter ${getTagStyle(tag)}`}>
                         {tag}
                       </span>
                     ))}
                   </div>
-                );
-              default:
-                return row[column.key];
-            }
-          }}
-        />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
 
-      {/* Client Detail Panel */}
-      <div style={styles.clientDetailPanel}>
-        <h2 style={styles.clientDetailTitle}>Client Details</h2>
-        <div className="clientDetailGrid" style={styles.clientDetailGrid}>
-          <div>
-            <h3 style={styles.sectionTitle}>Client Information</h3>
-            <dl style={styles.detailsList}>
-              <div style={styles.detailItem}>
-                <dt style={styles.detailLabel}>Name</dt>
-                <dd style={styles.detailValue}>John Doe</dd>
-              </div>
-              <div style={styles.detailItem}>
-                <dt style={styles.detailLabel}>Phone Number</dt>
-                <dd style={styles.detailValue}>+1 234 567 8900</dd>
-              </div>
-              <div style={styles.detailItem}>
-                <dt style={styles.detailLabel}>Country</dt>
-                <dd style={styles.detailValue}>USA</dd>
-              </div>
-            </dl>
-          </div>
+      {/* Detail Panel Section */}
+      {selectedClient && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
           
-          <div>
-            <h3 style={styles.sectionTitle}>Tags</h3>
-            <div style={styles.tagsContainer}>
-              <span style={{ ...styles.tag, ...styles.tagNew }}>
-                New Lead
-              </span>
-              <span style={{ ...styles.tag, ...styles.tagVip }}>
-                VIP
-              </span>
-            </div>
-            <button 
-              style={styles.addTagButton}
-              onMouseEnter={(e) => e.target.style.color = styles.addTagButtonHover.color}
-              onMouseLeave={(e) => e.target.style.color = styles.addTagButton.color}
-            >
-              + Add Tag
-            </button>
-          </div>
-          
-          <div>
-            <h3 style={styles.sectionTitle}>Notes</h3>
-            <div style={styles.notesList}>
-              <div style={styles.noteItem}>
-                <p style={styles.noteText}>Initial inquiry about product features</p>
-                <p style={styles.noteTime}>2 hours ago</p>
+          {/* Info Card */}
+          <div className="lg:col-span-2 bg-white rounded-3xl border border-slate-100 shadow-sm p-8 space-y-8">
+            <div className="flex items-center gap-6">
+              <div className="h-20 w-20 bg-emerald-500 text-white rounded-3xl flex items-center justify-center text-3xl font-black shadow-xl shadow-emerald-100">
+                {selectedClient.name.charAt(0)}
+              </div>
+              <div>
+                <h2 className="text-2xl font-black text-slate-800 tracking-tight">{selectedClient.name}</h2>
+                <div className="flex items-center gap-3 mt-1">
+                   <span className="flex items-center gap-1 text-xs font-bold text-slate-400"><Globe size={14}/> {selectedClient.country}</span>
+                   <span className="h-1 w-1 rounded-full bg-slate-200"/>
+                   <span className="flex items-center gap-1 text-xs font-bold text-emerald-600"><User size={14}/> Assigned to {selectedClient.agent}</span>
+                </div>
               </div>
             </div>
-            <button 
-              style={styles.addTagButton}
-              onMouseEnter={(e) => e.target.style.color = styles.addTagButtonHover.color}
-              onMouseLeave={(e) => e.target.style.color = styles.addTagButton.color}
-            >
-              + Add Note
-            </button>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4">
+              <div className="space-y-4">
+                <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Contact Information</h4>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl">
+                    <Phone size={16} className="text-slate-400"/>
+                    <span className="text-sm font-bold text-slate-700">{selectedClient.phone}</span>
+                  </div>
+                  <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl">
+                    <Tag size={16} className="text-slate-400"/>
+                    <div className="flex gap-2">
+                      {selectedClient.tags.map(tag => (
+                        <span key={tag} className="text-[10px] font-black text-emerald-600">#{tag.replace(' ', '')}</span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Active Notes ({selectedClient.notes.length})</h4>
+                <div className="space-y-2">
+                  {selectedClient.notes.length > 0 ? selectedClient.notes.map((note, idx) => (
+                    <div key={idx} className="p-3 bg-amber-50 border border-amber-100 rounded-xl text-sm text-amber-800 font-medium">
+                      {note}
+                    </div>
+                  )) : (
+                    <div className="text-sm text-slate-400 italic">No notes added yet.</div>
+                  )}
+                  <button className="text-xs font-black text-emerald-600 flex items-center gap-1 pt-2 hover:text-emerald-700">
+                    <Plus size={14}/> ADD NOTE
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
-        
-        <div style={styles.clientDetailSection}>
-          <h3 style={styles.sectionTitle}>Follow-up Reminder</h3>
-          <div style={styles.reminderContainer}>
-            <input
-              type="datetime-local"
-              style={styles.reminderInput}
-            />
-            <button 
-              style={styles.reminderButton}
-              onMouseEnter={(e) => e.target.style.backgroundColor = styles.reminderButtonHover.backgroundColor}
-              onMouseLeave={(e) => e.target.style.backgroundColor = styles.reminderButton.backgroundColor}
-            >
-              Save
-            </button>
+
+          {/* Sidebar Tools in Details */}
+          <div className="space-y-6">
+            <div className="bg-slate-900 rounded-3xl p-6 text-white shadow-xl shadow-slate-200">
+              <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-4">Quick Actions</h4>
+              <div className="space-y-3">
+                <button className="w-full bg-emerald-500 hover:bg-emerald-600 p-3 rounded-2xl flex items-center justify-center gap-3 text-sm font-black transition-all active:scale-95 shadow-lg shadow-emerald-500/20">
+                  <MessageSquare size={18}/> Send WhatsApp
+                </button>
+                <button className="w-full bg-slate-800 hover:bg-slate-700 p-3 rounded-2xl flex items-center justify-center gap-3 text-sm font-black transition-all">
+                  <Calendar size={18}/> Schedule Call
+                </button>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm">
+              <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-4 flex items-center gap-2">
+                <Bell size={14}/> Reminders
+              </h4>
+              <input type="datetime-local" className="w-full bg-slate-50 border-none rounded-xl p-3 text-xs font-bold text-slate-600 mb-3" />
+              <button className="w-full bg-emerald-50 text-emerald-600 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all hover:bg-emerald-100">
+                Set Follow-up
+              </button>
+            </div>
           </div>
+
         </div>
-      </div>
+      )}
     </div>
   )
 }

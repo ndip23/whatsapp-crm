@@ -127,3 +127,25 @@ export const removeAgent = async (req, res) => {
         res.status(500).json({ message: "Failed to delete agent", error: error.message });
     }
 };
+// Get all unique roles from the User model
+export const getRoles = async (req, res) => {
+  try {
+    // This finds all unique roles currently in your User collection
+    const roles = await User.distinct("role");
+    // To match your frontend, we map them into objects
+    const roleObjects = roles.map(r => ({ name: r, _id: r })); 
+    res.json({ roles: roleObjects });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Simple permissions list (usually these are hardcoded in the backend)
+export const getPermissions = async (req, res) => {
+  const permissions = [
+    { _id: '1', name: 'CHAT_ACCESS', description: 'Read/Write Chats' },
+    { _id: '2', name: 'AGENT_MANAGE', description: 'Create/Edit Agents' },
+    { _id: '3', name: 'REPORT_VIEW', description: 'View Analytics' }
+  ];
+  res.json({ permissions });
+};

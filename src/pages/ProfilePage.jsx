@@ -1,454 +1,209 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useUser } from '../context/UserContext'
 import { showToast } from '../utils/toast'
+import { User, Mail, Shield, Briefcase, Camera, Save, X, Loader2, Phone } from 'lucide-react'
 
 const ProfilePage = () => {
   const { currentUser } = useUser()
   const [isEditing, setIsEditing] = useState(false)
-  const [profileData, setProfileData] = useState({
-    firstName: 'Admin',
-    lastName: 'User',
-    email: 'admin@example.com',
-    phoneNumber: '+1234567890',
-    department: 'Administration',
-    position: 'System Administrator'
+  const [isSaving, setIsSaving] = useState(false)
+  
+  // Initialize form with backend user data or fallback
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    role: '',
+    phoneNumber: '',
+    department: 'Operations'
   })
+
+  useEffect(() => {
+    if (currentUser) {
+      setFormData({
+        name: currentUser.name || '',
+        email: currentUser.email || '',
+        role: currentUser.role || '',
+        phoneNumber: currentUser.phoneNumber || '+1 (555) 000-0000',
+        department: 'Operations'
+      })
+    }
+  }, [currentUser])
 
   const handleInputChange = (e) => {
     const { name, value } = e.target
-    setProfileData(prev => ({
-      ...prev,
-      [name]: value
-    }))
+    setFormData(prev => ({ ...prev, [name]: value }))
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    // In a real app, you would save this data to a backend
-    showToast('Profile updated successfully!', 'success')
-    setIsEditing(false)
-  }
-
-  const styles = {
-    container: {
-      padding: '1.5rem',
-      backgroundColor: '#ffffff',
-      borderRadius: '0.75rem',
-      boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)'
-    },
-    header: {
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginBottom: '2rem'
-    },
-    title: {
-      fontSize: '1.5rem',
-      fontWeight: '600',
-      color: '#111827'
-    },
-    editButton: {
-      padding: '0.5rem 1rem',
-      backgroundColor: '#10b981',
-      color: '#ffffff',
-      border: 'none',
-      borderRadius: '0.375rem',
-      fontSize: '0.875rem',
-      fontWeight: '500',
-      cursor: 'pointer'
-    },
-    editButtonHover: {
-      backgroundColor: '#059669'
-    },
-    profileSection: {
-      display: 'flex',
-      gap: '2rem',
-      marginBottom: '2rem'
-    },
-    avatarSection: {
-      flex: '0 0 auto'
-    },
-    avatar: {
-      height: '8rem',
-      width: '8rem',
-      borderRadius: '9999px',
-      backgroundColor: '#d1fae5',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      marginBottom: '1rem'
-    },
-    avatarIcon: {
-      height: '4rem',
-      width: '4rem',
-      color: '#10b981'
-    },
-    uploadButton: {
-      padding: '0.5rem 1rem',
-      backgroundColor: '#f3f4f6',
-      color: '#374151',
-      border: '1px solid #d1d5db',
-      borderRadius: '0.375rem',
-      fontSize: '0.875rem',
-      fontWeight: '500',
-      cursor: 'pointer',
-      width: '100%'
-    },
-    uploadButtonHover: {
-      backgroundColor: '#e5e7eb'
-    },
-    infoSection: {
-      flex: '1'
-    },
-    formGroup: {
-      marginBottom: '1.5rem'
-    },
-    label: {
-      display: 'block',
-      fontSize: '0.875rem',
-      fontWeight: '500',
-      color: '#374151',
-      marginBottom: '0.5rem'
-    },
-    input: {
-      display: 'block',
-      width: '100%',
-      padding: '0.75rem',
-      borderRadius: '0.375rem',
-      border: '1px solid #d1d5db',
-      fontSize: '0.875rem',
-      lineHeight: '1.25rem',
-      backgroundColor: '#ffffff',
-      color: '#111827'
-    },
-    inputFocus: {
-      borderColor: '#10b981',
-      outline: '2px solid #10b981',
-      outlineOffset: '0px'
-    },
-    readOnlyInput: {
-      display: 'block',
-      width: '100%',
-      padding: '0.75rem',
-      borderRadius: '0.375rem',
-      border: '1px solid #d1d5db',
-      fontSize: '0.875rem',
-      lineHeight: '1.25rem',
-      backgroundColor: '#f9fafb',
-      color: '#6b7280',
-      cursor: 'not-allowed'
-    },
-    buttonGroup: {
-      display: 'flex',
-      gap: '1rem',
-      justifyContent: 'flex-end'
-    },
-    saveButton: {
-      padding: '0.5rem 1rem',
-      backgroundColor: '#10b981',
-      color: '#ffffff',
-      border: 'none',
-      borderRadius: '0.375rem',
-      fontSize: '0.875rem',
-      fontWeight: '500',
-      cursor: 'pointer'
-    },
-    saveButtonHover: {
-      backgroundColor: '#059669'
-    },
-    cancelButton: {
-      padding: '0.5rem 1rem',
-      backgroundColor: '#f3f4f6',
-      color: '#374151',
-      border: '1px solid #d1d5db',
-      borderRadius: '0.375rem',
-      fontSize: '0.875rem',
-      fontWeight: '500',
-      cursor: 'pointer'
-    },
-    cancelButtonHover: {
-      backgroundColor: '#e5e7eb'
-    }
-  }
-
-  // Media queries for responsive design
-  const mediaStyles = `
-    @media (max-width: 768px) {
-      .profile-container {
-        padding: 1rem;
-      }
-      
-      .profile-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 1rem;
-        margin-bottom: 1.5rem;
-      }
-      
-      .profile-title {
-        font-size: 1.25rem;
-      }
-      
-      .profile-section {
-        flex-direction: column;
-        gap: 1.5rem;
-      }
-      
-      .avatar-section {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-      }
-      
-      .avatar {
-        height: 6rem;
-        width: 6rem;
-      }
-      
-      .avatar-icon {
-        height: 3rem;
-        width: 3rem;
-      }
-      
-      .button-group {
-        flex-direction: column;
-      }
-      
-      .button-group button {
-        width: 100%;
-      }
-    }
+    setIsSaving(true)
     
-    @media (max-width: 480px) {
-      .profile-container {
-        padding: 0.75rem;
-      }
-      
-      .avatar {
-        height: 5rem;
-        width: 5rem;
-      }
-      
-      .avatar-icon {
-        height: 2.5rem;
-        width: 2.5rem;
-      }
-    }
-  `
+    // Simulate API update
+    setTimeout(() => {
+      showToast('Profile updated successfully!', 'success')
+      setIsSaving(false)
+      setIsEditing(false)
+    }, 1000)
+  }
+
+  if (!currentUser) return (
+    <div className="flex h-96 items-center justify-center">
+      <Loader2 className="animate-spin text-emerald-500" size={40} />
+    </div>
+  )
 
   return (
-    <div style={styles.container} className="profile-container">
-      <style>{mediaStyles}</style>
-      <div style={styles.header} className="profile-header">
-        <h1 style={styles.title} className="profile-title">User Profile</h1>
-        {!isEditing && (
-          <button
-            style={styles.editButton}
-            onMouseEnter={(e) => e.target.style.backgroundColor = styles.editButtonHover.backgroundColor}
-            onMouseLeave={(e) => e.target.style.backgroundColor = styles.editButton.backgroundColor}
+    <div className="max-w-5xl mx-auto space-y-8 p-4 md:p-6 pb-20">
+      {/* Header section */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div className="flex items-center gap-6">
+          <div className="relative group">
+            <div className="h-24 w-24 md:h-32 md:w-32 bg-emerald-500 text-white rounded-[2.5rem] flex items-center justify-center text-4xl font-black shadow-2xl shadow-emerald-200 transition-transform group-hover:scale-105">
+              {formData.name?.charAt(0) || 'U'}
+            </div>
+            {isEditing && (
+              <button className="absolute -bottom-2 -right-2 p-3 bg-white text-emerald-600 rounded-2xl shadow-xl border border-emerald-50 hover:bg-emerald-50 transition-all">
+                <Camera size={20} />
+              </button>
+            )}
+          </div>
+          <div>
+            <h1 className="text-3xl font-black text-slate-800 tracking-tight">{formData.name}</h1>
+            <p className="text-emerald-600 font-black text-xs uppercase tracking-widest mt-1 flex items-center gap-2">
+              <Shield size={14} /> {formData.role} ACCESS
+            </p>
+          </div>
+        </div>
+
+        {!isEditing ? (
+          <button 
             onClick={() => setIsEditing(true)}
+            className="bg-slate-900 hover:bg-slate-800 text-white px-8 py-3 rounded-2xl font-black text-sm transition-all active:scale-95 shadow-xl shadow-slate-200"
           >
             Edit Profile
           </button>
+        ) : (
+          <div className="flex gap-3">
+            <button 
+              onClick={() => setIsEditing(false)}
+              className="px-6 py-3 text-sm font-black text-slate-400 hover:text-slate-600"
+            >
+              Cancel
+            </button>
+            <button 
+              onClick={handleSubmit}
+              disabled={isSaving}
+              className="bg-emerald-500 hover:bg-emerald-600 text-white px-8 py-3 rounded-2xl font-black text-sm transition-all active:scale-95 shadow-xl shadow-emerald-100 flex items-center gap-2"
+            >
+              {isSaving ? <Loader2 className="animate-spin" size={18}/> : <><Save size={18}/> Save Changes</>}
+            </button>
+          </div>
         )}
       </div>
 
-      <div style={styles.profileSection} className="profile-section">
-        <div style={styles.avatarSection} className="avatar-section">
-          <div style={styles.avatar} className="avatar">
-            <svg style={styles.avatarIcon} className="avatar-icon" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
-            </svg>
-          </div>
-          {isEditing && (
-            <button
-              style={styles.uploadButton}
-              onMouseEnter={(e) => e.target.style.backgroundColor = styles.uploadButtonHover.backgroundColor}
-              onMouseLeave={(e) => e.target.style.backgroundColor = styles.uploadButton.backgroundColor}
-            >
-              Upload New Photo
-            </button>
-          )}
-        </div>
+      {/* Main Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        {/* Contact Info Card */}
+        <div className="lg:col-span-2 bg-white rounded-[2.5rem] border border-slate-100 shadow-sm p-8 md:p-10">
+          <form className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+            
+            <ProfileField 
+              label="Full Display Name" 
+              name="name"
+              icon={<User size={18}/>}
+              value={formData.name} 
+              isEditing={isEditing} 
+              onChange={handleInputChange} 
+            />
 
-        <div style={styles.infoSection} className="info-section">
-          <form onSubmit={handleSubmit}>
-            <div style={styles.formGroup}>
-              <label style={styles.label}>First Name</label>
-              {isEditing ? (
-                <input
-                  type="text"
-                  name="firstName"
-                  value={profileData.firstName}
-                  onChange={handleInputChange}
-                  style={styles.input}
-                  onFocus={(e) => {
-                    e.target.style.borderColor = styles.inputFocus.borderColor
-                    e.target.style.outline = styles.inputFocus.outline
-                    e.target.style.outlineOffset = styles.inputFocus.outlineOffset
-                  }}
-                  onBlur={(e) => {
-                    e.target.style.borderColor = ''
-                    e.target.style.outline = ''
-                    e.target.style.outlineOffset = ''
-                  }}
-                />
-              ) : (
-                <div style={styles.readOnlyInput}>{profileData.firstName}</div>
-              )}
-            </div>
+            <ProfileField 
+              label="Email Address" 
+              name="email"
+              icon={<Mail size={18}/>}
+              value={formData.email} 
+              isEditing={isEditing} 
+              onChange={handleInputChange} 
+              type="email"
+            />
 
-            <div style={styles.formGroup}>
-              <label style={styles.label}>Last Name</label>
-              {isEditing ? (
-                <input
-                  type="text"
-                  name="lastName"
-                  value={profileData.lastName}
-                  onChange={handleInputChange}
-                  style={styles.input}
-                  onFocus={(e) => {
-                    e.target.style.borderColor = styles.inputFocus.borderColor
-                    e.target.style.outline = styles.inputFocus.outline
-                    e.target.style.outlineOffset = styles.inputFocus.outlineOffset
-                  }}
-                  onBlur={(e) => {
-                    e.target.style.borderColor = ''
-                    e.target.style.outline = ''
-                    e.target.style.outlineOffset = ''
-                  }}
-                />
-              ) : (
-                <div style={styles.readOnlyInput}>{profileData.lastName}</div>
-              )}
-            </div>
+            <ProfileField 
+              label="Phone Number" 
+              name="phoneNumber"
+              icon={<Phone size={18}/>}
+              value={formData.phoneNumber} 
+              isEditing={isEditing} 
+              onChange={handleInputChange} 
+            />
 
-            <div style={styles.formGroup}>
-              <label style={styles.label}>Email Address</label>
-              {isEditing ? (
-                <input
-                  type="email"
-                  name="email"
-                  value={profileData.email}
-                  onChange={handleInputChange}
-                  style={styles.input}
-                  onFocus={(e) => {
-                    e.target.style.borderColor = styles.inputFocus.borderColor
-                    e.target.style.outline = styles.inputFocus.outline
-                    e.target.style.outlineOffset = styles.inputFocus.outlineOffset
-                  }}
-                  onBlur={(e) => {
-                    e.target.style.borderColor = ''
-                    e.target.style.outline = ''
-                    e.target.style.outlineOffset = ''
-                  }}
-                />
-              ) : (
-                <div style={styles.readOnlyInput}>{profileData.email}</div>
-              )}
-            </div>
+            <ProfileField 
+              label="Department" 
+              name="department"
+              icon={<Briefcase size={18}/>}
+              value={formData.department} 
+              isEditing={isEditing} 
+              onChange={handleInputChange} 
+            />
 
-            <div style={styles.formGroup}>
-              <label style={styles.label}>Phone Number</label>
-              {isEditing ? (
-                <input
-                  type="tel"
-                  name="phoneNumber"
-                  value={profileData.phoneNumber}
-                  onChange={handleInputChange}
-                  style={styles.input}
-                  onFocus={(e) => {
-                    e.target.style.borderColor = styles.inputFocus.borderColor
-                    e.target.style.outline = styles.inputFocus.outline
-                    e.target.style.outlineOffset = styles.inputFocus.outlineOffset
-                  }}
-                  onBlur={(e) => {
-                    e.target.style.borderColor = ''
-                    e.target.style.outline = ''
-                    e.target.style.outlineOffset = ''
-                  }}
-                />
-              ) : (
-                <div style={styles.readOnlyInput}>{profileData.phoneNumber}</div>
-              )}
-            </div>
-
-            <div style={styles.formGroup}>
-              <label style={styles.label}>Department</label>
-              {isEditing ? (
-                <input
-                  type="text"
-                  name="department"
-                  value={profileData.department}
-                  onChange={handleInputChange}
-                  style={styles.input}
-                  onFocus={(e) => {
-                    e.target.style.borderColor = styles.inputFocus.borderColor
-                    e.target.style.outline = styles.inputFocus.outline
-                    e.target.style.outlineOffset = styles.inputFocus.outlineOffset
-                  }}
-                  onBlur={(e) => {
-                    e.target.style.borderColor = ''
-                    e.target.style.outline = ''
-                    e.target.style.outlineOffset = ''
-                  }}
-                />
-              ) : (
-                <div style={styles.readOnlyInput}>{profileData.department}</div>
-              )}
-            </div>
-
-            <div style={styles.formGroup}>
-              <label style={styles.label}>Position</label>
-              {isEditing ? (
-                <input
-                  type="text"
-                  name="position"
-                  value={profileData.position}
-                  onChange={handleInputChange}
-                  style={styles.input}
-                  onFocus={(e) => {
-                    e.target.style.borderColor = styles.inputFocus.borderColor
-                    e.target.style.outline = styles.inputFocus.outline
-                    e.target.style.outlineOffset = styles.inputFocus.outlineOffset
-                  }}
-                  onBlur={(e) => {
-                    e.target.style.borderColor = ''
-                    e.target.style.outline = ''
-                    e.target.style.outlineOffset = ''
-                  }}
-                />
-              ) : (
-                <div style={styles.readOnlyInput}>{profileData.position}</div>
-              )}
-            </div>
-
-            {isEditing && (
-              <div style={styles.buttonGroup} className="button-group">
-                <button
-                  type="button"
-                  style={styles.cancelButton}
-                  onMouseEnter={(e) => e.target.style.backgroundColor = styles.cancelButtonHover.backgroundColor}
-                  onMouseLeave={(e) => e.target.style.backgroundColor = styles.cancelButton.backgroundColor}
-                  onClick={() => setIsEditing(false)}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  style={styles.saveButton}
-                  onMouseEnter={(e) => e.target.style.backgroundColor = styles.saveButtonHover.backgroundColor}
-                  onMouseLeave={(e) => e.target.style.backgroundColor = styles.saveButton.backgroundColor}
-                >
-                  Save Changes
-                </button>
-              </div>
-            )}
           </form>
         </div>
+
+        {/* Sidebar Info */}
+        <div className="space-y-6">
+          <div className="bg-slate-900 rounded-[2rem] p-8 text-white shadow-2xl shadow-slate-200">
+             <h4 className="text-[10px] font-black uppercase text-emerald-400 tracking-[0.2em] mb-4">Security Status</h4>
+             <div className="space-y-4">
+                <div className="flex items-center justify-between border-b border-white/10 pb-4">
+                   <span className="text-xs font-bold text-slate-400">Account Type</span>
+                   <span className="text-xs font-black uppercase tracking-widest bg-white/10 px-2 py-1 rounded">PRO</span>
+                </div>
+                <div className="flex items-center justify-between border-b border-white/10 pb-4">
+                   <span className="text-xs font-bold text-slate-400">WhatsApp Sync</span>
+                   <span className="text-xs font-black text-emerald-400 uppercase tracking-widest">Active</span>
+                </div>
+                <div className="flex items-center justify-between">
+                   <span className="text-xs font-bold text-slate-400">Last Password Change</span>
+                   <span className="text-xs font-bold text-slate-200">3 months ago</span>
+                </div>
+             </div>
+          </div>
+
+          <div className="bg-emerald-50 rounded-[2rem] p-8 border border-emerald-100">
+             <h4 className="text-[10px] font-black uppercase text-emerald-700 tracking-[0.2em] mb-4">Quick Tip</h4>
+             <p className="text-xs font-medium text-emerald-800 leading-relaxed">
+               Updating your profile name will change how clients see your name when you respond on WhatsApp.
+             </p>
+          </div>
+        </div>
+
       </div>
     </div>
   )
 }
+
+// --- SUB-COMPONENT: FIELD ---
+const ProfileField = ({ label, name, value, isEditing, onChange, icon, type="text" }) => (
+  <div className="space-y-2">
+    <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">{label}</label>
+    <div className={`relative group flex items-center transition-all ${isEditing ? 'bg-slate-50 rounded-2xl ring-2 ring-transparent focus-within:ring-emerald-500/20' : ''}`}>
+      <div className={`absolute left-4 ${isEditing ? 'text-slate-300 group-focus-within:text-emerald-500' : 'text-emerald-500'} transition-colors`}>
+        {icon}
+      </div>
+      {isEditing ? (
+        <input 
+          type={type}
+          name={name}
+          value={value}
+          onChange={onChange}
+          className="w-full bg-transparent border-none py-4 pl-12 pr-4 text-sm font-bold text-slate-700 outline-none"
+        />
+      ) : (
+        <div className="py-4 pl-12 pr-4 text-sm font-black text-slate-800 tracking-tight">
+          {value || <span className="text-slate-300 italic font-medium">Not specified</span>}
+        </div>
+      )}
+    </div>
+  </div>
+)
 
 export default ProfilePage

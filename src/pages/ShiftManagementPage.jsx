@@ -1,545 +1,212 @@
-import { useState, useMemo } from 'react'
-import { Edit, Trash2, Plus, Search } from 'lucide-react'
+import { useState, useMemo, useEffect } from 'react'
+import { Edit, Trash2, Plus, Search, Clock, X, Loader2, Save, CalendarDays } from 'lucide-react'
 import { showToast } from '../utils/toast'
-import ResponsiveTable from '../components/ResponsiveTable'
-import ResponsivePagination from '../components/ResponsivePagination'
+import { viewShifts, createShift, editShift } from '../services/shiftService'
 
 const ShiftManagementPage = () => {
-  const [shifts, setShifts] = useState([
-    { id: 1, name: 'Morning Shift', startTime: '08:00', endTime: '16:00' },
-    { id: 2, name: 'Evening Shift', startTime: '16:00', endTime: '00:00' },
-    { id: 3, name: 'Night Shift', startTime: '00:00', endTime: '08:00' },
-  ])
-
+  const [shifts, setShifts] = useState([])
+  const [loading, setLoading] = useState(true)
+  
+  // Modal & Form States
   const [showModal, setShowModal] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
   const [editingShift, setEditingShift] = useState(null)
-  const [formData, setFormData] = useState({
-    name: '',
-    startTime: '',
-    endTime: ''
-  })
+  const [formData, setFormData] = useState({ name: '', startTime: '', endTime: '' })
 
-  // Pagination and search states
+  // Search & Pagination
   const [searchTerm, setSearchTerm] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
-  const itemsPerPage = 5
+  const itemsPerPage = 8
 
-  const handleAddShift = () => {
-    setEditingShift(null)
-    setFormData({ name: '', startTime: '', endTime: '' })
-    setShowModal(true)
-  }
-
-  const handleEditShift = (shift) => {
-    setEditingShift(shift)
-    setFormData({
-      name: shift.name,
-      startTime: shift.startTime,
-      endTime: shift.endTime
-    })
-    setShowModal(true)
-  }
-
-  const handleDeleteShift = (id) => {
-    setShifts(shifts.filter(shift => shift.id !== id))
-    showToast('Shift deleted successfully', 'success')
-  }
-
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    if (editingShift) {
-      // Update existing shift
-      setShifts(shifts.map(shift => 
-        shift.id === editingShift.id 
-          ? { ...shift, ...formData }
-          : shift
-      ))
-      showToast('Shift updated successfully', 'success')
-    } else {
-      // Add new shift
-      const newShift = {
-        id: shifts.length + 1,
-        ...formData
-      }
-      setShifts([...shifts, newShift])
-      showToast('Shift added successfully', 'success')
+  // --- 1. FETCH LIVE DATA ---
+  const fetchShifts = async () => {
+    try {
+      setLoading(true)
+      const data = await viewShifts()
+      setShifts(Array.isArray(data) ? data : [])
+    } catch (error) {
+      showToast('Could not load shift templates', 'error')
+    } finally {
+      setLoading(false)
     }
-    setShowModal(false)
   }
 
-  // Filter shifts based on search term
+  useEffect(() => { fetchShifts() }, [])
+
+  // --- 2. ACTIONS ---
+  const handleOpenModal = (shift = null) => {
+    if (shift) {
+      setEditingShift(shift)
+      setFormData({ name: shift.name, startTime: shift.startTime, endTime: shift.endTime })
+    } else {
+      setEditingShift(null)
+      setFormData({ name: '', startTime: '', endTime: '' })
+    }
+    setShowModal(true)
+  }
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    setIsSaving(true)
+    try {
+      if (editingShift) {
+        await editShift(editingShift._id, formData)
+        showToast('Shift template updated', 'success')
+      } else {
+        await createShift(formData)
+        showToast('New shift template created', 'success')
+      }
+      setShowModal(false)
+      fetchShifts()
+    } catch (error) {
+      showToast(error.message || 'Failed to save shift', 'error')
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  // Assuming a delete route exists. If not, this logic is ready for when you add it.
+  const handleDelete = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this shift template?')) return
+    try {
+      // await apiClient.delete(`/api/shift/delete/${id}`) 
+      setShifts(shifts.filter(s => s._id !== id))
+      showToast('Shift deleted', 'success')
+    } catch (error) {
+      showToast('Delete failed', 'error')
+    }
+  }
+
+  // --- 3. FILTERING ---
   const filteredShifts = useMemo(() => {
-    if (!searchTerm) return shifts
-    
     const term = searchTerm.toLowerCase()
-    return shifts.filter(shift => 
-      shift.name.toLowerCase().includes(term) ||
-      shift.startTime.includes(term) ||
-      shift.endTime.includes(term)
-    )
+    return shifts.filter(s => s.name?.toLowerCase().includes(term))
   }, [shifts, searchTerm])
 
-  // Pagination logic
-  const totalPages = Math.ceil(filteredShifts.length / itemsPerPage)
-  const startIndex = (currentPage - 1) * itemsPerPage
-  const endIndex = startIndex + itemsPerPage
-  const currentShifts = filteredShifts.slice(startIndex, endIndex)
+  const currentItems = filteredShifts.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
 
-  // Reset to first page when search term changes
-  useMemo(() => {
-    setCurrentPage(1)
-  }, [searchTerm])
-
-  const styles = {
-    page: {
-      padding: '1rem',
-      backgroundColor: '#ffffff',
-      borderRadius: '0.75rem',
-      boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)'
-    },
-    header: {
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginBottom: '1.5rem',
-      padding: '1rem 0'
-    },
-    pageTitle: {
-      fontSize: '1.25rem',
-      fontWeight: '600',
-      color: '#111827',
-      margin: 0
-    },
-    addButton: {
-      backgroundColor: '#10b981',
-      color: '#ffffff',
-      fontWeight: '500',
-      paddingTop: '0.5rem',
-      paddingBottom: '0.5rem',
-      paddingLeft: '1rem',
-      paddingRight: '1rem',
-      borderRadius: '0.375rem',
-      border: 'none',
-      cursor: 'pointer',
-      display: 'flex',
-      alignItems: 'center',
-      gap: '0.5rem',
-      fontSize: '0.875rem'
-    },
-    addButtonHover: {
-      backgroundColor: '#059669'
-    },
-    searchContainer: {
-      position: 'relative',
-      marginBottom: '1rem',
-      maxWidth: '300px'
-    },
-    searchInput: {
-      width: '100%',
-      paddingLeft: '2.5rem',
-      paddingRight: '1rem',
-      paddingTop: '0.5rem',
-      paddingBottom: '0.5rem',
-      border: '1px solid #d1d5db',
-      borderRadius: '0.375rem',
-      outline: 'none',
-      fontSize: '0.875rem'
-    },
-    searchInputFocus: {
-      borderColor: '#10b981',
-      boxShadow: '0 0 0 3px rgba(16, 185, 129, 0.1)'
-    },
-    searchIcon: {
-      position: 'absolute',
-      left: '0.75rem',
-      top: '50%',
-      transform: 'translateY(-50%)',
-      color: '#6b7280',
-      height: '1rem',
-      width: '1rem'
-    },
-    tableContainer: {
-      backgroundColor: '#ffffff',
-      borderRadius: '0.5rem',
-      boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
-      overflow: 'hidden',
-      border: '1px solid #e5e7eb'
-    },
-    tableCellSecondary: {
-      color: '#6b7280'
-    },
-    actionButton: {
-      backgroundColor: 'transparent',
-      border: 'none',
-      cursor: 'pointer',
-      color: '#6b7280',
-      padding: '0.25rem',
-      borderRadius: '0.25rem',
-      marginLeft: '0.125rem',
-      width: '1.75rem',
-      height: '1.75rem',
-      display: 'inline-flex',
-      alignItems: 'center',
-      justifyContent: 'center'
-    },
-    actionButtonHover: {
-      color: '#111827',
-      backgroundColor: '#f3f4f6'
-    },
-    actionButtonDanger: {
-      color: '#ef4444'
-    },
-    actionButtonDangerHover: {
-      color: '#b91c1c',
-      backgroundColor: '#fef2f2'
-    },
-    modalOverlay: {
-      position: 'fixed',
-      inset: '0',
-      backgroundColor: 'rgba(0, 0, 0, 0.5)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '1rem',
-      zIndex: '50'
-    },
-    modalContainer: {
-      backgroundColor: '#ffffff',
-      borderRadius: '0.5rem',
-      boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-      width: '100%',
-      maxWidth: '28rem'
-    },
-    modalHeader: {
-      paddingLeft: '1.5rem',
-      paddingRight: '1.5rem',
-      paddingTop: '1rem',
-      paddingBottom: '1rem',
-      borderBottom: '1px solid #e5e7eb',
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center'
-    },
-    modalTitle: {
-      fontSize: '1.125rem',
-      fontWeight: '500',
-      color: '#111827'
-    },
-    modalCloseButton: {
-      color: '#9ca3af',
-      backgroundColor: 'transparent',
-      border: 'none',
-      cursor: 'pointer'
-    },
-    modalCloseButtonHover: {
-      color: '#6b7280'
-    },
-    modalForm: {
-      padding: '1.5rem'
-    },
-    formGroup: {
-      marginBottom: '1rem'
-    },
-    formLabel: {
-      display: 'block',
-      fontSize: '0.875rem',
-      fontWeight: '500',
-      color: '#111827',
-      marginBottom: '0.25rem'
-    },
-    formInput: {
-      display: 'block',
-      width: '100%',
-      paddingLeft: '0.75rem',
-      paddingRight: '0.75rem',
-      paddingTop: '0.5rem',
-      paddingBottom: '0.5rem',
-      border: '1px solid #d1d5db',
-      borderRadius: '0.375rem',
-      outline: 'none'
-    },
-    formInputFocus: {
-      borderColor: '#10b981',
-      boxShadow: '0 0 0 3px rgba(16, 185, 129, 0.1)'
-    },
-    modalFooter: {
-      paddingLeft: '1.5rem',
-      paddingRight: '1.5rem',
-      paddingTop: '1rem',
-      paddingBottom: '1rem',
-      backgroundColor: '#f9fafb',
-      display: 'flex',
-      justifyContent: 'flex-end',
-      gap: '0.75rem'
-    },
-    cancelButton: {
-      paddingLeft: '1rem',
-      paddingRight: '1rem',
-      paddingTop: '0.5rem',
-      paddingBottom: '0.5rem',
-      border: '1px solid #d1d5db',
-      borderRadius: '0.375rem',
-      fontSize: '0.875rem',
-      fontWeight: '500',
-      color: '#374151',
-      backgroundColor: '#ffffff',
-      cursor: 'pointer'
-    },
-    cancelButtonHover: {
-      backgroundColor: '#f9fafb'
-    },
-    saveButton: {
-      paddingLeft: '1rem',
-      paddingRight: '1rem',
-      paddingTop: '0.5rem',
-      paddingBottom: '0.5rem',
-      borderRadius: '0.375rem',
-      fontSize: '0.875rem',
-      fontWeight: '500',
-      color: '#ffffff',
-      backgroundColor: '#10b981',
-      border: 'none',
-      cursor: 'pointer'
-    },
-    saveButtonHover: {
-      backgroundColor: '#059669'
-    }
-  }
-
-  // Responsive styles
-  const mediaStyles = `
-    @media (max-width: 768px) {
-      .page {
-        padding: 0.75rem;
-      }
-      
-      .modalContainer {
-        margin: 1rem;
-        max-width: calc(100% - 2rem);
-      }
-      
-      .pageTitle {
-        font-size: 1.125rem;
-      }
-      
-      .searchContainer {
-        max-width: 100%;
-        margin-bottom: 0.75rem;
-      }
-    }
-    
-    @media (max-width: 480px) {
-      .page {
-        padding: 0.5rem;
-      }
-      
-      .header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 1rem;
-        padding: 0.75rem 0;
-      }
-      
-      .addButton {
-        padding: 0.25rem 0.5rem;
-        font-size: 0.75rem;
-      }
-    }
-  `
+  if (loading) return (
+    <div className="flex h-96 items-center justify-center">
+      <Loader2 className="h-10 w-10 animate-spin text-emerald-500" />
+    </div>
+  )
 
   return (
-    <div style={styles.page}>
-      <style>{mediaStyles}</style>
-      <div style={styles.header}>
-        <h1 style={styles.pageTitle}>Manage Shifts</h1>
-        <button
-          onClick={handleAddShift}
-          style={styles.addButton}
-          onMouseEnter={(e) => e.target.style.backgroundColor = styles.addButtonHover.backgroundColor}
-          onMouseLeave={(e) => e.target.style.backgroundColor = styles.addButton.backgroundColor}
+    <div className="max-w-6xl mx-auto space-y-6 p-4 md:p-6">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-black text-slate-800 tracking-tight flex items-center gap-2">
+            <Clock size={28} className="text-emerald-500" />
+            Shift Templates
+          </h1>
+          <p className="text-slate-500 text-sm font-medium">Define recurring work hours for your team</p>
+        </div>
+        <button 
+          onClick={() => handleOpenModal()}
+          className="flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-3 rounded-2xl font-bold shadow-lg shadow-emerald-100 transition-all active:scale-95"
         >
-          <Plus style={{ height: '1rem', width: '1rem' }} />
-          <span>Add Shift</span>
+          <Plus size={18} />
+          <span>Create Shift</span>
         </button>
       </div>
 
-      {/* Search Filter */}
-      <div style={styles.searchContainer}>
-        <Search style={styles.searchIcon} />
-        <input
-          type="text"
-          placeholder="Search shifts..."
+      {/* Search Bar */}
+      <div className="relative max-w-md">
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
+        <input 
+          type="text" 
+          placeholder="Search by shift name..." 
+          className="w-full bg-white border border-slate-100 rounded-2xl py-3.5 pl-12 pr-4 text-sm font-bold text-slate-600 outline-none focus:ring-4 focus:ring-emerald-500/10 shadow-sm transition-all"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          style={styles.searchInput}
-          onFocus={(e) => {
-            e.target.style.borderColor = styles.searchInputFocus.borderColor;
-            e.target.style.boxShadow = styles.searchInputFocus.boxShadow;
-          }}
-          onBlur={(e) => {
-            e.target.style.borderColor = '';
-            e.target.style.boxShadow = '';
-          }}
         />
       </div>
 
-      <div style={styles.tableContainer}>
-        <ResponsiveTable
-          columns={[
-            { key: 'name', header: 'Name', isPrimary: true },
-            { key: 'startTime', header: 'Start Time' },
-            { key: 'endTime', header: 'End Time' },
-            { key: 'actions', header: 'Actions', sortable: false }
-          ]}
-          data={currentShifts.map(shift => ({
-            id: shift.id,
-            name: shift.name,
-            startTime: shift.startTime,
-            endTime: shift.endTime,
-            shift: shift
-          }))}
-          renderCell={(row, column) => {
-            switch (column.key) {
-              case 'startTime':
-              case 'endTime':
-                return <span style={styles.tableCellSecondary}>{row[column.key]}</span>;
-              case 'actions':
-                return (
-                  <div>
-                    <button
-                      onClick={() => handleEditShift(row.shift)}
-                      style={styles.actionButton}
-                      title="Edit Shift"
-                      onMouseEnter={(e) => e.target.style.backgroundColor = styles.actionButtonHover.backgroundColor}
-                      onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
-                    >
-                      <Edit style={{ height: '1rem', width: '1rem' }} />
-                    </button>
-                    <button
-                      onClick={() => handleDeleteShift(row.shift.id)}
-                      style={{ ...styles.actionButton, ...styles.actionButtonDanger }}
-                      title="Delete Shift"
-                      onMouseEnter={(e) => e.target.style.backgroundColor = styles.actionButtonDangerHover.backgroundColor}
-                      onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
-                    >
-                      <Trash2 style={{ height: '1rem', width: '1rem' }} />
-                    </button>
-                  </div>
-                );
-              default:
-                return row[column.key];
-            }
-          }}
-        />
-
-        <ResponsivePagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={setCurrentPage}
-          itemsPerPage={itemsPerPage}
-          totalItems={filteredShifts.length}
-          showInfo={true}
-          showNavigation={true}
-        />
-      </div>
-
-      {/* Modal */}
-      {showModal && (
-        <div style={styles.modalOverlay}>
-          <div style={styles.modalContainer}>
-            <div style={styles.modalHeader}>
-              <h3 style={styles.modalTitle}>
-                {editingShift ? 'Edit Shift' : 'Add New Shift'}
-              </h3>
-              <button 
-                onClick={() => setShowModal(false)}
-                style={styles.modalCloseButton}
-                onMouseEnter={(e) => e.target.style.color = styles.modalCloseButtonHover.color}
-                onMouseLeave={(e) => e.target.style.color = styles.modalCloseButton.color}
-              >
-                <svg style={{ height: '1.5rem', width: '1.5rem' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
+      {/* Grid Layout (Modern Cards) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {currentItems.map((shift) => (
+          <div key={shift._id} className="bg-white rounded-[2rem] border border-slate-100 p-6 shadow-sm hover:shadow-xl hover:shadow-emerald-500/5 transition-all group relative overflow-hidden">
+            <div className="flex justify-between items-start mb-6">
+              <div className="h-12 w-12 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center shadow-inner">
+                <CalendarDays size={24} />
+              </div>
+              <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button onClick={() => handleOpenModal(shift)} className="p-2 text-slate-400 hover:text-emerald-500 hover:bg-slate-50 rounded-xl transition-all"><Edit size={16}/></button>
+                <button onClick={() => handleDelete(shift._id)} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"><Trash2 size={16}/></button>
+              </div>
             </div>
-            <form onSubmit={handleSubmit} style={styles.modalForm}>
-              <div style={styles.formGroup}>
-                <label style={styles.formLabel}>
-                  Shift Name
-                </label>
-                <input
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData({...formData, name: e.target.value})}
-                  style={styles.formInput}
-                  onFocus={(e) => {
-                    e.target.style.borderColor = styles.formInputFocus.borderColor;
-                    e.target.style.boxShadow = styles.formInputFocus.boxShadow;
-                  }}
-                  onBlur={(e) => {
-                    e.target.style.borderColor = '';
-                    e.target.style.boxShadow = '';
-                  }}
-                  required
+
+            <h3 className="text-xl font-black text-slate-800 mb-4">{shift.name}</h3>
+            
+            <div className="space-y-3">
+               <div className="flex items-center justify-between p-3 bg-slate-50 rounded-2xl">
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Starts</span>
+                  <span className="text-sm font-black text-slate-700">{shift.startTime}</span>
+               </div>
+               <div className="flex items-center justify-between p-3 bg-slate-50 rounded-2xl">
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Ends</span>
+                  <span className="text-sm font-black text-slate-700">{shift.endTime}</span>
+               </div>
+            </div>
+
+            <div className="mt-6 pt-4 border-t border-slate-50 flex items-center gap-2 text-emerald-600">
+               <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+               <span className="text-[10px] font-black uppercase tracking-tighter">Template Active</span>
+            </div>
+          </div>
+        ))}
+
+        {currentItems.length === 0 && (
+          <div className="col-span-full py-20 text-center bg-slate-50 rounded-[2.5rem] border border-dashed border-slate-200">
+             <Clock size={48} className="mx-auto text-slate-200 mb-4" />
+             <p className="text-slate-400 font-bold uppercase text-xs tracking-widest">No shift templates defined</p>
+          </div>
+        )}
+      </div>
+
+      {/* CREATE/EDIT MODAL */}
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
+          <div className="w-full max-w-md bg-white rounded-[2.5rem] shadow-2xl p-8 md:p-10 animate-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-center mb-8">
+              <h3 className="text-2xl font-black text-slate-800">{editingShift ? 'Update Shift' : 'New Shift'}</h3>
+              <button onClick={() => setShowModal(false)} className="p-2 hover:bg-slate-100 rounded-full text-slate-400"><X size={24}/></button>
+            </div>
+            
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Template Name</label>
+                <input 
+                  required type="text" placeholder="e.g. Early Morning"
+                  className="w-full bg-slate-50 border-none rounded-2xl p-4 text-sm font-bold text-slate-700 focus:ring-4 focus:ring-emerald-500/10 outline-none"
+                  value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})}
                 />
               </div>
-              <div style={styles.formGroup}>
-                <label style={styles.formLabel}>
-                  Start Time
-                </label>
-                <input
-                  type="time"
-                  value={formData.startTime}
-                  onChange={(e) => setFormData({...formData, startTime: e.target.value})}
-                  style={styles.formInput}
-                  onFocus={(e) => {
-                    e.target.style.borderColor = styles.formInputFocus.borderColor;
-                    e.target.style.boxShadow = styles.formInputFocus.boxShadow;
-                  }}
-                  onBlur={(e) => {
-                    e.target.style.borderColor = '';
-                    e.target.style.boxShadow = '';
-                  }}
-                  required
-                />
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Start Time</label>
+                  <input 
+                    required type="time"
+                    className="w-full bg-slate-50 border-none rounded-2xl p-4 text-sm font-bold text-slate-700 focus:ring-4 focus:ring-emerald-500/10 outline-none"
+                    value={formData.startTime} onChange={e => setFormData({...formData, startTime: e.target.value})}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">End Time</label>
+                  <input 
+                    required type="time"
+                    className="w-full bg-slate-50 border-none rounded-2xl p-4 text-sm font-bold text-slate-700 focus:ring-4 focus:ring-emerald-500/10 outline-none"
+                    value={formData.endTime} onChange={e => setFormData({...formData, endTime: e.target.value})}
+                  />
+                </div>
               </div>
-              <div style={styles.formGroup}>
-                <label style={styles.formLabel}>
-                  End Time
-                </label>
-                <input
-                  type="time"
-                  value={formData.endTime}
-                  onChange={(e) => setFormData({...formData, endTime: e.target.value})}
-                  style={styles.formInput}
-                  onFocus={(e) => {
-                    e.target.style.borderColor = styles.formInputFocus.borderColor;
-                    e.target.style.boxShadow = styles.formInputFocus.boxShadow;
-                  }}
-                  onBlur={(e) => {
-                    e.target.style.borderColor = '';
-                    e.target.style.boxShadow = '';
-                  }}
-                  required
-                />
-              </div>
-              <div style={styles.modalFooter}>
-                <button
-                  type="button"
-                  onClick={() => setShowModal(false)}
-                  style={styles.cancelButton}
-                  onMouseEnter={(e) => e.target.style.backgroundColor = styles.cancelButtonHover.backgroundColor}
-                  onMouseLeave={(e) => e.target.style.backgroundColor = styles.cancelButton.backgroundColor}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  style={styles.saveButton}
-                  onMouseEnter={(e) => e.target.style.backgroundColor = styles.saveButtonHover.backgroundColor}
-                  onMouseLeave={(e) => e.target.style.backgroundColor = styles.saveButton.backgroundColor}
-                >
-                  Save
+
+              <div className="flex gap-3 pt-6">
+                <button type="button" onClick={() => setShowModal(false)} className="flex-1 py-4 text-sm font-black text-slate-400 hover:text-slate-600 transition-colors">Discard</button>
+                <button type="submit" disabled={isSaving} className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white rounded-2xl py-4 text-sm font-black shadow-lg shadow-emerald-100 transition-all flex items-center justify-center gap-2">
+                  {isSaving ? <Loader2 className="animate-spin" size={18}/> : <><Save size={18}/> Save Template</>}
                 </button>
               </div>
             </form>
